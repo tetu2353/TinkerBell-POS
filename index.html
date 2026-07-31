@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111111">
+<!-- build: seat-customer-draft-fix-20260801 -->
 <title>ティンカーベル 店舗管理</title>
 <style>
 :root{--bg:#f3edf4;--card:#fff;--ink:#201923;--muted:#756a77;--line:#dfd4e1;--gold:#b88a35;--dark:#171219;--danger:#b8425a}
@@ -222,7 +223,23 @@ function seatTotal(s){return s.orders.reduce((a,o)=>a+o.price*o.qty,0)}
 function seatElapsed(s){if(!s.openedAt)return '-';const ms=Date.now()-new Date(s.openedAt).getTime();const min=Math.max(0,Math.floor(ms/60000));return `${Math.floor(min/60)}時間${min%60}分`}
 let seatEditId='';
 let seatDraft={customerName:'',people:1,openedTime:'',memo:'',casts:[]};
-function syncSeatDraftFromInputs(){seatDraft.customerName=$('seatCustomerName').value;seatDraft.people=Math.max(1,Number($('seatPeople').value)||1);seatDraft.openedTime=$('seatOpenedTime').value;seatDraft.memo=$('seatMemo').value}
+function syncSeatDraftFromInputs(){
+ seatDraft.customerName=$('seatCustomerName').value;
+ seatDraft.people=Math.max(1,Number($('seatPeople').value)||1);
+ seatDraft.openedTime=$('seatOpenedTime').value;
+ seatDraft.memo=$('seatMemo').value;
+}
+function restoreSeatDraftInputs(){
+ $('seatCustomerName').value=seatDraft.customerName||'';
+ $('seatPeople').value=seatDraft.people||1;
+ $('seatOpenedTime').value=seatDraft.openedTime||'';
+ $('seatMemo').value=seatDraft.memo||'';
+}
+['seatCustomerName','seatPeople','seatOpenedTime','seatMemo'].forEach(id=>{
+ const el=$(id);
+ el.addEventListener('input',syncSeatDraftFromInputs);
+ el.addEventListener('change',syncSeatDraftFromInputs);
+});
 function renderSeatCastChoices(){$('seatCastChoices').innerHTML=db.staff.filter(x=>x.role==='cast').map(c=>`<button type="button" class="cast-choice ${seatDraft.casts.includes(c.id)?'selected':''}" onclick="chooseSeatCast('${c.id}')">${seatDraft.casts.includes(c.id)?'✓ ':''}${esc(c.name)}</button>`).join('')||'<div class="empty">キャストが登録されていません</div>'}
 function renderSeats(){
  const occupied=db.seats.filter(s=>s.customerName).length,total=db.seats.reduce((a,s)=>a+seatTotal(s),0);
@@ -254,7 +271,21 @@ function openSeatModal(sid){
  setTimeout(()=>$('seatCustomerName').focus(),100)
 }
 window.openSeat=openSeatModal;window.editSeat=openSeatModal;
-window.chooseSeatCast=x=>{syncSeatDraftFromInputs();seatDraft.casts=seatDraft.casts.includes(x)?seatDraft.casts.filter(id=>id!==x):[...seatDraft.casts,x];renderSeatCastChoices()}
+window.chooseSeatCast=x=>{
+ // 担当選択前に未保存の来店入力を退避する。
+ syncSeatDraftFromInputs();
+ const activeId=document.activeElement?.id||'';
+ const selectionStart=$('seatCustomerName').selectionStart;
+ const selectionEnd=$('seatCustomerName').selectionEnd;
+ seatDraft.casts=seatDraft.casts.includes(x)?seatDraft.casts.filter(id=>id!==x):[...seatDraft.casts,x];
+ renderSeatCastChoices();
+ // 担当ボタンの再描画後も、お客様名・人数・時刻・メモを必ず復元する。
+ restoreSeatDraftInputs();
+ if(activeId==='seatCustomerName'){
+  $('seatCustomerName').focus();
+  try{$('seatCustomerName').setSelectionRange(selectionStart,selectionEnd)}catch{}
+ }
+}
 $('seatModalCancel').onclick=()=>{$('seatModal').classList.add('hidden');seatEditId=''};
 $('seatModalSave').onclick=()=>{
  syncSeatDraftFromInputs();
