@@ -20,14 +20,14 @@ h2{margin:3px 0 13px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:
 label{display:block;font-size:12px;font-weight:900;margin-bottom:11px}input,select,textarea{width:100%;margin-top:6px;padding:11px;border:1px solid #d8cddd;border-radius:11px;background:#fff}
 .primary,.secondary,.danger{border:0;border-radius:12px;padding:12px 14px;font-weight:900}.primary{background:linear-gradient(135deg,#9f742f,#d2a754);color:#fff}.secondary{background:#2b252d;color:#fff}.danger{background:#f7e9ed;color:#a1324a}
 .list{display:grid;gap:9px}.item{position:relative;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px}.item h3{margin:0 0 6px}.meta{line-height:1.55;color:#5f5261}.tag{display:inline-block;border-radius:999px;padding:3px 8px;background:#eedce5;color:#8a3c59;font-size:11px;font-weight:900}.item-actions{display:flex;gap:7px;margin-top:10px}.item-actions button{flex:1}.empty{text-align:center;padding:22px;background:#fff;border:1px dashed #cdbfce;border-radius:14px;color:#8b7d8c}
-.seat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.seat{border:2px solid #d8cddd;background:#fff;border-radius:17px;padding:14px;min-height:150px}.seat.occupied{border-color:#b88a35;background:#fffaf0}.seat h3{margin:0 0 7px}.seat .guest{font-size:18px;font-weight:900}.seat .cast{color:#8b5e1f}
+.seat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.seat{position:relative;border:2px solid #d8cddd;background:#fff;border-radius:18px;padding:15px;min-height:178px;box-shadow:0 7px 18px #47274312}.seat.occupied{border-color:#b88a35;background:linear-gradient(145deg,#fffdf7,#fff7e7)}.seat.empty-seat{background:linear-gradient(145deg,#fff,#f8f4f9)}.seat-status{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.seat-name{font-size:18px;font-weight:950}.seat-badge{border-radius:999px;padding:5px 9px;font-size:11px;font-weight:950;background:#eee8ef;color:#6d6270}.seat.occupied .seat-badge{background:#f0dba9;color:#674814}.seat .guest{font-size:20px;font-weight:950;line-height:1.3;min-height:27px}.seat .cast{color:#6e4f1c;font-weight:800;margin-top:7px;min-height:22px}.seat .seat-meta{color:#665d68;font-size:12px;line-height:1.6;margin-top:7px}.seat-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.seat-actions .full{grid-column:1/-1}.seat-actions button{width:100%;padding:11px 8px}.seat-section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.seat-section-head p{margin:0;color:var(--muted);font-size:12px}.seat-live-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.seat-live-summary span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 10px;font-size:12px;font-weight:900}.modal-card.seat-editor{max-width:680px;margin:0 auto}.seat-form-grid{display:grid;grid-template-columns:2fr 1fr;gap:10px}.seat-form-grid .wide{grid-column:1/-1}.cast-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.cast-choice{padding:13px;border:1px solid var(--line);background:#fff;border-radius:12px;font-weight:900}.cast-choice.selected{background:#fff3d3;border-color:#b88a35;box-shadow:inset 0 0 0 2px #e0bd68}.modal-note{font-size:12px;color:var(--muted);margin:8px 0 0}.modal-footer{display:grid;grid-template-columns:1fr 1.4fr;gap:9px;margin-top:16px;position:sticky;bottom:0;background:#fff;padding-top:10px}
 .summary{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:12px}.metric{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px}.metric small{display:block;color:var(--muted)}.metric b{font-size:24px}
 table{width:100%;border-collapse:collapse;background:#fff;border-radius:13px;overflow:hidden}th,td{padding:10px;border-bottom:1px solid #eee4ee;text-align:left;font-size:13px}th{background:#2a232c;color:#fff}
 nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}nav button{flex:1;border:0;background:#fff;padding:8px 3px;color:#817583;font-size:20px}nav button small{display:block;font-size:9px;margin-top:2px}nav button.active{color:#a77b2b;font-weight:900}
 .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}.loginbox{width:min(440px,100%);background:#fff;border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 20px 50px #3d243330;text-align:center}.loginbox h1{font-family:Georgia,serif}.loginbox .logo{font-size:42px;color:#b58b35}
 .toast{position:fixed;left:50%;bottom:82px;transform:translateX(-50%);background:#171219;color:#fff;border-radius:999px;padding:11px 17px;z-index:50;white-space:nowrap}
 @media(min-width:760px){.grid{grid-template-columns:repeat(4,1fr)}.seat-grid{grid-template-columns:repeat(4,1fr)}.summary{grid-template-columns:repeat(4,1fr)}}
-@media(max-width:560px){.row,.row3{grid-template-columns:1fr}.seat-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.row,.row3{grid-template-columns:1fr}.seat-grid{grid-template-columns:1fr}.seat-form-grid{grid-template-columns:1fr}.seat-form-grid .wide{grid-column:auto}.cast-choice-grid{grid-template-columns:1fr 1fr}}
 
 .tap-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.tap-btn{min-height:72px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:10px;text-align:left}.tap-btn b{display:block;font-size:16px}.tap-btn small{color:#746a76}.tap-btn.selected{outline:3px solid #d6ad55;background:#fffaf0}.category-row{display:flex;gap:8px;overflow:auto;padding-bottom:6px}.category-row button{white-space:nowrap}.order-head{position:sticky;top:58px;z-index:5;background:#f7f3f7;padding:8px 0}.modal{position:fixed;inset:0;background:#0008;z-index:80;display:flex;align-items:flex-end}.modal.hidden{display:none}.modal-card{background:#fff;width:100%;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px;padding-bottom:calc(18px + env(safe-area-inset-bottom))}.choice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.choice{padding:13px;border:1px solid var(--line);background:#fff;border-radius:12px}.choice.selected{background:#fff4d8;border-color:#bd8e2f}.qty-row{display:flex;gap:8px}.qty-row button{flex:1}.undo{position:fixed;left:12px;right:12px;bottom:76px;z-index:70;background:#251c29;color:#fff;border-radius:14px;padding:12px;display:flex;justify-content:space-between;align-items:center}.undo.hidden{display:none}
 
@@ -97,7 +97,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
  <div class="roster-card"><h3>全員の予定</h3><div id="shiftRoster" class="roster-scroll"></div></div>
 </section>
 
-<section id="seats" class="screen"><h2>席管理</h2><div id="seatGrid" class="seat-grid"></div></section>
+<section id="seats" class="screen"><div class="seat-section-head"><div><h2>席管理</h2><p>空席・入店中・担当・会計状況を一覧で確認</p></div><button class="secondary" onclick="renderSeats()">更新</button></div><div id="seatLiveSummary" class="seat-live-summary"></div><div id="seatGrid" class="seat-grid"></div></section>
 
 <section id="orders" class="screen"><h2>注文・会計</h2>
 <div class="order-head"><div class="card"><b>① 席をタップ</b><div id="tapSeatGrid" class="tap-grid" style="margin-top:8px"></div></div>
@@ -123,7 +123,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 </main>
 <nav><button data-go="home" class="active">⌂<small>ホーム</small></button><button data-go="seats">🛋️<small>席</small></button><button data-go="orders">🥂<small>注文</small></button><button data-go="customers">👤<small>顧客</small></button><button data-go="reports" class="manager">📊<small>集計</small></button></nav>
 </div>
-<div id="seatModal" class="modal hidden"><div class="modal-card"><h2 id="seatModalTitle">入店登録</h2><label>お客様名<input id="seatCustomerName" list="customerNames" placeholder="名前を入力"></label><datalist id="customerNames"></datalist><p><b>担当キャスト</b></p><div id="seatCastChoices" class="choice-grid"></div><div class="row" style="margin-top:14px"><button id="seatModalCancel" class="secondary">閉じる</button><button id="seatModalSave" class="primary">保存</button></div></div></div>
+<div id="seatModal" class="modal hidden"><div class="modal-card seat-editor"><h2 id="seatModalTitle">入店登録</h2><div class="seat-form-grid"><label>お客様名<input id="seatCustomerName" list="customerNames" placeholder="例：佐藤様" autocomplete="off"></label><label>人数<input id="seatPeople" type="number" min="1" max="99" value="1"></label><label>入店時刻<input id="seatOpenedTime" type="time"></label><label>メモ<input id="seatMemo" placeholder="例：同伴、VIP、延長確認"></label></div><datalist id="customerNames"></datalist><p><b>担当キャスト</b> <span class="muted">複数選択可</span></p><div id="seatCastChoices" class="cast-choice-grid"></div><p class="modal-note">キャストを押しても、お客様名や人数は消えません。最後に「保存」を押すまで入力内容を保持します。</p><div class="modal-footer"><button id="seatModalCancel" class="secondary" type="button">キャンセル</button><button id="seatModalSave" class="primary" type="button">この内容で保存</button></div></div></div>
 <div id="undoBar" class="undo hidden"><span id="undoText">注文を追加しました</span><button id="undoBtn" class="secondary">取り消す</button></div>
 <div id="toast" class="toast hidden"></div>
 
@@ -219,14 +219,53 @@ $('printShift').onclick=()=>window.print();
 $('exportShiftCsv').onclick=()=>{const key=shiftMonthKey(),days=new Date(shiftViewMonth.getFullYear(),shiftViewMonth.getMonth()+1,0).getDate();let rows=[['名前',...Array.from({length:days},(_,i)=>`${i+1}日`)]];db.staff.forEach(st=>rows.push([st.name,...Array.from({length:days},(_,i)=>shiftRecord(st.id,`${key}-${String(i+1).padStart(2,'0')}`)?.status||'')]));const csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tinkerbell_shift_${key}.csv`;a.click();URL.revokeObjectURL(a.href)};
 
 function seatTotal(s){return s.orders.reduce((a,o)=>a+o.price*o.qty,0)}
-let seatEditId='',seatCastSelected='';
-function renderSeats(){$('seatGrid').innerHTML=db.seats.map(s=>`<div class="seat ${s.customerName?'occupied':''}" onclick="${s.customerName?`selectOrderSeat('${s.id}');show('orders')`:`openSeat('${s.id}')`}"><h3>${esc(s.name)}</h3><div class="guest">${esc(s.customerName||'空席')}</div><div class="cast">${s.casts.length?'担当 '+s.casts.map(x=>esc(staffById(x)?.name||'')).join('・'):'担当なし'}</div><div class="meta">注文 ${s.orders.length}件 / ${yen(seatTotal(s))}</div><div class="item-actions">${s.customerName?`<button class="secondary" onclick="event.stopPropagation();editSeat('${s.id}')">変更</button><button class="primary" onclick="event.stopPropagation();checkoutSeat('${s.id}')">会計</button>`:`<button class="primary">入店登録</button>`}</div></div>`).join('')}
-function openSeatModal(sid){const s=db.seats.find(x=>x.id===sid);seatEditId=sid;seatCastSelected=s.casts[0]||'';$('seatModalTitle').textContent=s.customerName?`${s.name}を変更`:`${s.name}へ入店`;$('seatCustomerName').value=s.customerName||'';$('seatCastChoices').innerHTML=db.staff.filter(x=>x.role==='cast').map(c=>`<button class="choice ${seatCastSelected===c.id?'selected':''}" onclick="chooseSeatCast('${c.id}')">${esc(c.name)}</button>`).join('');$('seatModal').classList.remove('hidden')}
+function seatElapsed(s){if(!s.openedAt)return '-';const ms=Date.now()-new Date(s.openedAt).getTime();const min=Math.max(0,Math.floor(ms/60000));return `${Math.floor(min/60)}時間${min%60}分`}
+let seatEditId='';
+let seatDraft={customerName:'',people:1,openedTime:'',memo:'',casts:[]};
+function syncSeatDraftFromInputs(){seatDraft.customerName=$('seatCustomerName').value;seatDraft.people=Math.max(1,Number($('seatPeople').value)||1);seatDraft.openedTime=$('seatOpenedTime').value;seatDraft.memo=$('seatMemo').value}
+function renderSeatCastChoices(){$('seatCastChoices').innerHTML=db.staff.filter(x=>x.role==='cast').map(c=>`<button type="button" class="cast-choice ${seatDraft.casts.includes(c.id)?'selected':''}" onclick="chooseSeatCast('${c.id}')">${seatDraft.casts.includes(c.id)?'✓ ':''}${esc(c.name)}</button>`).join('')||'<div class="empty">キャストが登録されていません</div>'}
+function renderSeats(){
+ const occupied=db.seats.filter(s=>s.customerName).length,total=db.seats.reduce((a,s)=>a+seatTotal(s),0);
+ $('seatLiveSummary').innerHTML=`<span>使用中 ${occupied}席</span><span>空席 ${db.seats.length-occupied}席</span><span>未会計 ${yen(total)}</span>`;
+ $('seatGrid').innerHTML=db.seats.map(s=>{
+  const isOccupied=!!s.customerName;
+  const casts=s.casts?.length?s.casts.map(x=>esc(staffById(x)?.name||'')).filter(Boolean).join('・'):'担当なし';
+  return `<article class="seat ${isOccupied?'occupied':'empty-seat'}">
+   <div class="seat-status"><div class="seat-name">${esc(s.name)}</div><span class="seat-badge">${isOccupied?'使用中':'空席'}</span></div>
+   <div class="guest">${esc(s.customerName||'空席')}</div>
+   <div class="cast">${isOccupied?'担当 '+casts:'入店登録してください'}</div>
+   <div class="seat-meta">${isOccupied?`人数 ${Number(s.people||1)}名<br>滞在 ${seatElapsed(s)}<br>注文 ${s.orders.length}件・${yen(seatTotal(s))}`:'お客様名・人数・担当を登録できます'}</div>
+   <div class="seat-actions">${isOccupied?`<button class="secondary" type="button" onclick="editSeat('${s.id}')">席情報</button><button class="primary" type="button" onclick="selectOrderSeat('${s.id}');show('orders')">注文</button><button class="danger full" type="button" onclick="checkoutSeat('${s.id}')">会計へ進む</button>`:`<button class="primary full" type="button" onclick="openSeat('${s.id}')">＋ 入店登録</button>`}</div>
+  </article>`
+ }).join('')
+}
+function openSeatModal(sid){
+ const s=db.seats.find(x=>x.id===sid);if(!s)return;
+ seatEditId=sid;
+ const opened=s.openedAt?new Date(s.openedAt):new Date();
+ seatDraft={customerName:s.customerName||'',people:Number(s.people||1),openedTime:`${String(opened.getHours()).padStart(2,'0')}:${String(opened.getMinutes()).padStart(2,'0')}`,memo:s.memo||'',casts:[...(s.casts||[])]};
+ $('seatModalTitle').textContent=s.customerName?`${s.name}の席情報`:`${s.name}へ入店登録`;
+ $('seatCustomerName').value=seatDraft.customerName;
+ $('seatPeople').value=seatDraft.people;
+ $('seatOpenedTime').value=seatDraft.openedTime;
+ $('seatMemo').value=seatDraft.memo;
+ renderSeatCastChoices();
+ $('seatModal').classList.remove('hidden');
+ setTimeout(()=>$('seatCustomerName').focus(),100)
+}
 window.openSeat=openSeatModal;window.editSeat=openSeatModal;
-window.chooseSeatCast=x=>{seatCastSelected=seatCastSelected===x?'':x;openSeatModal(seatEditId)}
-$('seatModalCancel').onclick=()=>$('seatModal').classList.add('hidden');
-$('seatModalSave').onclick=()=>{const name=$('seatCustomerName').value.trim();if(!name)return toast('お客様名を入力');const s=db.seats.find(x=>x.id===seatEditId),c=db.customers.find(x=>x.name===name);s.customerId=c?.id||'';s.customerName=name;s.openedAt=s.openedAt||nowISO();s.casts=seatCastSelected?[seatCastSelected]:[];$('seatModal').classList.add('hidden');persist();refreshSelects();renderAll();selectOrderSeat(s.id);toast('席を登録しました')}
-window.checkoutSeat=sid=>{const s=db.seats.find(x=>x.id===sid);if(!confirm(`${s.name} ${s.customerName}\n合計 ${yen(seatTotal(s))}\n会計を確定しますか？`))return;db.checkouts.push({id:id(),seat:s.name,customerName:s.customerName,openedAt:s.openedAt,closedAt:nowISO(),orders:s.orders,total:seatTotal(s)});s.customerId='';s.customerName='';s.casts=[];s.openedAt='';s.orders=[];if(selectedOrderSeat===sid)selectedOrderSeat='';persist();renderAll();toast('会計を確定しました')}
+window.chooseSeatCast=x=>{syncSeatDraftFromInputs();seatDraft.casts=seatDraft.casts.includes(x)?seatDraft.casts.filter(id=>id!==x):[...seatDraft.casts,x];renderSeatCastChoices()}
+$('seatModalCancel').onclick=()=>{$('seatModal').classList.add('hidden');seatEditId=''};
+$('seatModalSave').onclick=()=>{
+ syncSeatDraftFromInputs();
+ const name=seatDraft.customerName.trim();if(!name)return toast('お客様名を入力してください');
+ const s=db.seats.find(x=>x.id===seatEditId);if(!s)return;
+ const c=db.customers.find(x=>x.name===name);
+ s.customerId=c?.id||'';s.customerName=name;s.people=seatDraft.people;s.memo=seatDraft.memo;s.casts=[...seatDraft.casts];
+ const [hh,mm]=(seatDraft.openedTime||'').split(':').map(Number);if(!s.openedAt){const d=new Date();if(Number.isFinite(hh)){d.setHours(hh||0,mm||0,0,0)}s.openedAt=d.toISOString()}
+ $('seatModal').classList.add('hidden');persist();refreshSelects();renderAll();selectOrderSeat(s.id);toast('席情報を保存しました')
+}
+window.checkoutSeat=sid=>{const s=db.seats.find(x=>x.id===sid);if(!s||!s.customerName)return;const msg=`${s.name} ${s.customerName}\n人数 ${Number(s.people||1)}名\n合計 ${yen(seatTotal(s))}\n会計を確定しますか？`;if(!confirm(msg))return;db.checkouts.push({id:id(),seat:s.name,customerName:s.customerName,people:Number(s.people||1),openedAt:s.openedAt,closedAt:nowISO(),orders:s.orders,total:seatTotal(s),memo:s.memo||''});s.customerId='';s.customerName='';s.people=1;s.memo='';s.casts=[];s.openedAt='';s.orders=[];if(selectedOrderSeat===sid)selectedOrderSeat='';persist();renderAll();toast('会計を確定しました')}
 
 let selectedOrderSeat='',selectedCategory='すべて',pendingMenu='',lastOrder=null,undoTimer=null;
 window.selectOrderSeat=sid=>{selectedOrderSeat=sid;pendingMenu='';renderTapOrders()}
