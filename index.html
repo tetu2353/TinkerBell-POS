@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111111">
-<title>ティンカーベル POS v6</title>
+<title>ティンカーベル 店舗管理</title>
 <style>
 :root{--bg:#f3edf4;--card:#fff;--ink:#201923;--muted:#756a77;--line:#dfd4e1;--gold:#b88a35;--dark:#171219;--danger:#b8425a}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;background:linear-gradient(180deg,#f8f3f8,#eee7f1);color:var(--ink)}
@@ -54,15 +54,12 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <header><div class="brand"><small>TINKER BELL</small><b>店舗管理</b></div><div class="header-actions"><button id="userBadge" class="pill"></button><button id="logoutBtn" class="pill">退出</button></div></header>
 <main>
 <section id="home" class="screen active">
- <div class="hero"><div style="font-size:25px;color:#f0cf75">✦</div><h1>Tinker Bell POS</h1><p id="welcome"></p></div>
- <div class="card" style="margin-top:13px;border:2px solid #c79b43;background:linear-gradient(145deg,#fffaf0,#fff)"><h2 style="margin:0 0 10px">店舗POS</h2><div class="grid" style="margin-top:0">
-  <button class="tile" data-go="seats" style="border:2px solid #b88a35"><span>🛋️</span><b>席管理</b><small>入店・担当キャスト</small></button>
-  <button class="tile" data-go="orders" style="border:2px solid #b88a35"><span>💰</span><b>注文・会計</b><small>商品追加・会計確定</small></button>
- </div></div>
- <h2 style="margin-top:18px">スタッフ管理</h2>
+ <div class="hero"><div style="font-size:25px;color:#f0cf75">✦</div><h1>Tinker Bell</h1><p id="welcome"></p></div>
  <div class="grid">
   <button class="tile" data-go="attendance"><span>🕒</span><b>出勤・退勤</b><small>勤怠を記録</small></button>
   <button class="tile" data-go="shifts"><span>📅</span><b>シフト</b><small>予定を確認・登録</small></button>
+  <button class="tile" data-go="seats"><span>🛋️</span><b>席管理</b><small>カウンター6・BOX5</small></button>
+  <button class="tile" data-go="orders"><span>🥂</span><b>注文・会計</b><small>席別の伝票</small></button>
   <button class="tile" data-go="customers"><span>👤</span><b>お客様</b><small>担当・履歴・メモ</small></button>
   <button class="tile" data-go="bottles"><span>🍾</span><b>ボトル</b><small>残量・保管場所</small></button>
   <button class="tile" data-go="visits"><span>🤝</span><b>同伴・来店予定</b><small>予約を共有</small></button>
@@ -133,7 +130,6 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v6-seat-order-checkout';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
