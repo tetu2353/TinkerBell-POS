@@ -3,428 +3,357 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#111111">
-<!-- build: club-menu-categories-20260801-03 -->
-<title>ティンカーベル 店舗管理</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#17121f">
+<title>Tinker Bell Club POS</title>
 <style>
-:root{--bg:#f3edf4;--card:#fff;--ink:#201923;--muted:#756a77;--line:#dfd4e1;--gold:#b88a35;--dark:#171219;--danger:#b8425a}
-*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;background:linear-gradient(180deg,#f8f3f8,#eee7f1);color:var(--ink)}
+:root{--bg:#f5f3f7;--panel:#fff;--ink:#201828;--muted:#756c7e;--line:#e5dfe9;--main:#6d3b78;--main2:#9f6bac;--gold:#b9944e;--ok:#17734d;--warn:#a65b00;--danger:#b43b4b;--shadow:0 10px 28px rgba(38,20,47,.09)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
 button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
-header{position:sticky;top:0;z-index:20;background:#111;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #705a28}
-.brand small{display:block;color:#d5bc7a;letter-spacing:.18em;font-size:9px}.brand b{font-family:Georgia,serif;letter-spacing:.08em;font-size:20px}
-.header-actions{display:flex;gap:7px}.pill{border:1px solid #6f5a2b;background:#272129;color:#eed58e;border-radius:999px;padding:8px 11px;font-weight:800}
-main{max-width:1100px;margin:auto;padding:14px 14px 92px}.screen{display:none}.screen.active{display:block}
-.hero{background:radial-gradient(circle at 20% 15%,#503951,#161116 65%);color:#fff;border:1px solid #9f7a31;border-radius:22px;padding:24px;text-align:center;box-shadow:0 12px 28px #39203926}.hero h1{margin:4px 0;font-family:Georgia,serif}.hero p{color:#ddcadb}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:13px}.tile{min-height:112px;background:linear-gradient(145deg,#fff,#fbf6fb);border:1px solid #dfcfe0;border-radius:17px;padding:15px 10px;box-shadow:0 7px 18px #47274312;color:#251e27}.tile span{display:block;font-size:29px}.tile b{display:block;font-size:16px;margin-top:5px}.tile small{display:block;color:#7e7080;margin-top:4px}
-h2{margin:3px 0 13px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:11px}.toolbar>*{flex:1;min-width:130px}
-.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:12px;box-shadow:0 5px 14px #4c304311}.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-label{display:block;font-size:12px;font-weight:900;margin-bottom:11px}input,select,textarea{width:100%;margin-top:6px;padding:11px;border:1px solid #d8cddd;border-radius:11px;background:#fff}
-.primary,.secondary,.danger{border:0;border-radius:12px;padding:12px 14px;font-weight:900}.primary{background:linear-gradient(135deg,#9f742f,#d2a754);color:#fff}.secondary{background:#2b252d;color:#fff}.danger{background:#f7e9ed;color:#a1324a}
-.list{display:grid;gap:9px}.item{position:relative;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px}.item h3{margin:0 0 6px}.meta{line-height:1.55;color:#5f5261}.tag{display:inline-block;border-radius:999px;padding:3px 8px;background:#eedce5;color:#8a3c59;font-size:11px;font-weight:900}.item-actions{display:flex;gap:7px;margin-top:10px}.item-actions button{flex:1}.empty{text-align:center;padding:22px;background:#fff;border:1px dashed #cdbfce;border-radius:14px;color:#8b7d8c}
-.seat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.seat{position:relative;border:2px solid #d8cddd;background:#fff;border-radius:18px;padding:15px;min-height:178px;box-shadow:0 7px 18px #47274312}.seat.occupied{border-color:#b88a35;background:linear-gradient(145deg,#fffdf7,#fff7e7)}.seat.empty-seat{background:linear-gradient(145deg,#fff,#f8f4f9)}.seat-status{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.seat-name{font-size:18px;font-weight:950}.seat-badge{border-radius:999px;padding:5px 9px;font-size:11px;font-weight:950;background:#eee8ef;color:#6d6270}.seat.occupied .seat-badge{background:#f0dba9;color:#674814}.seat .guest{font-size:20px;font-weight:950;line-height:1.3;min-height:27px}.seat .cast{color:#6e4f1c;font-weight:800;margin-top:7px;min-height:22px}.seat .seat-meta{color:#665d68;font-size:12px;line-height:1.6;margin-top:7px}.seat-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.seat-actions .full{grid-column:1/-1}.seat-actions button{width:100%;padding:11px 8px}.seat-section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.seat-section-head p{margin:0;color:var(--muted);font-size:12px}.seat-live-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.seat-live-summary span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 10px;font-size:12px;font-weight:900}.modal-card.seat-editor{max-width:680px;margin:0 auto}.seat-form-grid{display:grid;grid-template-columns:2fr 1fr;gap:10px}.seat-form-grid .wide{grid-column:1/-1}.cast-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.cast-choice{padding:13px;border:1px solid var(--line);background:#fff;border-radius:12px;font-weight:900}.cast-choice.selected{background:#fff3d3;border-color:#b88a35;box-shadow:inset 0 0 0 2px #e0bd68}.modal-note{font-size:12px;color:var(--muted);margin:8px 0 0}.modal-footer{display:grid;grid-template-columns:1fr 1.4fr;gap:9px;margin-top:16px;position:sticky;bottom:0;background:#fff;padding-top:10px}
-.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:12px}.metric{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px}.metric small{display:block;color:var(--muted)}.metric b{font-size:24px}
-table{width:100%;border-collapse:collapse;background:#fff;border-radius:13px;overflow:hidden}th,td{padding:10px;border-bottom:1px solid #eee4ee;text-align:left;font-size:13px}th{background:#2a232c;color:#fff}
-nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}nav button{flex:1;border:0;background:#fff;padding:8px 3px;color:#817583;font-size:20px}nav button small{display:block;font-size:9px;margin-top:2px}nav button.active{color:#a77b2b;font-weight:900}
-.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}.loginbox{width:min(440px,100%);background:#fff;border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 20px 50px #3d243330;text-align:center}.loginbox h1{font-family:Georgia,serif}.loginbox .logo{font-size:42px;color:#b58b35}
-.toast{position:fixed;left:50%;bottom:82px;transform:translateX(-50%);background:#171219;color:#fff;border-radius:999px;padding:11px 17px;z-index:50;white-space:nowrap}
-@media(min-width:760px){.grid{grid-template-columns:repeat(4,1fr)}.seat-grid{grid-template-columns:repeat(4,1fr)}.summary{grid-template-columns:repeat(4,1fr)}}
-@media(max-width:560px){.row,.row3{grid-template-columns:1fr}.seat-grid{grid-template-columns:1fr}.seat-form-grid{grid-template-columns:1fr}.seat-form-grid .wide{grid-column:auto}.cast-choice-grid{grid-template-columns:1fr 1fr}}
-
-.tap-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.tap-btn{min-height:72px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:10px;text-align:left}.tap-btn b{display:block;font-size:16px}.tap-btn small{color:#746a76}.tap-btn.selected{outline:3px solid #d6ad55;background:#fffaf0}.category-row{display:flex;gap:8px;overflow:auto;padding-bottom:6px}.category-row button{white-space:nowrap}.order-head{position:sticky;top:58px;z-index:5;background:#f7f3f7;padding:8px 0}.modal{position:fixed;inset:0;background:#0008;z-index:80;display:flex;align-items:flex-end}.modal.hidden{display:none}.modal-card{background:#fff;width:100%;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px;padding-bottom:calc(18px + env(safe-area-inset-bottom))}.choice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.choice{padding:13px;border:1px solid var(--line);background:#fff;border-radius:12px}.choice.selected{background:#fff4d8;border-color:#bd8e2f}.qty-row{display:flex;gap:8px}.qty-row button{flex:1}.undo{position:fixed;left:12px;right:12px;bottom:76px;z-index:70;background:#251c29;color:#fff;border-radius:14px;padding:12px;display:flex;justify-content:space-between;align-items:center}.undo.hidden{display:none}
-
-.shift-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}.shift-toolbar button{min-width:72px}.shift-month-title{font-size:20px;font-weight:900;text-align:center;flex:1}.shift-banner{border-radius:14px;padding:13px 15px;margin-bottom:12px;font-weight:800;line-height:1.55}.shift-banner.staff-view{background:#edf8e9;color:#245c2d}.shift-banner.manager{background:#eaf3ff;color:#174d8c}.shift-help{font-size:12px;font-weight:600}.shift-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px;background:#fff;-webkit-overflow-scrolling:touch}.shift-table{border-collapse:separate;border-spacing:0;min-width:max-content;width:auto}.shift-table th,.shift-table td{min-width:48px;width:48px;height:48px;padding:4px;text-align:center;border-right:1px solid #ece6ed;border-bottom:1px solid #ece6ed}.shift-table thead th{position:sticky;top:0;z-index:3;background:#fff;color:#27202a}.shift-table .name-col{position:sticky;left:0;z-index:2;min-width:112px;width:112px;text-align:left;padding-left:10px;background:#fff;font-weight:900}.shift-table thead .name-col{z-index:4;background:#fff}.shift-cell{border:0;width:38px;height:38px;border-radius:10px;font-size:21px;font-weight:900;background:#f4f1f5;color:#8a7d8c}.shift-cell.manager-edit,.shift-cell.staff-edit{cursor:pointer}.shift-table tr.my-shift-row .name-col{background:#f1faef;color:#205b2a}.shift-table tr.my-shift-row td{background:#fbfff9}.shift-cell.status-ok{background:#e8f6ea;color:#248138}.shift-cell.status-late{background:#fff3dc;color:#e08a00}.shift-cell.status-off{background:#fdebed;color:#d52e3d}.shift-cell.today-cell{outline:2px solid #2677dd}.shift-day small{display:block;font-size:10px;font-weight:700;color:#756a77}.shift-day.sun{color:#e04444}.shift-day.sat{color:#2677dd}.shift-legend{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;font-weight:900}.shift-legend span{white-space:nowrap}.shift-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}.shift-actions .wide{grid-column:1/-1}.shift-save{background:#249b43;color:white;border:0;border-radius:12px;padding:14px;font-weight:900;font-size:17px}.shift-publish{background:#2677dd;color:white;border:0;border-radius:12px;padding:14px;font-weight:900}.shift-status-card{background:#f8fafc;border:1px solid #dfe6ee;border-radius:14px;padding:14px;margin-top:12px}.shift-status-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:9px 0;border-bottom:1px solid #e8edf2}.shift-status-row:last-child{border-bottom:0}.submitted{color:#249b43;font-weight:900}.unsubmitted{color:#d93030;font-weight:900}.published-note{font-size:12px;color:#5f5261;margin-top:8px}.my-entry-state{padding:13px;background:#eef6ff;border:1px solid #d8e8fa;border-radius:12px;margin-top:12px}.my-entry-state b{color:#249b43}.shift-row-badge{display:block;font-size:10px;font-weight:800;color:#6e6870;margin-top:2px}@media(max-width:560px){.shift-actions{grid-template-columns:1fr}.shift-actions .wide{grid-column:auto}}
-
-/* v5 actual shift screen */
-#shifts{max-width:760px;margin:0 auto}.shift-page-head{background:linear-gradient(135deg,#7e69ad,#9b83c3);color:#fff;margin:-14px -14px 16px;padding:18px 18px 20px;border-radius:0 0 22px 22px;box-shadow:0 8px 22px #6d579130}.shift-page-head h2{margin:0;font-size:22px}.shift-page-head p{margin:5px 0 0;color:#eee8fa;font-size:12px}.shift-shell{background:#fff;border:1px solid #ded4e9;border-radius:20px;padding:14px;box-shadow:0 8px 24px #6f58701a}.shift-toolbar{margin:0 0 12px}.shift-toolbar button{min-width:44px;width:44px;height:40px;padding:0;border-radius:11px;background:#f2edf8;color:#58456f}.shift-month-title{font-size:21px;color:#392d48}.shift-banner{padding:11px 13px;border-radius:12px;font-size:13px;margin-bottom:12px}.shift-banner.staff-view{background:#f2ecff;color:#5a4178}.shift-banner.manager{background:#eee8fb;color:#554176}.shift-person-picker{display:flex;gap:8px;overflow:auto;padding:1px 1px 10px}.shift-person-picker button{white-space:nowrap;border:1px solid #dcd1e9;background:#fff;color:#62516f;padding:9px 12px;border-radius:999px;font-weight:800}.shift-person-picker button.active{background:#7f69ad;color:#fff;border-color:#7f69ad}.month-calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.month-calendar .dow{text-align:center;font-size:11px;font-weight:900;color:#85788e;padding:5px 0}.month-calendar .dow.sun{color:#db5f6a}.month-calendar .dow.sat{color:#557dc6}.month-day{min-height:67px;border:1px solid #e8e0ef;background:#fff;border-radius:12px;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}.month-day.blank{border-color:transparent;background:transparent}.month-day.editable{cursor:pointer}.month-day.today{outline:2px solid #8c72bd}.month-day .num{font-size:12px;font-weight:900;color:#5e5265;align-self:flex-start}.month-day.sun .num{color:#db5f6a}.month-day.sat .num{color:#557dc6}.month-day .mark{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#f2eef5;color:#aa9eae;font-size:21px;font-weight:900}.month-day.status-ok .mark{background:#e9f7eb;color:#2c9a49}.month-day.status-late .mark{background:#fff2db;color:#df8b0e}.month-day.status-off .mark{background:#fde9ed;color:#d6495a}.shift-legend{justify-content:center;font-size:12px;gap:10px;margin:13px 0}.my-entry-state{background:#f5f1fb;border-color:#e2d8ef}.shift-save{background:#2e9d4b;box-shadow:0 6px 14px #2e9d4b33}.shift-publish{background:#7d68ae;box-shadow:0 6px 14px #7d68ae33}.shift-status-card{background:#fbf9fd;border-color:#e5dced}.shift-status-row{align-items:center}.roster-card{margin-top:14px;background:#fff;border:1px solid #e3d9eb;border-radius:16px;padding:13px}.roster-card h3{margin:0 0 10px;font-size:16px}.roster-scroll{overflow:auto}.roster-mini{min-width:620px}.roster-mini th{background:#7d68ae}.roster-mini td,.roster-mini th{text-align:center;padding:8px}.roster-mini td:first-child,.roster-mini th:first-child{text-align:left;position:sticky;left:0;background:#fff;color:#34293d;font-weight:900}.shift-actions button{min-height:47px}.shift-footnote{text-align:center;color:#786d7e;font-size:11px;margin-top:8px}
-@media(max-width:560px){#shifts{padding-bottom:30px}.month-day{min-height:58px;padding:4px}.month-day .mark{width:30px;height:30px;font-size:19px}.shift-shell{padding:11px}.shift-page-head{margin:-14px -14px 14px}.shift-actions{grid-template-columns:1fr 1fr}.shift-actions .wide{grid-column:1/-1}}
-
+header{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,#17121f,#392342);color:#fff;padding:14px 16px;box-shadow:0 5px 18px rgba(0,0,0,.18)}
+.header-row{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-weight:900;font-size:21px;letter-spacing:.03em}.sub{font-size:12px;color:#dbcfe0;margin-top:3px}
+main{padding:14px 14px 90px;max-width:1100px;margin:auto}
+.nav{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:12px 0 14px}.nav button{border:0;border-radius:12px;padding:11px 5px;background:#fff;color:var(--ink);font-weight:800;box-shadow:0 3px 10px rgba(0,0,0,.05)}.nav button.active{background:var(--main);color:#fff}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}.summary>div{background:#fff;border-radius:15px;padding:13px;box-shadow:var(--shadow)}.summary small{color:var(--muted)}.summary strong{display:block;font-size:22px;margin-top:3px}
+.card{background:#fff;border-radius:17px;padding:15px;box-shadow:var(--shadow);margin-bottom:13px}.card h2,.card h3{margin:0 0 10px}.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0 11px}.section-title h2{font-size:20px;margin:0}
+.btn{border:0;border-radius:12px;padding:12px 14px;font-weight:850;background:#ece7ef;color:var(--ink)}.btn.primary{background:var(--main);color:#fff}.btn.gold{background:var(--gold);color:#fff}.btn.ok{background:var(--ok);color:#fff}.btn.danger{background:var(--danger);color:#fff}.btn.ghost{background:#fff;border:1px solid var(--line)}.btn.small{padding:8px 10px;border-radius:9px;font-size:13px}
+.grid{display:grid;gap:11px}.seat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.seat{border:2px solid var(--line);border-radius:16px;padding:14px;background:#fff;text-align:left;min-height:145px}.seat.used{border-color:var(--main2);background:#fcf9fd}.seat.vip{box-shadow:inset 0 0 0 2px rgba(185,148,78,.25)}.seat-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.seat-name{font-size:18px;font-weight:900}.status{font-size:12px;border-radius:999px;padding:4px 8px;background:#eee}.status.used{background:#ead9ef;color:#5c246a}.status.empty{background:#e9f4ee;color:#17613f}.customer{font-size:19px;font-weight:900;margin-top:12px}.meta{color:var(--muted);font-size:13px;line-height:1.6}.money{font-size:19px;font-weight:900;color:var(--main);margin-top:7px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:block}.field span{display:block;font-size:13px;font-weight:800;margin-bottom:5px}.field.full{grid-column:1/-1}input,select,textarea{width:100%;border:1px solid #cbc3cf;border-radius:11px;padding:12px;background:#fff;color:var(--ink)}textarea{min-height:75px;resize:vertical}
+.choice-row{display:flex;gap:8px;flex-wrap:wrap}.choice{border:1px solid #cabed0;background:#fff;border-radius:999px;padding:10px 13px;font-weight:800}.choice.selected{background:var(--main);color:#fff;border-color:var(--main)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.actions .btn{flex:1}
+.category-tabs{display:flex;gap:7px;overflow:auto;padding-bottom:7px;margin-bottom:10px}.category-tabs button{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;font-weight:800}.category-tabs button.active{background:var(--main);color:#fff;border-color:var(--main)}
+.menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.menu-item{border:1px solid var(--line);background:#fff;border-radius:13px;padding:13px;text-align:left}.menu-item b{display:block}.menu-item span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.line{display:grid;grid-template-columns:1fr auto;gap:10px;border-bottom:1px solid var(--line);padding:11px 0}.line:last-child{border-bottom:0}.line-title{font-weight:850}.line-sub{font-size:12px;color:var(--muted);margin-top:3px}.line-right{text-align:right;font-weight:900}.qty{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:5px}.qty button{width:30px;height:30px;border:0;border-radius:8px;background:#ece7ef;font-weight:900}
+.total-box{background:#f4eef6;border-radius:14px;padding:14px;margin-top:10px}.total-row{display:flex;justify-content:space-between;padding:5px 0}.total-row.grand{font-size:23px;font-weight:950;border-top:1px solid #d6c8dc;margin-top:7px;padding-top:10px}
+.empty-box{text-align:center;color:var(--muted);padding:25px 10px}
+dialog{border:0;padding:0;border-radius:18px;width:min(720px,95vw);max-height:92vh;overflow:auto;box-shadow:0 25px 90px rgba(0,0,0,.35)}dialog::backdrop{background:rgba(20,12,24,.62)}.modal{padding:16px}.modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}.modal-head h2{margin:0}.x{border:0;background:#eee6f0;width:38px;height:38px;border-radius:50%;font-size:20px}
+.toast{position:fixed;left:50%;bottom:82px;transform:translateX(-50%);background:#211729;color:#fff;padding:11px 16px;border-radius:999px;z-index:100;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}
+.badge{display:inline-block;font-size:11px;border-radius:999px;padding:3px 7px;background:#eee6f0;color:#593566}
+.history-row{border-bottom:1px solid var(--line);padding:12px 0}.history-row:last-child{border-bottom:0}
+@media(min-width:760px){.seat-grid{grid-template-columns:repeat(3,1fr)}.menu-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:540px){.nav{grid-template-columns:repeat(3,1fr)}.summary{grid-template-columns:1fr 1fr}.summary>div:last-child{grid-column:1/-1}.seat-grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}}
 </style>
-<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
+</head>
 <body>
-<section id="login" class="login">
- <div class="loginbox">
-  <div class="logo">✦</div><h1>TINKER BELL</h1><p>店舗管理システム</p>
-  <label>スタッフ<select id="loginStaff"></select></label>
-  <label>暗証番号<input id="loginPin" type="password" inputmode="numeric" placeholder="初期番号 0000"></label>
-  <button id="loginBtn" class="primary" style="width:100%">ログイン</button>
-  <p style="font-size:12px;color:#7d7080">初期暗証番号は全員 0000（管理画面で変更可能）</p>
- </div>
-</section>
-
-<div id="app" class="hidden">
-<header><div class="brand"><small>TINKER BELL</small><b>店舗管理</b></div><div class="header-actions"><button id="userBadge" class="pill"></button><button id="logoutBtn" class="pill">退出</button></div></header>
-<main>
-<section id="home" class="screen active">
- <div class="hero"><div style="font-size:25px;color:#f0cf75">✦</div><h1>Tinker Bell</h1><p id="welcome"></p></div>
- <div class="grid">
-  <button class="tile" data-go="attendance"><span>🕒</span><b>出勤・退勤</b><small>勤怠を記録</small></button>
-  <button class="tile" data-go="shifts"><span>📅</span><b>シフト</b><small>予定を確認・登録</small></button>
-  <button class="tile" data-go="seats"><span>🛋️</span><b>席管理</b><small>カウンター6・BOX5</small></button>
-  <button class="tile" data-go="orders"><span>🥂</span><b>注文・会計</b><small>席別の伝票</small></button>
-  <button class="tile" data-go="customers"><span>👤</span><b>お客様</b><small>担当・履歴・メモ</small></button>
-  <button class="tile" data-go="bottles"><span>🍾</span><b>ボトル</b><small>残量・保管場所</small></button>
-  <button class="tile" data-go="visits"><span>🤝</span><b>同伴・来店予定</b><small>予約を共有</small></button>
-  <button class="tile" data-go="notices"><span>🔔</span><b>お知らせ</b><small>店舗からの連絡</small></button>
-  <button class="tile manager" data-go="staff"><span>👥</span><b>従業員管理</b><small>時給・手当・権限</small></button>
-  <button class="tile manager" data-go="menu"><span>📖</span><b>メニュー管理</b><small>料金・バック設定</small></button>
-  <button class="tile manager" data-go="reports"><span>📊</span><b>売上・勤怠集計</b><small>日別集計</small></button>
-  <button class="tile manager" data-go="settings"><span>⚙️</span><b>設定</b><small>データ保存・初期化</small></button>
- </div>
-</section>
-
-<section id="attendance" class="screen"><h2>出勤・退勤</h2><div class="card"><div class="row"><button id="clockIn" class="primary">出勤を記録</button><button id="clockOut" class="secondary">退勤を記録</button></div></div><div id="attendanceList" class="list"></div></section>
-
-<section id="shifts" class="screen">
- <div class="shift-page-head"><h2 id="shiftScreenTitle">シフト入力</h2><p>出勤できる日をタップして登録します</p></div>
- <div class="shift-shell">
-  <div class="shift-banner staff-view">自分の予定を入力してください。日付をタップすると ○ → △ → × → 空欄 に切り替わります。</div>
-  <div class="shift-banner manager">従業員を選んで予定を編集できます。全員の入力状況も下で確認できます。</div>
-  <div id="shiftPersonPicker" class="shift-person-picker manager"></div>
-  <div class="shift-toolbar"><button id="prevShiftMonth" class="secondary">‹</button><div id="shiftMonthTitle" class="shift-month-title"></div><button id="nextShiftMonth" class="secondary">›</button></div>
-  <div id="shiftGrid"></div>
-  <div class="shift-legend"><span style="color:#248138">○ 出勤できる</span><span style="color:#e08a00">△ 遅れる・相談</span><span style="color:#d52e3d">× 休み</span><span>空欄 未回答</span></div>
-  <div id="myShiftState" class="my-entry-state staff-view"></div>
-  <div class="shift-actions staff-view"><button id="saveMyShift" class="shift-save wide">保存する</button></div>
-  <div id="shiftInputStatus" class="shift-status-card manager"></div>
-  <div class="shift-actions manager">
-   <button id="publishShift" class="shift-publish wide">全員に公開する</button>
-   <button id="copyPrevShift" class="secondary">前月をコピー</button>
-   <button id="printShift" class="secondary">印刷</button>
-   <button id="exportShiftCsv" class="secondary wide">CSV出力</button>
+<header>
+  <div class="header-row">
+    <div><div class="brand">TINKER BELL CLUB POS</div><div class="sub">席・注文・会計・メニュー管理</div></div>
+    <button class="btn small gold" id="backupBtn">バックアップ</button>
   </div>
-  <div id="shiftPublishedNote" class="published-note"></div>
-  <div class="shift-footnote">スタッフは自分の予定だけ変更できます。店長は全員分を変更できます。</div>
- </div>
- <div class="roster-card"><h3>全員の予定</h3><div id="shiftRoster" class="roster-scroll"></div></div>
-</section>
+</header>
+<main>
+  <nav class="nav" id="nav">
+    <button data-view="dashboard" class="active">ホーム</button>
+    <button data-view="seats">席管理</button>
+    <button data-view="orders">注文</button>
+    <button data-view="menu">メニュー</button>
+    <button data-view="history">会計履歴</button>
+  </nav>
 
-<section id="seats" class="screen"><div class="seat-section-head"><div><h2>席管理</h2><p>空席・入店中・担当・会計状況を一覧で確認</p></div><button class="secondary" onclick="renderSeats()">更新</button></div><div id="seatLiveSummary" class="seat-live-summary"></div><div id="seatGrid" class="seat-grid"></div></section>
+  <section id="dashboard" class="view">
+    <div class="summary">
+      <div><small>使用中の席</small><strong id="sumSeats">0</strong></div>
+      <div><small>未会計</small><strong id="sumOpen">¥0</strong></div>
+      <div><small>本日の売上</small><strong id="sumSales">¥0</strong></div>
+    </div>
+    <div class="card">
+      <div class="section-title"><h2>席の状況</h2><button class="btn small primary" data-go="seats">席管理を開く</button></div>
+      <div id="dashboardSeats" class="grid seat-grid"></div>
+    </div>
+  </section>
 
-<section id="orders" class="screen"><h2>注文・会計</h2>
-<div class="order-head"><div class="card"><b>① 席をタップ</b><div id="tapSeatGrid" class="tap-grid" style="margin-top:8px"></div></div>
-<div class="card"><b>② 商品をタップ</b><div id="orderCategories" class="category-row" style="margin-top:8px"></div><div id="tapMenuGrid" class="tap-grid" style="margin-top:10px"></div></div>
-<div id="castPicker" class="card hidden"><b>③ キャストをタップ</b><div id="tapCastGrid" class="choice-grid" style="margin-top:8px"></div></div></div>
-<div id="orderSummary"></div></section>
+  <section id="seats" class="view hidden">
+    <div class="section-title"><h2>席管理</h2><button class="btn small primary" id="newVisitBtn">来店入力</button></div>
+    <div id="seatGrid" class="grid seat-grid"></div>
+  </section>
 
-<section id="customers" class="screen"><h2>お客様管理</h2><div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・メモ"></label></div><div class="card"><div class="row3"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label><label>電話番号<input id="customerPhone" inputmode="tel"></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><button id="saveCustomer" class="primary">お客様登録</button></div><div id="customerList" class="list"></div></section>
+  <section id="orders" class="view hidden">
+    <div class="card">
+      <div class="section-title"><h2>注文入力</h2></div>
+      <label class="field"><span>席を選択</span><select id="orderSeatSelect"></select></label>
+    </div>
+    <div id="orderWorkspace"></div>
+  </section>
 
-<section id="bottles" class="screen"><h2>ボトル管理</h2><div class="card"><div class="row3"><label>お客様<select id="bottleCustomer"></select></label><label>ボトル名<input id="bottleName"></label><label>残量<select id="bottleLevel"><option>満タン</option><option>75%</option><option>50%</option><option>25%</option><option>ほぼ空</option></select></label></div><label>保管場所<input id="bottlePlace"></label><button id="saveBottle" class="primary">ボトル登録</button></div><div id="bottleList" class="list"></div></section>
+  <section id="menu" class="view hidden">
+    <div class="card">
+      <h2>メニュー追加</h2>
+      <div class="form-grid">
+        <label class="field"><span>商品名</span><input id="menuName" placeholder="例：モエ・エ・シャンドン"></label>
+        <label class="field"><span>カテゴリ</span><select id="menuCategory"></select></label>
+        <label class="field"><span>販売価格</span><input id="menuPrice" type="number" min="0" inputmode="numeric"></label>
+        <label class="field"><span>キャストバック</span><input id="menuBack" type="number" min="0" value="0" inputmode="numeric"></label>
+      </div>
+      <div class="actions"><button class="btn primary" id="addMenuBtn">商品を追加</button></div>
+    </div>
+    <div id="menuAdminList"></div>
+  </section>
 
-<section id="visits" class="screen"><h2>同伴・来店予定</h2><div class="card"><div class="row3"><label>担当<select id="visitCast"></select></label><label>お客様名<input id="visitCustomer"></label><label>日付<input id="visitDate" type="date"></label></div><div class="row3"><label>区分<select id="visitType"><option>同伴</option><option>来店予定</option><option>予約</option></select></label><label>時間<input id="visitTime" type="time"></label><label>人数<input id="visitPeople" type="number" min="1" value="1"></label></div><label>メモ<input id="visitMemo"></label><button id="saveVisit" class="primary">予定登録</button></div><div id="visitList" class="list"></div></section>
-
-<section id="notices" class="screen"><h2>お知らせ</h2><div class="card manager"><label>タイトル<input id="noticeTitle"></label><label>本文<textarea id="noticeBody" rows="4"></textarea></label><button id="saveNotice" class="primary">投稿</button></div><div id="noticeList" class="list"></div></section>
-
-<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>暗証番号<input id="staffPin" value="0000"></label></div><button id="saveStaff" class="primary">従業員登録</button></div><div id="staffList" class="list"></div></section>
-
-<section id="menu" class="screen manager"><h2>メニュー管理</h2><div class="card"><div class="row3"><label>商品名<input id="menuName"></label><label>価格<input id="menuPrice" type="number"></label><label>カテゴリ<select id="menuType"><option>ドリンク</option><option>ボトル</option><option>シャンパン</option><option>ワイン</option><option>セット料金</option><option>アイス・割り物</option><option>フード</option><option>同伴料</option><option>その他</option></select></label></div><div class="row"><label>キャストバック<input id="menuBack" type="number" value="0"></label><label>税率<select id="menuTax"><option value="10">10%</option><option value="0">0%</option></select></label></div><button id="saveMenu" class="primary">商品登録</button></div><div id="menuList" class="list"></div></section>
-
-<section id="reports" class="screen manager"><h2>売上・勤怠集計</h2><div id="metrics" class="summary"></div><div class="card"><h3>会計履歴</h3><div id="checkoutHistory"></div></div><div class="card"><h3>従業員別勤怠</h3><div id="attendanceReport"></div></div></section>
-
-<section id="settings" class="screen manager"><h2>設定</h2><div class="card"><button id="exportData" class="primary" style="width:100%;margin-bottom:9px">データを書き出す</button><label>データを読み込む<input id="importData" type="file" accept=".json"></label><button id="resetData" class="danger" style="width:100%">全データを初期化</button></div><div class="card"><b>現在の保存方式</b><p>この端末のブラウザ内に保存。複数端末共有にはサーバー接続が必要。</p></div></section>
+  <section id="history" class="view hidden">
+    <div class="card"><div class="section-title"><h2>会計履歴</h2><button class="btn small ghost" id="exportBtn">CSV出力</button></div><div id="historyList"></div></div>
+  </section>
 </main>
-<nav><button data-go="home" class="active">⌂<small>ホーム</small></button><button data-go="seats">🛋️<small>席</small></button><button data-go="orders">🥂<small>注文</small></button><button data-go="customers">👤<small>顧客</small></button><button data-go="reports" class="manager">📊<small>集計</small></button></nav>
-</div>
-<div id="seatModal" class="modal hidden"><div class="modal-card seat-editor"><h2 id="seatModalTitle">入店登録</h2><div class="seat-form-grid"><label>お客様名<input id="seatCustomerName" list="customerNames" placeholder="例：佐藤様" autocomplete="off"></label><label>人数<input id="seatPeople" type="number" min="1" max="99" value="1"></label><label>入店時刻<input id="seatOpenedTime" type="time"></label><label>メモ<input id="seatMemo" placeholder="例：同伴、VIP、延長確認"></label></div><datalist id="customerNames"></datalist><p><b>担当キャスト</b> <span class="muted">複数選択可</span></p><div id="seatCastChoices" class="cast-choice-grid"></div><p class="modal-note">キャストを押しても、お客様名や人数は消えません。最後に「保存」を押すまで入力内容を保持します。</p><div class="modal-footer"><button id="seatModalCancel" class="secondary" type="button">キャンセル</button><button id="seatModalSave" class="primary" type="button">この内容で保存</button></div></div></div>
-<div id="checkoutModal" class="modal hidden"><div class="modal-card seat-editor">
-<h2 id="checkoutTitle">会計確認</h2>
-<div id="checkoutDetails" class="card"></div>
-<div class="row">
-<label>値引き<input id="checkoutDiscount" type="number" min="0" value="0" inputmode="numeric"></label>
-<label>支払方法<select id="checkoutPayment"><option>現金</option><option>クレジットカード</option><option>QR決済</option><option>売掛</option><option>その他</option></select></label>
-</div>
-<div class="card"><div class="meta">お支払い合計</div><div id="checkoutGrandTotal" style="font-size:32px;font-weight:950;margin-top:4px">¥0</div></div>
-<div class="modal-footer"><button id="checkoutCancel" class="secondary" type="button">戻る</button><button id="checkoutConfirm" class="primary" type="button">会計を確定</button></div>
-</div></div>
-<div id="undoBar" class="undo hidden"><span id="undoText">注文を追加しました</span><button id="undoBtn" class="secondary">取り消す</button></div>
-<div id="toast" class="toast hidden"></div>
+
+<dialog id="visitDialog">
+  <div class="modal">
+    <div class="modal-head"><h2 id="visitTitle">来店入力</h2><button class="x" data-close="visitDialog">×</button></div>
+    <div class="form-grid">
+      <label class="field"><span>席</span><select id="visitSeat"></select></label>
+      <label class="field"><span>お客様名</span><input id="visitCustomer" placeholder="例：佐藤様" autocomplete="off"></label>
+      <label class="field"><span>人数</span><input id="visitPeople" type="number" min="1" value="1" inputmode="numeric"></label>
+      <div class="field"><span>席種</span><div class="choice-row" id="seatTypeChoices"><button type="button" class="choice selected" data-type="一般席">一般席</button><button type="button" class="choice" data-type="VIP席">VIP席</button></div></div>
+      <div class="field full"><span>担当キャスト（複数選択可）</span><div class="choice-row" id="castChoices"></div></div>
+      <label class="field full"><span>メモ</span><textarea id="visitMemo" placeholder="来店予定、好み、注意事項など"></textarea></label>
+    </div>
+    <div class="actions"><button class="btn primary" id="saveVisitBtn">来店を保存</button><button class="btn danger hidden" id="clearSeatBtn">席を空ける</button></div>
+  </div>
+</dialog>
+
+<dialog id="checkoutDialog">
+  <div class="modal">
+    <div class="modal-head"><h2>会計確認</h2><button class="x" data-close="checkoutDialog">×</button></div>
+    <div id="checkoutSummary"></div>
+    <div class="form-grid">
+      <label class="field"><span>値引き</span><input id="discountInput" type="number" min="0" value="0" inputmode="numeric"></label>
+      <label class="field"><span>支払方法</span><select id="paymentMethod"><option>現金</option><option>カード</option><option>売掛</option><option>その他</option></select></label>
+    </div>
+    <div class="actions"><button class="btn ok" id="confirmCheckoutBtn">会計を確定</button></div>
+  </div>
+</dialog>
+
+<div id="toast" class="toast"></div>
 
 <script>
-if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));}
-if('caches' in window){caches.keys().then(keys=>keys.forEach(k=>caches.delete(k)));}
-const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
-const KEY='tb_integrated_v1';
-const nowISO=()=>new Date().toISOString();
-const today=()=>new Date().toLocaleDateString('sv-SE');
-const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-const seed=()=>({
- staff:[
-  {id:'m1',name:'店長',role:'manager',wage:2000,drinkBack:0,bottleBack:0,pin:'0000'},
-  {id:'s1',name:'黒服A',role:'staff',wage:1500,drinkBack:0,bottleBack:0,pin:'0000'},
-  {id:'c1',name:'あや',role:'cast',wage:2500,drinkBack:200,bottleBack:1000,pin:'0000'},
-  {id:'c2',name:'りな',role:'cast',wage:2300,drinkBack:200,bottleBack:1000,pin:'0000'}
- ],
- menu:[
-  {id:'mn1',name:'生ビール',price:1000,type:'ドリンク',back:0,tax:10},
-  {id:'mn2',name:'キャストドリンク',price:1500,type:'ドリンク',back:200,tax:10},
-  {id:'mn3',name:'吉四六',price:10000,type:'ボトル',back:1000,tax:10},
-  {id:'mn4',name:'一般席セット料金',price:5000,type:'セット料金',back:0,tax:10},
-  {id:'mn5',name:'VIP席セット料金',price:8000,type:'セット料金',back:0,tax:10},
-  {id:'mn6',name:'同伴料',price:3000,type:'同伴料',back:0,tax:10},
-  {id:'mn7',name:'アイス',price:500,type:'アイス・割り物',back:0,tax:10},
-  {id:'mn8',name:'ミネラルウォーター',price:500,type:'アイス・割り物',back:0,tax:10},
-  {id:'mn9',name:'炭酸',price:500,type:'アイス・割り物',back:0,tax:10}
- ],
- seats:[...Array.from({length:6},(_,i)=>({id:'C'+(i+1),name:'カウンター'+(i+1),customerId:'',customerName:'',casts:[],openedAt:'',orders:[]})),
- ...Array.from({length:5},(_,i)=>({id:'B'+(i+1),name:'BOX '+(i+1),customerId:'',customerName:'',casts:[],openedAt:'',orders:[]}))],
- customers:[], bottles:[], attendance:[], shifts:[], shiftMeta:{submitted:{},published:{}}, visits:[], notices:[], checkouts:[]
-});
-let db=JSON.parse(localStorage.getItem(KEY)||'null')||seed(), current=null;
-function normalizeDb(){
- const d=seed();
- if(!Array.isArray(db.staff)||!db.staff.length)db.staff=d.staff;
- if(!Array.isArray(db.menu)||!db.menu.length)db.menu=d.menu;
- if(!Array.isArray(db.seats)||!db.seats.length)db.seats=d.seats;
- for(const s of db.seats){
-  if(!Array.isArray(s.orders))s.orders=[];
-  if(!Array.isArray(s.casts))s.casts=[];
-  if(typeof s.customerName!=='string')s.customerName='';
-  if(!('people' in s))s.people=1;
- }
- for(const k of ['customers','bottles','attendance','shifts','visits','notices','checkouts'])if(!Array.isArray(db[k]))db[k]=[];
-const categoryMap={'セット':'セット料金','割り物':'アイス・割り物'};
-db.menu=db.menu.filter(m=>!['m_nomination','m_extend'].includes(m.id)&&!['場内指名','延長30分'].includes(m.name));
-for(const m of db.menu){if(categoryMap[m.type])m.type=categoryMap[m.type];if(!m.type)m.type='その他'}
-const defaults=[
-{id:'m_set_general',name:'一般席セット料金',price:5000,type:'セット料金',back:0,tax:10},
-{id:'m_set_vip',name:'VIP席セット料金',price:8000,type:'セット料金',back:0,tax:10},
-{id:'m_douhan',name:'同伴料',price:3000,type:'同伴料',back:0,tax:10},
-{id:'m_ice',name:'アイス',price:500,type:'アイス・割り物',back:0,tax:10},
-{id:'m_water',name:'ミネラルウォーター',price:500,type:'アイス・割り物',back:0,tax:10},
-{id:'m_soda',name:'炭酸',price:500,type:'アイス・割り物',back:0,tax:10}
+'use strict';
+const KEY='tinkerbell_club_pos_v1';
+const CATEGORIES=['ドリンク','ボトル','シャンパン','ワイン','セット料金','アイス・割り物','フード','同伴料','その他'];
+const CASTS=['あい','れな','みか','ゆい','さき'];
+const DEFAULT_MENU=[
+ {id:'set-general',name:'一般席セット料金',category:'セット料金',price:0,back:0},
+ {id:'set-vip',name:'VIP席セット料金',category:'セット料金',price:0,back:0},
+ {id:'drink-cast',name:'キャストドリンク',category:'ドリンク',price:1000,back:300},
+ {id:'drink-beer',name:'ビール',category:'ドリンク',price:800,back:0},
+ {id:'mixer-ice',name:'アイス',category:'アイス・割り物',price:500,back:0},
+ {id:'mixer-water',name:'ミネラルウォーター',category:'アイス・割り物',price:500,back:0},
+ {id:'mixer-soda',name:'炭酸',category:'アイス・割り物',price:500,back:0},
+ {id:'companion',name:'同伴料',category:'同伴料',price:0,back:0}
 ];
-for(const m of defaults){if(!db.menu.some(x=>x.id===m.id||x.name===m.name))db.menu.push(m)}
-if(!Array.isArray(db.menu)||db.menu.length===0){db.menu=defaults;}
-
- if(!db.shiftMeta)db.shiftMeta={submitted:{},published:{}};
- persist();
+const seatNames=[...Array.from({length:6},(_,i)=>`カウンター${i+1}`),...Array.from({length:5},(_,i)=>`BOX${i+1}`)];
+const emptySeat=name=>({id:name,name,status:'empty',customer:'',people:1,seatType:'一般席',casts:[],memo:'',openedAt:null,orders:[]});
+function initialState(){return{version:1,seats:seatNames.map(emptySeat),menu:structuredClone(DEFAULT_MENU),checkouts:[]}}
+function load(){
+ try{
+  const v=JSON.parse(localStorage.getItem(KEY));
+  if(!v||!Array.isArray(v.seats)||!Array.isArray(v.menu)||!Array.isArray(v.checkouts))return initialState();
+  for(const n of seatNames)if(!v.seats.some(s=>s.id===n))v.seats.push(emptySeat(n));
+  for(const m of DEFAULT_MENU)if(!v.menu.some(x=>x.id===m.id))v.menu.push(structuredClone(m));
+  return v;
+ }catch(e){return initialState()}
 }
-normalizeDb();
-function persist(){localStorage.setItem(KEY,JSON.stringify(db))}
-function toast(t){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),1500)}
-function staffById(x){return db.staff.find(s=>s.id===x)}
-function customerById(x){return db.customers.find(c=>c.id===x)}
-function isManager(){return current?.role==='manager'}
-function fillSelect(el,arr,label='name',value='id',allowBlank=false){el.innerHTML=(allowBlank?'<option value="">未選択</option>':'')+arr.map(x=>`<option value="${esc(x[value])}">${esc(x[label])}</option>`).join('')}
-function refreshSelects(){
- fillSelect($('loginStaff'),db.staff);
- ['customerCast','visitCast'].forEach(x=>fillSelect($(x),db.staff.filter(s=>s.role==='cast')));
- fillSelect($('bottleCustomer'),db.customers);
- $('customerNames').innerHTML=db.customers.map(c=>`<option value="${esc(c.name)}"></option>`).join('');
+let db=load();
+let visitDraft={seatId:'',customer:'',people:1,seatType:'一般席',casts:[],memo:''};
+let selectedCategory='ドリンク';
+const $=id=>document.getElementById(id);
+const yen=n=>new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(Number(n)||0);
+const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2);
+const today=()=>new Date().toLocaleDateString('sv-SE');
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),1800)}
+function seatTotal(s){return s.orders.reduce((a,o)=>a+(Number(o.price)||0)*(Number(o.qty)||0),0)}
+function usedSeats(){return db.seats.filter(s=>s.status==='used')}
+function getSeat(id){return db.seats.find(s=>s.id===id)}
+function showView(id){
+ document.querySelectorAll('.view').forEach(v=>v.classList.toggle('hidden',v.id!==id));
+ document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
+ if(id==='orders')renderOrders();
+ if(id==='menu')renderMenuAdmin();
+ if(id==='history')renderHistory();
+ window.scrollTo({top:0,behavior:'smooth'});
 }
-function applyRole(){qsa('.manager').forEach(x=>x.classList.toggle('hidden',!isManager()))}
-function show(idn){qsa('.screen').forEach(x=>x.classList.remove('active'));$(idn).classList.add('active');qsa('nav button').forEach(x=>x.classList.toggle('active',x.dataset.go===idn));renderAll();scrollTo(0,0)}
-qsa('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
-$('loginBtn').onclick=()=>{const s=staffById($('loginStaff').value);if(!s||s.pin!==$('loginPin').value)return toast('暗証番号が違います');current=s;$('login').classList.add('hidden');$('app').classList.remove('hidden');$('userBadge').textContent=s.name;$('welcome').textContent=`${s.name}でログイン中`;applyRole();show('home')};
-$('logoutBtn').onclick=()=>location.reload();$('userBadge').onclick=()=>show('home');
-
-$('clockIn').onclick=()=>{db.attendance.push({id:id(),staffId:current.id,in:nowISO(),out:''});persist();renderAttendance();toast('出勤を記録しました')};
-$('clockOut').onclick=()=>{const r=[...db.attendance].reverse().find(x=>x.staffId===current.id&&!x.out);if(!r)return toast('出勤記録がありません');r.out=nowISO();persist();renderAttendance();toast('退勤を記録しました')};
-function renderAttendance(){const a=db.attendance.filter(x=>isManager()||x.staffId===current?.id).slice().reverse();$('attendanceList').innerHTML=a.length?a.map(x=>`<div class="item"><h3>${esc(staffById(x.staffId)?.name||'不明')}</h3><div class="meta">出勤 ${new Date(x.in).toLocaleString('ja-JP')}<br>退勤 ${x.out?new Date(x.out).toLocaleString('ja-JP'):'未退勤'}</div></div>`).join(''):'<div class="empty">勤怠記録なし</div>'}
-
-let shiftViewMonth=new Date();shiftViewMonth.setDate(1);
-let selectedShiftStaffId='';
-const shiftStatuses=['','○','△','×'];
-function shiftMonthKey(){return `${shiftViewMonth.getFullYear()}-${String(shiftViewMonth.getMonth()+1).padStart(2,'0')}`}
-function ensureShiftMeta(){if(!db.shiftMeta)db.shiftMeta={submitted:{},published:{}};if(!db.shiftMeta.submitted)db.shiftMeta.submitted={};if(!db.shiftMeta.published)db.shiftMeta.published={}}
-function shiftStatusClass(v){return v==='○'?'status-ok':v==='△'?'status-late':v==='×'?'status-off':''}
-function shiftRecord(staffId,date){return db.shifts.find(x=>x.staffId===staffId&&x.date===date)}
-window.cycleShift=(staffId,date)=>{if(!current||(staffId!==current.id&&!isManager()))return;let r=shiftRecord(staffId,date),now=r?.status||(r?.time?'○':''),next=shiftStatuses[(shiftStatuses.indexOf(now)+1)%shiftStatuses.length];if(next){if(r){r.status=next;delete r.time}else db.shifts.push({id:id(),staffId,date,status:next})}else if(r){db.shifts=db.shifts.filter(x=>x.id!==r.id)}ensureShiftMeta();delete db.shiftMeta.submitted[`${shiftMonthKey()}:${staffId}`];persist();renderShifts()}
-function monthShiftCount(staffId,key){return db.shifts.filter(x=>x.staffId===staffId&&x.date.startsWith(key)).length}
-function renderShifts(){
- ensureShiftMeta();
- const y=shiftViewMonth.getFullYear(),m=shiftViewMonth.getMonth(),days=new Date(y,m+1,0).getDate(),todayStr=today(),key=shiftMonthKey();
- if(!selectedShiftStaffId||!staffById(selectedShiftStaffId))selectedShiftStaffId=current?.id||db.staff[0]?.id;
- const targetId=isManager()?selectedShiftStaffId:current?.id,target=staffById(targetId);
- $('shiftMonthTitle').textContent=`${y}年${m+1}月`;
- $('shiftScreenTitle').textContent=isManager()?'シフト管理（店長）':'シフト入力';
- $('shiftPersonPicker').innerHTML=db.staff.map(st=>`<button class="${st.id===targetId?'active':''}" onclick="selectShiftPerson('${st.id}')">${esc(st.name)}</button>`).join('');
- const weekdays=['日','月','火','水','木','金','土'],firstDow=new Date(y,m,1).getDay();
- let cal='<div class="month-calendar">'+weekdays.map((w,i)=>`<div class="dow ${i===0?'sun':i===6?'sat':''}">${w}</div>`).join('');
- for(let i=0;i<firstDow;i++)cal+='<div class="month-day blank"></div>';
- for(let d=1;d<=days;d++){
-   const dt=new Date(y,m,d),dow=dt.getDay(),ds=`${key}-${String(d).padStart(2,'0')}`,r=shiftRecord(targetId,ds),v=r?.status||(r?.time?'○':''),canEdit=isManager()||targetId===current?.id;
-   cal+=`<button class="month-day ${dow===0?'sun':dow===6?'sat':''} ${shiftStatusClass(v)} ${ds===todayStr?'today':''} ${canEdit?'editable':''}" ${canEdit?`onclick="cycleShift('${targetId}','${ds}')"`:''}><span class="num">${d}</span><span class="mark">${v}</span></button>`;
+function renderAll(){renderSummary();renderSeats();renderOrderSeatSelect();renderMenuAdmin();renderHistory()}
+function renderSummary(){
+ $('sumSeats').textContent=usedSeats().length;
+ $('sumOpen').textContent=yen(usedSeats().reduce((a,s)=>a+seatTotal(s),0));
+ $('sumSales').textContent=yen(db.checkouts.filter(c=>c.date===today()).reduce((a,c)=>a+c.total,0));
+ $('dashboardSeats').innerHTML=db.seats.map(seatCard).join('');
+}
+function seatCard(s){
+ const used=s.status==='used';
+ return `<button class="seat ${used?'used':''} ${s.seatType==='VIP席'?'vip':''}" data-seat="${esc(s.id)}">
+ <div class="seat-head"><span class="seat-name">${esc(s.name)}</span><span class="status ${used?'used':'empty'}">${used?'使用中':'空席'}</span></div>
+ ${used?`<div class="customer">${esc(s.customer||'お名前未入力')}</div>
+ <div class="meta">${esc(s.seatType)}・${s.people}名<br>担当：${s.casts.length?s.casts.map(esc).join('・'):'なし'}<br>注文 ${s.orders.reduce((a,o)=>a+o.qty,0)}点</div>
+ <div class="money">${yen(seatTotal(s))}</div>`:`<div class="empty-box">タップして来店入力</div>`}
+ </button>`;
+}
+function renderSeats(){$('seatGrid').innerHTML=db.seats.map(seatCard).join('')}
+function syncVisitDraftFromInputs(){
+ visitDraft.customer=$('visitCustomer').value;
+ visitDraft.people=Math.max(1,Number($('visitPeople').value)||1);
+ visitDraft.memo=$('visitMemo').value;
+}
+function openVisit(seatId){
+ const s=getSeat(seatId)||db.seats.find(x=>x.status==='empty')||db.seats[0];
+ visitDraft={seatId:s.id,customer:s.status==='used'?s.customer:'',people:s.status==='used'?s.people:1,seatType:s.status==='used'?s.seatType:'一般席',casts:s.status==='used'?[...s.casts]:[],memo:s.status==='used'?s.memo:''};
+ $('visitTitle').textContent=s.status==='used'?'席情報を編集':'来店入力';
+ $('visitSeat').innerHTML=db.seats.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}${x.status==='used'&&x.id!==s.id?'（使用中）':''}</option>`).join('');
+ $('visitSeat').value=s.id;
+ $('visitCustomer').value=visitDraft.customer;
+ $('visitPeople').value=visitDraft.people;
+ $('visitMemo').value=visitDraft.memo;
+ renderSeatTypeChoices();
+ renderCastChoices();
+ $('clearSeatBtn').classList.toggle('hidden',s.status!=='used');
+ $('visitDialog').showModal();
+}
+function renderSeatTypeChoices(){
+ document.querySelectorAll('#seatTypeChoices .choice').forEach(b=>b.classList.toggle('selected',b.dataset.type===visitDraft.seatType));
+}
+function renderCastChoices(){
+ $('castChoices').innerHTML=CASTS.map(c=>`<button type="button" class="choice ${visitDraft.casts.includes(c)?'selected':''}" data-cast="${esc(c)}">${esc(c)}</button>`).join('');
+}
+function saveVisit(){
+ syncVisitDraftFromInputs();
+ if(!visitDraft.customer.trim())return toast('お客様名を入力してください');
+ const s=getSeat(visitDraft.seatId);
+ if(!s)return toast('席が見つかりません');
+ Object.assign(s,{status:'used',customer:visitDraft.customer.trim(),people:visitDraft.people,seatType:visitDraft.seatType,casts:[...visitDraft.casts],memo:visitDraft.memo,openedAt:s.openedAt||new Date().toISOString()});
+ if(!s.orders.length){
+  const setItem=db.menu.find(m=>m.id===(s.seatType==='VIP席'?'set-vip':'set-general'));
+  if(setItem&&Number(setItem.price)>0)s.orders.push({id:uid(),menuId:setItem.id,name:setItem.name,category:setItem.category,price:Number(setItem.price),back:Number(setItem.back)||0,qty:s.people,cast:''});
  }
- cal+='</div>';$('shiftGrid').innerHTML=cal;
- qsa('.staff-view').forEach(x=>x.classList.toggle('hidden',isManager()));
- const mine=db.shiftMeta.submitted[`${key}:${current?.id}`],count=current?monthShiftCount(current.id,key):0;
- $('myShiftState').innerHTML=mine?`あなたの入力状況： <b>保存済み</b><br><small>最終保存 ${new Date(mine).toLocaleString('ja-JP')}・入力 ${count}日</small>`:`あなたの入力状況： <span class="unsubmitted">未保存</span><br><small>予定を入力して「保存する」を押してください</small>`;
- $('shiftInputStatus').innerHTML=`<b>${esc(target?.name||'')}を編集中</b><div style="height:8px"></div><b>入力状況</b>`+db.staff.map(st=>{const t=db.shiftMeta.submitted[`${key}:${st.id}`];return `<div class="shift-status-row"><span>${esc(st.name)}</span><span class="${t?'submitted':'unsubmitted'}">${t?'● 入力済み':'● 未入力'}</span></div>`}).join('');
- const startDay=1,endDay=Math.min(days,14);let roster='<table class="roster-mini"><tr><th>名前</th>';
- for(let d=startDay;d<=endDay;d++)roster+=`<th>${d}</th>`;roster+='</tr>';
- db.staff.forEach(st=>{roster+=`<tr><td>${esc(st.name)}</td>`;for(let d=startDay;d<=endDay;d++){const r=shiftRecord(st.id,`${key}-${String(d).padStart(2,'0')}`),v=r?.status||(r?.time?'○':'');roster+=`<td class="${shiftStatusClass(v)}">${v||'・'}</td>`}roster+='</tr>'});roster+='</table>';$('shiftRoster').innerHTML=roster;
- const pub=db.shiftMeta.published[key];$('shiftPublishedNote').textContent=pub?`公開済み：${new Date(pub).toLocaleString('ja-JP')}`:'まだ公開されていません';
+ save();$('visitDialog').close();renderAll();toast('来店を保存しました');
 }
-window.selectShiftPerson=x=>{if(!isManager())return;selectedShiftStaffId=x;renderShifts()};
-$('prevShiftMonth').onclick=()=>{shiftViewMonth.setMonth(shiftViewMonth.getMonth()-1);renderShifts()};
-$('nextShiftMonth').onclick=()=>{shiftViewMonth.setMonth(shiftViewMonth.getMonth()+1);renderShifts()};
-$('saveMyShift').onclick=()=>{ensureShiftMeta();db.shiftMeta.submitted[`${shiftMonthKey()}:${current.id}`]=nowISO();persist();renderShifts();toast('シフトを保存しました')};
-$('publishShift').onclick=()=>{if(!isManager())return;ensureShiftMeta();db.shiftMeta.published[shiftMonthKey()]=nowISO();persist();renderShifts();toast('全員に公開しました')};
-$('copyPrevShift').onclick=()=>{if(!isManager())return;const key=shiftMonthKey(),prev=new Date(shiftViewMonth);prev.setMonth(prev.getMonth()-1);const pkey=`${prev.getFullYear()}-${String(prev.getMonth()+1).padStart(2,'0')}`;if(!confirm('前月の予定を今月へコピーしますか？'))return;db.staff.forEach(st=>{for(let d=1;d<=new Date(shiftViewMonth.getFullYear(),shiftViewMonth.getMonth()+1,0).getDate();d++){const target=`${key}-${String(d).padStart(2,'0')}`;if(shiftRecord(st.id,target))continue;const source=`${pkey}-${String(Math.min(d,new Date(prev.getFullYear(),prev.getMonth()+1,0).getDate())).padStart(2,'0')}`,r=shiftRecord(st.id,source);if(r)db.shifts.push({id:id(),staffId:st.id,date:target,status:r.status||(r.time?'○':'')})}});persist();renderShifts();toast('前月からコピーしました')};
-$('printShift').onclick=()=>window.print();
-$('exportShiftCsv').onclick=()=>{const key=shiftMonthKey(),days=new Date(shiftViewMonth.getFullYear(),shiftViewMonth.getMonth()+1,0).getDate();let rows=[['名前',...Array.from({length:days},(_,i)=>`${i+1}日`)]];db.staff.forEach(st=>rows.push([st.name,...Array.from({length:days},(_,i)=>shiftRecord(st.id,`${key}-${String(i+1).padStart(2,'0')}`)?.status||'')]));const csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tinkerbell_shift_${key}.csv`;a.click();URL.revokeObjectURL(a.href)};
+function clearSeat(){
+ const s=getSeat(visitDraft.seatId);if(!s)return;
+ if(s.orders.length&&!confirm('未会計の注文も消して席を空けます。よろしいですか？'))return;
+ Object.assign(s,emptySeat(s.name));save();$('visitDialog').close();renderAll();toast('席を空けました');
+}
+function renderOrderSeatSelect(){
+ const current=$('orderSeatSelect').value;
+ const used=usedSeats();
+ $('orderSeatSelect').innerHTML=used.length?used.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}｜${esc(s.customer)}</option>`).join(''):'<option value="">使用中の席がありません</option>';
+ if(used.some(s=>s.id===current))$('orderSeatSelect').value=current;
+}
+function renderOrders(){
+ renderOrderSeatSelect();
+ const id=$('orderSeatSelect').value;
+ const s=getSeat(id);
+ if(!s||s.status!=='used'){$('orderWorkspace').innerHTML='<div class="card empty-box">先に席管理から来店登録してください</div>';return}
+ $('orderWorkspace').innerHTML=`
+ <div class="card"><div class="section-title"><h2>${esc(s.name)}　${esc(s.customer)}</h2><button class="btn small gold" id="checkoutBtn">会計へ</button></div>
+ <div class="meta">${esc(s.seatType)}・${s.people}名／担当 ${s.casts.length?s.casts.map(esc).join('・'):'なし'}</div></div>
+ <div class="card"><h3>商品を追加</h3><div class="category-tabs" id="categoryTabs"></div><div class="menu-grid" id="orderMenuGrid"></div></div>
+ <div class="card"><h3>注文一覧</h3><div id="orderLines"></div><div class="total-box"><div class="total-row grand"><span>合計</span><span>${yen(seatTotal(s))}</span></div></div></div>`;
+ renderCategoryTabs();renderOrderMenu();renderOrderLines();
+ $('checkoutBtn').onclick=()=>openCheckout(s.id);
+}
+function renderCategoryTabs(){
+ $('categoryTabs').innerHTML=CATEGORIES.map(c=>`<button class="${c===selectedCategory?'active':''}" data-category="${esc(c)}">${esc(c)}</button>`).join('');
+}
+function renderOrderMenu(){
+ const items=db.menu.filter(m=>m.category===selectedCategory);
+ $('orderMenuGrid').innerHTML=items.length?items.map(m=>`<button class="menu-item" data-menu="${esc(m.id)}"><b>${esc(m.name)}</b><span>${yen(m.price)}${m.back?`／バック ${yen(m.back)}`:''}</span></button>`).join(''):'<div class="empty-box">このカテゴリの商品は未登録です</div>';
+}
+function renderOrderLines(){
+ const s=getSeat($('orderSeatSelect').value);if(!s)return;
+ $('orderLines').innerHTML=s.orders.length?s.orders.map(o=>`<div class="line"><div><div class="line-title">${esc(o.name)}</div><div class="line-sub">${esc(o.category)}${o.cast?`／担当 ${esc(o.cast)}`:''}</div></div><div class="line-right">${yen(o.price*o.qty)}<div class="qty"><button data-minus="${esc(o.id)}">−</button><span>${o.qty}</span><button data-plus="${esc(o.id)}">＋</button><button data-remove="${esc(o.id)}">×</button></div></div></div>`).join(''):'<div class="empty-box">注文はまだありません</div>';
+}
+function addOrder(menuId){
+ const s=getSeat($('orderSeatSelect').value),m=db.menu.find(x=>x.id===menuId);if(!s||!m)return;
+ let cast='';
+ if(Number(m.back)>0&&s.casts.length){
+  cast=prompt(`バックを付ける担当キャスト\n${s.casts.join(' / ')}`,s.casts[0])||'';
+  if(cast&&!s.casts.includes(cast))return toast('担当キャスト名が一致しません');
+ }
+ const same=s.orders.find(o=>o.menuId===m.id&&o.cast===cast);
+ if(same)same.qty++;else s.orders.push({id:uid(),menuId:m.id,name:m.name,category:m.category,price:Number(m.price)||0,back:Number(m.back)||0,qty:1,cast});
+ save();renderOrders();renderSummary();toast(`${m.name}を追加しました`);
+}
+function changeQty(orderId,delta){
+ const s=getSeat($('orderSeatSelect').value),o=s?.orders.find(x=>x.id===orderId);if(!o)return;
+ o.qty+=delta;if(o.qty<=0)s.orders=s.orders.filter(x=>x.id!==orderId);
+ save();renderOrders();renderSummary();
+}
+function removeOrder(orderId){const s=getSeat($('orderSeatSelect').value);if(!s)return;s.orders=s.orders.filter(x=>x.id!==orderId);save();renderOrders();renderSummary()}
+function openCheckout(seatId){
+ const s=getSeat(seatId);if(!s)return;
+ $('checkoutDialog').dataset.seatId=seatId;$('discountInput').value=0;$('paymentMethod').value='現金';
+ updateCheckoutSummary();$('checkoutDialog').showModal();
+}
+function updateCheckoutSummary(){
+ const s=getSeat($('checkoutDialog').dataset.seatId);if(!s)return;
+ const subtotal=seatTotal(s),discount=Math.max(0,Number($('discountInput').value)||0),total=Math.max(0,subtotal-discount);
+ $('checkoutSummary').innerHTML=`<div class="card"><h3>${esc(s.name)}　${esc(s.customer)}</h3>${s.orders.map(o=>`<div class="total-row"><span>${esc(o.name)} × ${o.qty}</span><span>${yen(o.price*o.qty)}</span></div>`).join('')}<div class="total-box"><div class="total-row"><span>小計</span><span>${yen(subtotal)}</span></div><div class="total-row"><span>値引き</span><span>−${yen(discount)}</span></div><div class="total-row grand"><span>お支払い</span><span>${yen(total)}</span></div></div></div>`;
+}
+function confirmCheckout(){
+ const s=getSeat($('checkoutDialog').dataset.seatId);if(!s)return;
+ if(!s.orders.length&&!confirm('注文が0件です。会計を確定しますか？'))return;
+ const subtotal=seatTotal(s),discount=Math.max(0,Number($('discountInput').value)||0),total=Math.max(0,subtotal-discount);
+ db.checkouts.unshift({id:uid(),date:today(),createdAt:new Date().toISOString(),seat:s.name,customer:s.customer,people:s.people,seatType:s.seatType,casts:[...s.casts],items:structuredClone(s.orders),subtotal,discount,total,payment:$('paymentMethod').value});
+ Object.assign(s,emptySeat(s.name));save();$('checkoutDialog').close();renderAll();showView('dashboard');toast('会計を確定しました');
+}
+function renderMenuAdmin(){
+ $('menuCategory').innerHTML=CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join('');
+ $('menuAdminList').innerHTML=CATEGORIES.map(cat=>{
+  const items=db.menu.filter(m=>m.category===cat);
+  return `<div class="card"><h3>${esc(cat)} <span class="badge">${items.length}件</span></h3>${items.length?items.map(m=>`<div class="line"><div><div class="line-title">${esc(m.name)}</div><div class="line-sub">${yen(m.price)}／バック ${yen(m.back)}</div></div><div><button class="btn small ghost" data-edit-menu="${esc(m.id)}">編集</button> <button class="btn small danger" data-delete-menu="${esc(m.id)}">削除</button></div></div>`).join(''):'<div class="meta">未登録</div>'}</div>`;
+ }).join('');
+}
+function addMenu(){
+ const name=$('menuName').value.trim(),price=Math.max(0,Number($('menuPrice').value)||0),back=Math.max(0,Number($('menuBack').value)||0),category=$('menuCategory').value;
+ if(!name)return toast('商品名を入力してください');
+ db.menu.push({id:uid(),name,category,price,back});save();$('menuName').value='';$('menuPrice').value='';$('menuBack').value=0;renderMenuAdmin();toast('商品を追加しました');
+}
+function editMenu(id){
+ const m=db.menu.find(x=>x.id===id);if(!m)return;
+ const name=prompt('商品名',m.name);if(name===null||!name.trim())return;
+ const price=prompt('販売価格',String(m.price));if(price===null)return;
+ const back=prompt('キャストバック',String(m.back));if(back===null)return;
+ m.name=name.trim();m.price=Math.max(0,Number(price)||0);m.back=Math.max(0,Number(back)||0);save();renderMenuAdmin();toast('商品を更新しました');
+}
+function deleteMenu(id){
+ const m=db.menu.find(x=>x.id===id);if(!m||!confirm(`${m.name}を削除しますか？`))return;
+ db.menu=db.menu.filter(x=>x.id!==id);save();renderMenuAdmin();toast('削除しました');
+}
+function renderHistory(){
+ $('historyList').innerHTML=db.checkouts.length?db.checkouts.map(c=>`<div class="history-row"><div class="seat-head"><b>${esc(c.date)}　${esc(c.seat)}　${esc(c.customer)}</b><strong>${yen(c.total)}</strong></div><div class="meta">${c.people}名・${esc(c.seatType)}／${esc(c.payment)}／値引 ${yen(c.discount)}</div></div>`).join(''):'<div class="empty-box">会計履歴はまだありません</div>';
+}
+function exportCsv(){
+ const rows=[['日付','席','お客様名','人数','席種','支払方法','小計','値引','合計'],...db.checkouts.map(c=>[c.date,c.seat,c.customer,c.people,c.seatType,c.payment,c.subtotal,c.discount,c.total])];
+ const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`tinkerbell-sales-${today()}.csv`;a.click();URL.revokeObjectURL(a.href);
+}
+function backup(){
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.download=`tinkerbell-pos-backup-${today()}.json`;a.click();URL.revokeObjectURL(a.href);
+}
 
-function seatTotal(s){return s.orders.reduce((a,o)=>a+o.price*o.qty,0)}
-function seatElapsed(s){if(!s.openedAt)return '-';const ms=Date.now()-new Date(s.openedAt).getTime();const min=Math.max(0,Math.floor(ms/60000));return `${Math.floor(min/60)}時間${min%60}分`}
-let seatEditId='';
-let seatDraft={customerName:'',people:1,openedTime:'',memo:'',casts:[]};
-function syncSeatDraftFromInputs(){
- seatDraft.customerName=$('seatCustomerName').value;
- seatDraft.people=Math.max(1,Number($('seatPeople').value)||1);
- seatDraft.openedTime=$('seatOpenedTime').value;
- seatDraft.memo=$('seatMemo').value;
-}
-function restoreSeatDraftInputs(){
- $('seatCustomerName').value=seatDraft.customerName||'';
- $('seatPeople').value=seatDraft.people||1;
- $('seatOpenedTime').value=seatDraft.openedTime||'';
- $('seatMemo').value=seatDraft.memo||'';
-}
-['seatCustomerName','seatPeople','seatOpenedTime','seatMemo'].forEach(id=>{
- const el=$(id);
- el.addEventListener('input',syncSeatDraftFromInputs);
- el.addEventListener('change',syncSeatDraftFromInputs);
+document.addEventListener('click',e=>{
+ const nav=e.target.closest('[data-view]');if(nav)return showView(nav.dataset.view);
+ const go=e.target.closest('[data-go]');if(go)return showView(go.dataset.go);
+ const close=e.target.closest('[data-close]');if(close)return $(close.dataset.close).close();
+ const seat=e.target.closest('[data-seat]');if(seat)return openVisit(seat.dataset.seat);
+ const type=e.target.closest('[data-type]');if(type){syncVisitDraftFromInputs();visitDraft.seatType=type.dataset.type;renderSeatTypeChoices();return}
+ const cast=e.target.closest('[data-cast]');if(cast){syncVisitDraftFromInputs();const c=cast.dataset.cast;visitDraft.casts=visitDraft.casts.includes(c)?visitDraft.casts.filter(x=>x!==c):[...visitDraft.casts,c];renderCastChoices();return}
+ const cat=e.target.closest('[data-category]');if(cat){selectedCategory=cat.dataset.category;renderCategoryTabs();renderOrderMenu();return}
+ const menu=e.target.closest('[data-menu]');if(menu)return addOrder(menu.dataset.menu);
+ const plus=e.target.closest('[data-plus]');if(plus)return changeQty(plus.dataset.plus,1);
+ const minus=e.target.closest('[data-minus]');if(minus)return changeQty(minus.dataset.minus,-1);
+ const rem=e.target.closest('[data-remove]');if(rem)return removeOrder(rem.dataset.remove);
+ const edit=e.target.closest('[data-edit-menu]');if(edit)return editMenu(edit.dataset.editMenu);
+ const del=e.target.closest('[data-delete-menu]');if(del)return deleteMenu(del.dataset.deleteMenu);
 });
-function renderSeatCastChoices(){$('seatCastChoices').innerHTML=db.staff.filter(x=>x.role==='cast').map(c=>`<button type="button" class="cast-choice ${seatDraft.casts.includes(c.id)?'selected':''}" onclick="chooseSeatCast('${c.id}')">${seatDraft.casts.includes(c.id)?'✓ ':''}${esc(c.name)}</button>`).join('')||'<div class="empty">キャストが登録されていません</div>'}
-function renderSeats(){
- const occupied=db.seats.filter(s=>s.customerName).length,total=db.seats.reduce((a,s)=>a+seatTotal(s),0);
- $('seatLiveSummary').innerHTML=`<span>使用中 ${occupied}席</span><span>空席 ${db.seats.length-occupied}席</span><span>未会計 ${yen(total)}</span>`;
- $('seatGrid').innerHTML=db.seats.map(s=>{
-  const isOccupied=!!s.customerName;
-  const casts=s.casts?.length?s.casts.map(x=>esc(staffById(x)?.name||'')).filter(Boolean).join('・'):'担当なし';
-  return `<article class="seat ${isOccupied?'occupied':'empty-seat'}">
-   <div class="seat-status"><div class="seat-name">${esc(s.name)}</div><span class="seat-badge">${isOccupied?'使用中':'空席'}</span></div>
-   <div class="guest">${esc(s.customerName||'空席')}</div>
-   <div class="cast">${isOccupied?'担当 '+casts:'入店登録してください'}</div>
-   <div class="seat-meta">${isOccupied?`人数 ${Number(s.people||1)}名<br>滞在 ${seatElapsed(s)}<br>注文 ${s.orders.length}件・${yen(seatTotal(s))}`:'お客様名・人数・担当を登録できます'}</div>
-   <div class="seat-actions">${isOccupied?`<button class="secondary" type="button" onclick="editSeat('${s.id}')">席情報</button><button class="primary" type="button" onclick="selectOrderSeat('${s.id}');setCategory('ドリンク');show('orders')">ドリンク追加</button><button class="danger full" type="button" onclick="checkoutSeat('${s.id}')">会計へ進む</button>`:`<button class="primary full" type="button" onclick="openSeat('${s.id}')">＋ 入店登録</button>`}</div>
-  </article>`
- }).join('')
-}
-function openSeatModal(sid){
- const s=db.seats.find(x=>x.id===sid);if(!s)return;
- seatEditId=sid;
- const opened=s.openedAt?new Date(s.openedAt):new Date();
- seatDraft={customerName:s.customerName||'',people:Number(s.people||1),openedTime:`${String(opened.getHours()).padStart(2,'0')}:${String(opened.getMinutes()).padStart(2,'0')}`,memo:s.memo||'',casts:[...(s.casts||[])]};
- $('seatModalTitle').textContent=s.customerName?`${s.name}の席情報`:`${s.name}へ入店登録`;
- $('seatCustomerName').value=seatDraft.customerName;
- $('seatPeople').value=seatDraft.people;
- $('seatOpenedTime').value=seatDraft.openedTime;
- $('seatMemo').value=seatDraft.memo;
- renderSeatCastChoices();
- $('seatModal').classList.remove('hidden');
- setTimeout(()=>$('seatCustomerName').focus(),100)
-}
-window.openSeat=openSeatModal;window.editSeat=openSeatModal;
-window.chooseSeatCast=x=>{
- // 担当選択前に未保存の来店入力を退避する。
- syncSeatDraftFromInputs();
- const activeId=document.activeElement?.id||'';
- const selectionStart=$('seatCustomerName').selectionStart;
- const selectionEnd=$('seatCustomerName').selectionEnd;
- seatDraft.casts=seatDraft.casts.includes(x)?seatDraft.casts.filter(id=>id!==x):[...seatDraft.casts,x];
- renderSeatCastChoices();
- // 担当ボタンの再描画後も、お客様名・人数・時刻・メモを必ず復元する。
- restoreSeatDraftInputs();
- if(activeId==='seatCustomerName'){
-  $('seatCustomerName').focus();
-  try{$('seatCustomerName').setSelectionRange(selectionStart,selectionEnd)}catch{}
- }
-}
-$('seatModalCancel').onclick=()=>{$('seatModal').classList.add('hidden');seatEditId=''};
-$('seatModalSave').onclick=()=>{
- syncSeatDraftFromInputs();
- const name=seatDraft.customerName.trim();if(!name)return toast('お客様名を入力してください');
- const s=db.seats.find(x=>x.id===seatEditId);if(!s)return;
- const c=db.customers.find(x=>x.name===name);
- s.customerId=c?.id||'';s.customerName=name;s.people=seatDraft.people;s.memo=seatDraft.memo;s.casts=[...seatDraft.casts];
- const [hh,mm]=(seatDraft.openedTime||'').split(':').map(Number);if(!s.openedAt){const d=new Date();if(Number.isFinite(hh)){d.setHours(hh||0,mm||0,0,0)}s.openedAt=d.toISOString()}
- $('seatModal').classList.add('hidden');persist();refreshSelects();renderAll();selectOrderSeat(s.id);toast('席情報を保存しました')
-}
-let checkoutSeatId='';
-function updateCheckoutTotal(){
- const s=db.seats.find(x=>x.id===checkoutSeatId);if(!s)return;
- const subtotal=seatTotal(s),discount=Math.max(0,Number($('checkoutDiscount').value)||0),grand=Math.max(0,subtotal-discount);
- $('checkoutGrandTotal').textContent=yen(grand);
-}
-window.checkoutSeat=sid=>{
- const s=db.seats.find(x=>x.id===sid);if(!s||!s.customerName){toast('入店中の席を選んでください');return}
- checkoutSeatId=sid;
- $('checkoutTitle').textContent=`${s.name}　会計確認`;
- $('checkoutDiscount').value='0';
- $('checkoutPayment').value='現金';
- $('checkoutDetails').innerHTML=`<h3>${esc(s.customerName)}　${Number(s.people||1)}名</h3>`+
-  (s.orders.length?s.orders.map(o=>`<div class="item"><b>${esc(o.name)} × ${Number(o.qty||1)}</b><div class="meta">${yen(Number(o.price||0)*Number(o.qty||1))}</div></div>`).join(''):'<div class="empty">注文はありません</div>')+
-  `<p style="font-size:20px"><b>小計 ${yen(seatTotal(s))}</b></p>`;
- updateCheckoutTotal();
- $('checkoutModal').classList.remove('hidden');
-}
-$('checkoutDiscount').addEventListener('input',updateCheckoutTotal);
-$('checkoutCancel').onclick=()=>{$('checkoutModal').classList.add('hidden');checkoutSeatId=''};
-$('checkoutConfirm').onclick=()=>{
- const s=db.seats.find(x=>x.id===checkoutSeatId);if(!s)return;
- const subtotal=seatTotal(s),discount=Math.max(0,Number($('checkoutDiscount').value)||0),total=Math.max(0,subtotal-discount);
- db.checkouts.push({id:id(),seat:s.name,seatId:s.id,customerName:s.customerName,people:Number(s.people||1),openedAt:s.openedAt,closedAt:nowISO(),orders:structuredClone(s.orders),subtotal,discount,total,payment:$('checkoutPayment').value,memo:s.memo||''});
- s.customerId='';s.customerName='';s.people=1;s.memo='';s.casts=[];s.openedAt='';s.orders=[];
- if(selectedOrderSeat===s.id)selectedOrderSeat='';
- $('checkoutModal').classList.add('hidden');checkoutSeatId='';persist();renderAll();show('seats');toast('会計を確定しました');
-}
-
-
-const MENU_CATEGORIES=['ドリンク','ボトル','シャンパン','ワイン','セット料金','アイス・割り物','フード','同伴料','その他'];
-let selectedOrderSeat='',selectedCategory='すべて',pendingMenu='',lastOrder=null,undoTimer=null;
-window.selectOrderSeat=sid=>{selectedOrderSeat=sid;pendingMenu='';renderTapOrders();const el=$('tapMenuGrid');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}
-window.setCategory=c=>{selectedCategory=c;renderTapOrders()}
-function renderTapOrders(){
- const occupied=db.seats.filter(s=>s.customerName);
- if(!occupied.some(s=>s.id===selectedOrderSeat))selectedOrderSeat=occupied[0]?.id||'';
- $('tapSeatGrid').innerHTML=occupied.length?occupied.map(s=>`<button class="tap-btn ${s.id===selectedOrderSeat?'selected':''}" onclick="selectOrderSeat('${s.id}')"><b>${esc(s.name)}</b><small>${esc(s.customerName)}・${yen(seatTotal(s))}</small></button>`).join(''):'<div class="empty">先に席管理で入店登録してください</div>';
- const used=[...new Set(db.menu.map(m=>m.type||'その他'))];const cats=['すべて',...MENU_CATEGORIES.filter(c=>used.includes(c)),...used.filter(c=>!MENU_CATEGORIES.includes(c))];
- $('orderCategories').innerHTML=cats.map(c=>`<button class="${c===selectedCategory?'primary':'secondary'}" onclick="setCategory('${esc(c)}')">${esc(c)}</button>`).join('');
- const items=db.menu.filter(m=>selectedCategory==='すべて'||(m.type||'その他')===selectedCategory);
- $('tapMenuGrid').innerHTML=!selectedOrderSeat?'<div class="empty">最初に席を選んでください</div>':items.length?items.map(m=>`<button class="tap-btn" type="button" onclick="tapMenu('${m.id}')"><b>${esc(m.name)}</b><small>${yen(m.price)}・${esc(m.type||'その他')}</small></button>`).join(''):'<div class="empty">この分類の商品がありません。メニュー管理で追加してください。</div>';
- $('castPicker').classList.add('hidden')
-}
-window.tapMenu=mid=>{if(!selectedOrderSeat)return toast('先に席をタップ');const m=db.menu.find(x=>x.id===mid);pendingMenu=mid;if(m.back>0||m.name.includes('キャスト')){const casts=db.staff.filter(x=>x.role==='cast');$('tapCastGrid').innerHTML=casts.map(c=>`<button class="choice" onclick="commitTapOrder('${mid}','${c.id}')">${esc(c.name)}</button>`).join('');$('castPicker').classList.remove('hidden');$('castPicker').scrollIntoView({behavior:'smooth',block:'center'})}else commitTapOrder(mid,'')}
-window.commitTapOrder=(mid,castId)=>{const s=db.seats.find(x=>x.id===selectedOrderSeat),m=db.menu.find(x=>x.id===mid);if(!s||!m)return;s.orders.push({id:id(),menuId:m.id,name:m.name,price:m.price,qty:1,castId,back:m.back,memo:''});lastOrder={sid:s.id,oid:s.orders.at(-1).id};persist();renderAll();showUndo(`${m.name}を追加`);toast('注文を追加しました')}
-function showUndo(text){$('undoText').textContent=text;$('undoBar').classList.remove('hidden');clearTimeout(undoTimer);undoTimer=setTimeout(()=>$('undoBar').classList.add('hidden'),5000)}
-$('undoBtn').onclick=()=>{if(lastOrder){const s=db.seats.find(x=>x.id===lastOrder.sid);if(s)s.orders=s.orders.filter(x=>x.id!==lastOrder.oid);persist();renderAll();toast('注文を取り消しました')}lastOrder=null;$('undoBar').classList.add('hidden')}
-function renderOrders(){renderTapOrders();$('orderSummary').innerHTML=db.seats.filter(s=>s.customerName).map(s=>`<div class="card"><h3>${esc(s.name)}　${esc(s.customerName)}</h3>${s.orders.length?s.orders.map(o=>`<div class="item"><b>${esc(o.name)} × ${o.qty}</b><div class="meta">${yen(o.price*o.qty)} / ${esc(staffById(o.castId)?.name||'担当なし')}</div><div class="item-actions"><button class="danger" onclick="delOrder('${s.id}','${o.id}')">削除</button></div></div>`).join(''):'<div class="empty">注文なし</div>'}<p><b>合計 ${yen(seatTotal(s))}</b></p><div class="item-actions"><button class="secondary" type="button" onclick="selectOrderSeat('${s.id}');setCategory('ドリンク')">＋ドリンク追加</button><button class="primary" type="button" onclick="checkoutSeat('${s.id}')">この席を会計</button></div></div>`).join('')||'<div class="empty">入店中の席がありません</div>'}
-window.delOrder=(sid,oid)=>{const s=db.seats.find(x=>x.id===sid);s.orders=s.orders.filter(x=>x.id!==oid);persist();renderAll()}
-
-$('saveCustomer').onclick=()=>{if(!$('customerName').value.trim())return toast('お客様名を入力');db.customers.push({id:id(),name:$('customerName').value.trim(),castId:$('customerCast').value,phone:$('customerPhone').value,memo:$('customerMemo').value,visits:0});persist();$('customerName').value='';$('customerPhone').value='';$('customerMemo').value='';refreshSelects();renderCustomers();toast('お客様登録')};
-$('customerSearch').oninput=renderCustomers;
-function renderCustomers(){const q=$('customerSearch').value.toLowerCase();const a=db.customers.filter(c=>(c.name+c.phone+c.memo+(staffById(c.castId)?.name||'')).toLowerCase().includes(q));$('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)}</h3><div class="meta">担当 ${esc(staffById(c.castId)?.name||'未設定')}<br>電話 ${esc(c.phone||'未登録')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>`${esc(b.name)}(${esc(b.level)})`).join('、'):'なし'}</div><div class="item-actions"><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>'}
-window.delCustomer=x=>{if(!confirm('削除しますか？'))return;db.customers=db.customers.filter(v=>v.id!==x);db.bottles=db.bottles.filter(v=>v.customerId!==x);persist();refreshSelects();renderAll()}
-
-$('saveBottle').onclick=()=>{if(!$('bottleCustomer').value||!$('bottleName').value.trim())return toast('お客様とボトル名を入力');db.bottles.push({id:id(),customerId:$('bottleCustomer').value,name:$('bottleName').value.trim(),level:$('bottleLevel').value,place:$('bottlePlace').value});persist();$('bottleName').value='';$('bottlePlace').value='';renderBottles();renderCustomers();toast('ボトル登録')};
-function renderBottles(){$('bottleList').innerHTML=db.bottles.length?db.bottles.map(b=>`<div class="item"><h3>${esc(b.name)} <span class="tag">${esc(b.level)}</span></h3><div class="meta">${esc(customerById(b.customerId)?.name||'不明')} / ${esc(b.place||'保管場所未登録')}</div><div class="item-actions"><button class="secondary" onclick="changeBottle('${b.id}')">残量変更</button><button class="danger" onclick="delBottle('${b.id}')">削除</button></div></div>`).join(''):'<div class="empty">ボトルなし</div>'}
-window.changeBottle=x=>{const b=db.bottles.find(v=>v.id===x);const n=prompt('残量を入力（満タン・75%・50%・25%・ほぼ空）',b.level);if(n===null)return;b.level=n;persist();renderAll()}
-window.delBottle=x=>{db.bottles=db.bottles.filter(v=>v.id!==x);persist();renderAll()}
-
-$('saveVisit').onclick=()=>{if(!$('visitCustomer').value.trim())return toast('お客様名を入力');db.visits.push({id:id(),castId:$('visitCast').value,customer:$('visitCustomer').value,date:$('visitDate').value,type:$('visitType').value,time:$('visitTime').value,people:$('visitPeople').value,memo:$('visitMemo').value});persist();renderVisits();toast('予定登録')};
-function renderVisits(){const a=db.visits.sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));$('visitList').innerHTML=a.length?a.map(v=>`<div class="item"><h3>${esc(v.customer)} <span class="tag">${esc(v.type)}</span></h3><div class="meta">${esc(v.date)} ${esc(v.time)} / ${esc(v.people)}名<br>担当 ${esc(staffById(v.castId)?.name||'')}<br>${esc(v.memo||'')}</div><div class="item-actions"><button class="danger" onclick="delVisit('${v.id}')">削除</button></div></div>`).join(''):'<div class="empty">予定なし</div>'}
-window.delVisit=x=>{db.visits=db.visits.filter(v=>v.id!==x);persist();renderVisits()}
-
-$('saveNotice').onclick=()=>{db.notices.unshift({id:id(),title:$('noticeTitle').value,body:$('noticeBody').value,date:today()});persist();renderNotices();toast('投稿しました')};
-function renderNotices(){$('noticeList').innerHTML=db.notices.length?db.notices.map(n=>`<div class="item"><h3>${esc(n.title)}</h3><div class="meta">${esc(n.date)}<br>${esc(n.body)}</div></div>`).join(''):'<div class="empty">お知らせなし</div>'}
-
-$('saveStaff').onclick=()=>{if(!$('staffName').value.trim())return toast('名前を入力');db.staff.push({id:id(),name:$('staffName').value.trim(),role:$('staffRole').value,wage:Number($('staffWage').value),drinkBack:Number($('staffDrinkBack').value),bottleBack:Number($('staffBottleBack').value),pin:$('staffPin').value});persist();refreshSelects();renderStaff();toast('従業員登録')};
-function renderStaff(){$('staffList').innerHTML=db.staff.map(s=>`<div class="item"><h3>${esc(s.name)} <span class="tag">${esc(s.role)}</span></h3><div class="meta">時給 ${yen(s.wage)} / ドリンクバック ${yen(s.drinkBack)} / ボトルバック ${yen(s.bottleBack)}</div></div>`).join('')}
-
-$('saveMenu').onclick=()=>{if(!$('menuName').value.trim())return toast('商品名を入力');db.menu.push({id:id(),name:$('menuName').value.trim(),price:Number($('menuPrice').value),type:$('menuType').value,back:Number($('menuBack').value),tax:Number($('menuTax').value)});persist();$('menuName').value='';$('menuPrice').value='';$('menuBack').value='0';refreshSelects();renderAll();toast('商品登録')};
-function renderMenu(){const used=[...new Set(db.menu.map(m=>m.type||'その他'))];const cats=[...MENU_CATEGORIES.filter(c=>used.includes(c)),...used.filter(c=>!MENU_CATEGORIES.includes(c))];$('menuList').innerHTML=cats.map(c=>`<div class="card"><h3>${esc(c)} <span class="tag">${db.menu.filter(m=>(m.type||'その他')===c).length}件</span></h3>${db.menu.filter(m=>(m.type||'その他')===c).map(m=>`<div class="item"><h3>${esc(m.name)}</h3><div class="meta">${yen(m.price)} / バック ${yen(m.back)} / 税 ${m.tax}%</div><div class="item-actions"><button class="danger" onclick="delMenu('${m.id}')">削除</button></div></div>`).join('')}</div>`).join('')}
-window.delMenu=x=>{db.menu=db.menu.filter(v=>v.id!==x);persist();refreshSelects();renderMenu()}
-
-function renderReports(){const sales=db.checkouts.reduce((a,x)=>a+x.total,0),open=db.seats.reduce((a,x)=>a+seatTotal(x),0),orders=db.checkouts.reduce((a,x)=>a+x.orders.length,0)+db.seats.reduce((a,x)=>a+x.orders.length,0);$('metrics').innerHTML=`<div class="metric"><small>確定売上</small><b>${yen(sales)}</b></div><div class="metric"><small>未会計</small><b>${yen(open)}</b></div><div class="metric"><small>会計件数</small><b>${db.checkouts.length}</b></div><div class="metric"><small>注文数</small><b>${orders}</b></div>`;$('checkoutHistory').innerHTML=db.checkouts.length?`<table><tr><th>日時</th><th>席</th><th>お客様</th><th>金額</th></tr>${db.checkouts.slice().reverse().map(x=>`<tr><td>${new Date(x.closedAt).toLocaleString('ja-JP')}</td><td>${esc(x.seat)}</td><td>${esc(x.customerName)}</td><td>${yen(x.total)}</td></tr>`).join('')}</table>`:'会計履歴なし';$('attendanceReport').innerHTML=db.staff.map(s=>{const rs=db.attendance.filter(a=>a.staffId===s.id),hours=rs.reduce((sum,r)=>sum+(r.out?(new Date(r.out)-new Date(r.in))/36e5:0),0);return `<div class="item"><b>${esc(s.name)}</b><div class="meta">${hours.toFixed(1)}時間 / 概算 ${yen(Math.round(hours*s.wage))}</div></div>`}).join('')}
-
-$('exportData').onclick=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tinkerbell_backup_'+today()+'.json';a.click();URL.revokeObjectURL(a.href)}
-$('importData').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);persist();refreshSelects();renderAll();toast('読み込み完了')}catch{toast('ファイル形式が違います')}};r.readAsText(f)}
-$('resetData').onclick=()=>{if(confirm('全データを初期化しますか？')){db=seed();persist();refreshSelects();renderAll();toast('初期化しました')}}
-
-function renderAll(){renderAttendance();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports()}
-$('visitDate').value=today();refreshSelects();renderAll();if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+$('newVisitBtn').onclick=()=>openVisit(db.seats.find(s=>s.status==='empty')?.id||db.seats[0].id);
+$('saveVisitBtn').onclick=saveVisit;
+$('clearSeatBtn').onclick=clearSeat;
+$('orderSeatSelect').onchange=renderOrders;
+$('addMenuBtn').onclick=addMenu;
+$('discountInput').oninput=updateCheckoutSummary;
+$('confirmCheckoutBtn').onclick=confirmCheckout;
+$('exportBtn').onclick=exportCsv;
+$('backupBtn').onclick=backup;
+renderAll();
 </script>
-</body></html>
+</body>
+</html>
