@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050505">
+<title>Tinker Bell Staff</title>
+<style>
+:root{--bg:#050505;--panel:#141414;--gold:#d7aa49;--gold2:#f5da8f;--cream:#f7f1e8;--ink:#171717;--muted:#a79e91;--red:#d94b68;--blue:#164b83}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1a130b 0,#050505 35%);color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+header{padding:18px 16px 14px;border-bottom:1px solid #3a2b13}.brand{font-family:Georgia,serif;color:var(--gold2);font-size:34px;font-style:italic}.jp{font-size:12px;color:var(--gold)}.greeting{margin-top:8px;color:#eee}
+main{max-width:800px;margin:auto;padding:14px 14px 90px}.card{background:linear-gradient(145deg,#181818,#0b0b0b);border:1px solid var(--gold);border-radius:18px;padding:15px;margin-bottom:13px}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.section-head h2{margin:0;color:var(--gold2)}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.metric{background:var(--cream);color:var(--ink);border:0;border-radius:15px;padding:16px;text-align:left}.metric strong{display:block;font-size:38px}.metric.red strong{color:var(--red)}.metric.blue strong{color:var(--blue)}
+.notice{display:flex;gap:12px;align-items:center;width:100%;text-align:left}.notice .ico{font-size:31px}.notice b{color:var(--gold2)}
+.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.tile{min-height:130px;background:linear-gradient(145deg,#1b1b1b,#0b0b0b);border:1px solid var(--gold);border-radius:17px;color:#fff;padding:15px;text-align:left}.tile .ico{font-size:31px;display:block;margin-bottom:10px}.tile b{display:block;font-size:18px}.tile small{display:block;color:#c8bfb1;font-size:12px;line-height:1.5;margin-top:6px}
+.btn{border:0;border-radius:11px;padding:11px 13px;font-weight:850;background:#2a2a2a;color:#fff}.btn.gold{background:linear-gradient(#f0d079,#b78326);color:#111}.btn.red{background:#8d263b}.btn.ghost{border:1px solid var(--gold);background:transparent;color:var(--gold2)}
+.tabs{display:flex;gap:7px;margin:12px 0}.tabs button{flex:1;border:1px solid #5f4922;background:#151515;color:#ddd;border-radius:10px;padding:10px}.tabs button.active{background:var(--gold);color:#111;font-weight:900}
+.list{display:grid;gap:9px}.row{background:#111;border:1px solid #46371e;border-radius:13px;padding:12px;text-align:left;color:#fff}.row-top{display:flex;justify-content:space-between;gap:10px}.time{font-size:21px;font-weight:900;color:var(--gold2)}.name{font-size:18px;font-weight:900}.meta{color:#c2b8aa;font-size:12px;line-height:1.6;margin-top:6px}.tag{border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900}.tag.comp{background:#5d1726;color:#ffc0cc}.tag.visit{background:#11375d;color:#b9d8ff}
+label{display:block;margin-bottom:10px}label span{display:block;font-size:12px;color:#d9c38c;font-weight:800;margin-bottom:5px}input,select,textarea{width:100%;border:1px solid #6a5325;border-radius:11px;background:var(--cream);color:#111;padding:12px}textarea{min-height:80px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}.choice-wrap{display:flex;gap:7px;flex-wrap:wrap}.choice{border:1px solid #6a5325;background:#161616;color:#ddd;border-radius:999px;padding:9px 11px}.choice.selected{background:var(--gold);color:#111;font-weight:900}
+.actions{display:flex;gap:8px;margin-top:12px}.actions .btn{flex:1}.empty{text-align:center;color:#8f877c;padding:24px}
+dialog{border:0;padding:0;background:#0b0b0b;color:#fff;border-radius:18px;width:min(680px,95vw);max-height:92vh;overflow:auto}dialog::backdrop{background:rgba(0,0,0,.75)}.modal{padding:16px}.modal-head{display:flex;justify-content:space-between;align-items:center}.modal-head h2{margin:0;color:var(--gold2)}.x{width:38px;height:38px;border-radius:50%;border:0;background:#222;color:#fff;font-size:20px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#fff;color:#111;padding:11px 16px;border-radius:999px;opacity:0;transition:.2s;z-index:99}.toast.show{opacity:1}
+@media(min-width:640px){.menu{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<header><div class="brand">Tinker Bell</div><div class="jp">ティンカーベル</div><div class="greeting">本日もよろしくお願いします！</div></header>
+<main>
+<section id="home">
+ <div class="card">
+  <div class="section-head"><h2>今日の予定</h2><button class="btn ghost" data-view="today">一覧を見る</button></div>
+  <div class="hero">
+   <button class="metric red" data-filter="companion"><small>同伴予定</small><strong id="compCount">0</strong>件</button>
+   <button class="metric blue" data-filter="visit"><small>来店予定</small><strong id="visitCount">0</strong>件</button>
+  </div>
+ </div>
+ <button class="card notice" data-view="notices"><span class="ico">📣</span><span><b>ティンカーベルからのお願い</b><br><small>重要なお知らせがあります</small></span></button>
+ <div class="menu">
+  <button class="tile"><span class="ico">🗓️</span><b>シフト登録</b><small>自分のシフトを登録します</small></button>
+  <button class="tile"><span class="ico">🔎</span><b>シフト確認</b><small>登録済みシフトを確認します</small></button>
+  <button class="tile" id="openScheduleBtn"><span class="ico">✍️</span><b>同伴・来店予定を登録</b><small>予定を登録します</small></button>
+  <button class="tile" data-view="today"><span class="ico">🥂</span><b>今日の同伴・来店予定</b><small>本日の予定を確認します</small></button>
+  <button class="tile"><span class="ico">👥</span><b>お客様情報</b><small>お客様情報を確認します</small></button>
+  <button class="tile"><span class="ico">🍾</span><b>ボトル確認</b><small>キープ状況を確認します</small></button>
+  <button class="tile" data-view="notices"><span class="ico">🔔</span><b>お知らせ</b><small>店舗からのお知らせ</small></button>
+  <button class="tile" id="adminBtn"><span class="ico">🔒</span><b>管理者専用</b><small>店内状況・売上状況・各種管理</small></button>
+ </div>
+</section>
+
+<section id="today" class="hidden">
+ <button class="btn ghost" data-view="home">← ホーム</button>
+ <div class="section-head" style="margin-top:12px"><h2>今日の同伴・来店予定</h2><button class="btn gold" id="addFromToday">＋追加</button></div>
+ <div class="tabs"><button class="active" data-tab="all">すべて</button><button data-tab="companion">同伴</button><button data-tab="visit">来店予定</button></div>
+ <div id="todayList" class="list"></div>
+</section>
+
+<section id="notices" class="hidden">
+ <button class="btn ghost" data-view="home">← ホーム</button>
+ <div class="card" style="margin-top:12px"><h2>ティンカーベルからのお願い</h2><p>・無断欠勤、遅刻は絶対にしないでください。</p><p>・お客様情報やお店の情報は口外厳禁です。</p><p>・みんなで楽しく働ける環境を作りましょう。</p></div>
+</section>
+</main>
+
+<dialog id="scheduleDialog">
+<div class="modal">
+ <div class="modal-head"><h2 id="scheduleTitle">同伴・来店予定を登録</h2><button class="x" data-close="scheduleDialog">×</button></div>
+ <div class="form-grid">
+  <label><span>日付</span><input id="schDate" type="date"></label>
+  <label><span>種別</span><select id="schType"><option value="companion">同伴</option><option value="visit">来店予定</option></select></label>
+  <label><span>時間</span><input id="schTime" type="time"></label>
+  <label><span>お客様名</span><input id="schCustomer" placeholder="例：田中様"></label>
+  <label><span>担当（代表）</span><select id="schMainCast"></select></label>
+  <label><span>人数</span><input id="schPeople" type="number" min="1" value="1"></label>
+  <div class="full"><span style="display:block;color:#d9c38c;font-size:12px;font-weight:800;margin-bottom:6px">同行キャスト（複数選択）</span><div id="companionCastChoices" class="choice-wrap"></div></div>
+  <div class="full"><span style="display:block;color:#d9c38c;font-size:12px;font-weight:800;margin-bottom:6px">席</span><div id="seatChoices" class="choice-wrap"></div></div>
+  <label class="full"><span>備考</span><textarea id="schMemo" placeholder="シャンパン予約、ボトルあり等"></textarea></label>
+ </div>
+ <div class="actions"><button class="btn red hidden" id="deleteScheduleBtn">削除</button><button class="btn gold" id="saveScheduleBtn">登録する</button></div>
+</div>
+</dialog>
+
+<dialog id="detailDialog">
+<div class="modal">
+ <div class="modal-head"><h2>予定の詳細</h2><button class="x" data-close="detailDialog">×</button></div>
+ <div id="detailBody"></div>
+ <div class="actions"><button class="btn ghost" id="editScheduleBtn">編集する</button></div>
+</div>
+</dialog>
+
+<dialog id="adminDialog">
+<div class="modal">
+ <div class="modal-head"><h2>管理者ログイン</h2><button class="x" data-close="adminDialog">×</button></div>
+ <label><span>パスコード</span><input id="adminPass" type="password" inputmode="numeric"></label>
+ <button class="btn gold" id="adminLoginBtn" style="width:100%">ログイン</button>
+ <div id="adminPanel" class="hidden" style="margin-top:14px"><div class="card"><h3>管理者専用</h3><p>店内状況</p><p>売上状況</p><p>各種管理</p></div></div>
+</div>
+</dialog>
+
+<div id="toast" class="toast"></div>
+
+<script>
+'use strict';
+const KEY='tinkerbell_line_staff_v1';
+const CASTS=['あい','れな','みく','ゆい','るな','りか'];
+const SEATS=['カウンター','1','2','3','4','5'];
+const todayISO=()=>new Date().toLocaleDateString('sv-SE');
+const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+let db=load(),currentTab='all',editingId=null,detailId=null,selectedCompanions=[],selectedSeat='カウンター';
+
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&Array.isArray(v.schedules))return v}catch(e){}return{schedules:[]}}
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),1600)}
+function showView(id){document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');if(id==='today')renderToday();window.scrollTo({top:0,behavior:'smooth'})}
+function todaySchedules(){return db.schedules.filter(x=>x.date===todayISO()).sort((a,b)=>a.time.localeCompare(b.time))}
+function updateCounts(){const a=todaySchedules();document.getElementById('compCount').textContent=a.filter(x=>x.type==='companion').length;document.getElementById('visitCount').textContent=a.filter(x=>x.type==='visit').length}
+function renderToday(){
+ document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===currentTab));
+ const arr=todaySchedules().filter(x=>currentTab==='all'||x.type===currentTab);
+ document.getElementById('todayList').innerHTML=arr.length?arr.map(x=>`<button class="row" data-detail="${x.id}">
+  <div class="row-top"><div><div class="time">${esc(x.time)}</div><div class="name">${esc(x.customer)}</div></div><span class="tag ${x.type==='companion'?'comp':'visit'}">${x.type==='companion'?'同伴':'来店予定'}</span></div>
+  <div class="meta">担当：${esc(x.mainCast)}／同行：${x.companions.length?x.companions.map(esc).join('・'):'なし'}／席：${esc(x.seat==='カウンター'?'カウンター':'BOX'+x.seat)}／${x.people}名</div>${x.memo?`<div class="meta">備考：${esc(x.memo)}</div>`:''}
+ </button>`).join(''):'<div class="empty">本日の予定はありません</div>';
+}
+function renderChoices(){
+ document.getElementById('schMainCast').innerHTML=CASTS.map(c=>`<option>${esc(c)}</option>`).join('');
+ document.getElementById('companionCastChoices').innerHTML=CASTS.map(c=>`<button type="button" class="choice ${selectedCompanions.includes(c)?'selected':''}" data-companion="${esc(c)}">${esc(c)}</button>`).join('');
+ document.getElementById('seatChoices').innerHTML=SEATS.map(s=>`<button type="button" class="choice ${selectedSeat===s?'selected':''}" data-seat-choice="${esc(s)}">${s==='カウンター'?'カウンター':'BOX'+s}</button>`).join('');
+}
+function openSchedule(id=null){
+ editingId=id;const x=id?db.schedules.find(s=>s.id===id):null;
+ document.getElementById('scheduleTitle').textContent=x?'予定を編集':'同伴・来店予定を登録';
+ document.getElementById('schDate').value=x?.date||todayISO();
+ document.getElementById('schType').value=x?.type||'companion';
+ document.getElementById('schTime').value=x?.time||'21:00';
+ document.getElementById('schCustomer').value=x?.customer||'';
+ selectedCompanions=[...(x?.companions||[])];selectedSeat=x?.seat||'カウンター';
+ renderChoices();
+ document.getElementById('schMainCast').value=x?.mainCast||CASTS[0];
+ document.getElementById('schPeople').value=x?.people||1;
+ document.getElementById('schMemo').value=x?.memo||'';
+ document.getElementById('deleteScheduleBtn').classList.toggle('hidden',!x);
+ document.getElementById('saveScheduleBtn').textContent=x?'更新する':'登録する';
+ syncTimeRule();document.getElementById('scheduleDialog').showModal();
+}
+function syncTimeRule(){const type=document.getElementById('schType').value,time=document.getElementById('schTime');if(type==='companion'){time.value='21:00';time.readOnly=true}else time.readOnly=false}
+function saveSchedule(){
+ const date=document.getElementById('schDate').value,type=document.getElementById('schType').value,time=type==='companion'?'21:00':document.getElementById('schTime').value,customer=document.getElementById('schCustomer').value.trim(),mainCast=document.getElementById('schMainCast').value,people=Math.max(1,Number(document.getElementById('schPeople').value)||1),memo=document.getElementById('schMemo').value.trim();
+ if(!date||!time||!customer)return toast('日付・時間・お客様名を入力してください');
+ const obj={id:editingId||uid(),date,type,time,customer,mainCast,companions:selectedCompanions.filter(c=>c!==mainCast),people,seat:selectedSeat,memo};
+ db.schedules=editingId?db.schedules.map(x=>x.id===editingId?obj:x):[...db.schedules,obj];
+ save();document.getElementById('scheduleDialog').close();updateCounts();renderToday();toast(editingId?'予定を更新しました':'予定を登録しました');
+}
+function openDetail(id){detailId=id;const x=db.schedules.find(s=>s.id===id);if(!x)return;document.getElementById('detailBody').innerHTML=`<div class="card"><p><b>日付：</b>${esc(x.date)}</p><p><b>時間：</b>${esc(x.time)}</p><p><b>種別：</b>${x.type==='companion'?'同伴':'来店予定'}</p><p><b>お客様：</b>${esc(x.customer)}</p><p><b>担当：</b>${esc(x.mainCast)}</p><p><b>同行：</b>${x.companions.length?x.companions.map(esc).join('・'):'なし'}</p><p><b>人数：</b>${x.people}名</p><p><b>席：</b>${esc(x.seat==='カウンター'?'カウンター':'BOX'+x.seat)}</p><p><b>備考：</b>${esc(x.memo||'なし')}</p></div>`;document.getElementById('detailDialog').showModal()}
+document.addEventListener('click',e=>{
+ const v=e.target.closest('[data-view]');if(v)return showView(v.dataset.view);
+ const f=e.target.closest('[data-filter]');if(f){currentTab=f.dataset.filter;showView('today');return}
+ const t=e.target.closest('[data-tab]');if(t){currentTab=t.dataset.tab;renderToday();return}
+ const c=e.target.closest('[data-companion]');if(c){const n=c.dataset.companion;selectedCompanions=selectedCompanions.includes(n)?selectedCompanions.filter(x=>x!==n):[...selectedCompanions,n];renderChoices();return}
+ const s=e.target.closest('[data-seat-choice]');if(s){selectedSeat=s.dataset.seatChoice;renderChoices();return}
+ const d=e.target.closest('[data-detail]');if(d)return openDetail(d.dataset.detail);
+ const x=e.target.closest('[data-close]');if(x)return document.getElementById(x.dataset.close).close();
+});
+document.getElementById('openScheduleBtn').onclick=()=>openSchedule();
+document.getElementById('addFromToday').onclick=()=>openSchedule();
+document.getElementById('schType').onchange=syncTimeRule;
+document.getElementById('saveScheduleBtn').onclick=saveSchedule;
+document.getElementById('deleteScheduleBtn').onclick=()=>{if(!editingId||!confirm('この予定を削除しますか？'))return;db.schedules=db.schedules.filter(x=>x.id!==editingId);save();document.getElementById('scheduleDialog').close();updateCounts();renderToday();toast('削除しました')};
+document.getElementById('editScheduleBtn').onclick=()=>{document.getElementById('detailDialog').close();openSchedule(detailId)};
+document.getElementById('adminBtn').onclick=()=>{document.getElementById('adminPass').value='';document.getElementById('adminPanel').classList.add('hidden');document.getElementById('adminDialog').showModal()};
+document.getElementById('adminLoginBtn').onclick=()=>{if(document.getElementById('adminPass').value==='1234'){document.getElementById('adminPanel').classList.remove('hidden');toast('ログインしました')}else toast('パスコードが違います')};
+updateCounts();renderToday();
+</script>
+</body>
+</html>
