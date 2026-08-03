@@ -110,12 +110,23 @@ dialog{border:0;padding:0;background:#f9f6ef;color:var(--ink);border-radius:19px
 
 <section id="schedules" class="hidden"><button class="btn ghost" data-view="home">← ホーム</button><div class="sectionHead"><h2>今日の予定</h2><button class="btn gold" id="addScheduleBtn">＋予定登録</button></div><div id="scheduleList" class="list"></div></section>
 <section id="customers" class="hidden"><button class="btn ghost" data-view="home">← ホーム</button><div class="sectionHead"><h2>お客様情報</h2><button class="btn gold" id="addCustomerBtn">＋登録</button></div><div id="customerList" class="list"></div></section>
-<section id="bottles" class="hidden"><button class="btn ghost" data-view="home">← ホーム</button><div class="sectionHead"><h2>ボトル確認</h2><button class="btn gold" id="addBottleBtn">＋登録</button></div><div id="bottleList" class="list"></div></section>
+<section id="bottles" class="hidden">
+      <button class="btn ghost" data-view="home">← ホーム</button>
+      <div class="sectionHead"><h2>ボトル確認</h2><button class="btn gold" id="addBottleBtn">＋登録</button></div>
+      <div class="card"><label><span>管理番号・お客様名・ボトル名で検索</span><input id="bottleSearch" placeholder="例：12、田中様、吉四六"></label></div>
+      <div id="bottleList" class="list"></div>
+    </section>
 </main>
 
 <dialog id="scheduleDialog"><div class="modal"><div class="modalHead"><h2>同伴・来店予定を登録</h2><button class="close" data-close="scheduleDialog">×</button></div>
 <div class="form2"><label><span>日付</span><input id="schDate" type="date"></label><label><span>種別</span><select id="schType"><option value="companion">同伴</option><option value="visit">来店予定</option></select></label><label><span>時間</span><input id="schTime" type="time"></label><label><span>お客様名</span><input id="schCustomer"></label><label><span>担当</span><select id="schMainCast"></select></label><label><span>人数</span><input id="schPeople" type="number" min="1" value="1"></label><div class="span2"><span class="small">同行キャスト</span><div id="companionChoices" class="choices"></div></div><div class="span2"><span class="small">席</span><div id="seatChoices" class="choices"></div></div><label class="span2"><span>備考</span><textarea id="schMemo"></textarea></label></div>
 <button class="btn gold full" id="saveScheduleBtn">登録</button></div></dialog>
+
+
+<dialog id="scheduleDetailDialog"><div class="modal">
+  <div class="modalHead"><h2>予定の詳細</h2><button class="close" data-close="scheduleDetailDialog">×</button></div>
+  <div id="scheduleDetailBody"></div>
+</div></dialog>
 
 <dialog id="simpleDialog"><div class="modal"><div class="modalHead"><h2 id="simpleTitle"></h2><button class="close" data-close="simpleDialog">×</button></div><div id="simpleBody"></div></div></dialog>
 <dialog id="adminDialog"><div class="modal"><div class="modalHead"><h2>その他・管理</h2><button class="close" data-close="adminDialog">×</button></div><div id="loginArea"><label><span>管理者パスコード</span><input id="adminPass" type="password"></label><button class="btn gold full" id="adminLoginBtn">ログイン</button></div><div id="adminPanel" class="hidden"><div class="stats"><div class="stat"><small>スタッフ</small><strong id="staffCount">0</strong></div><div class="stat"><small>顧客</small><strong id="customerCount">0</strong></div><div class="stat"><small>ボトル</small><strong id="bottleCount">0</strong></div></div><div class="sectionHead"><h2 style="font-size:19px">スタッフ管理</h2><button class="btn gold" id="addStaffBtn">＋追加</button></div><div id="staffList" class="list"></div></div></div></dialog>
@@ -159,20 +170,58 @@ function renderCheck(){
 }
 function renderChoices(){companionChoices.innerHTML=names().map(n=>`<button class="choice ${companions.includes(n)?'selected':''}" data-comp="${n}">${n}</button>`).join('');seatChoices.innerHTML=SEATS.map(s=>`<button class="choice ${seat===s?'selected':''}" data-seat="${s}">${s==='カウンター'?'カウンター':'BOX'+s}</button>`).join('')}
 function openSchedule(){schDate.value=today();schType.value='companion';schTime.value='21:00';schTime.readOnly=true;schCustomer.value='';schMainCast.value=names()[0]||'';companions=[];seat='カウンター';renderChoices();scheduleDialog.showModal()}
-function renderSchedules(){const a=db.schedules.filter(x=>x.date===today()).sort((a,b)=>a.time.localeCompare(b.time));scheduleList.innerHTML=a.length?a.map(x=>`<div class="row"><div class="rowTitle">${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.mainCast}／同行:${x.companions.join('・')||'なし'}／席:${x.seat==='カウンター'?'カウンター':'BOX'+x.seat}</div></div>`).join(''):'<div class="card">本日の予定はありません</div>'}
+function renderSchedules(){
+ const a=db.schedules.filter(x=>x.date===today()).sort((a,b)=>a.time.localeCompare(b.time));
+ scheduleList.innerHTML=a.length?a.map(x=>`<button class="row full" data-schedule-detail="${x.id}">
+  <div class="rowTitle">${x.time} ${x.customer}</div>
+  <div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.mainCast}／同行:${x.companions.join('・')||'なし'}／席:${x.seat==='カウンター'?'カウンター':'BOX'+x.seat}</div>
+  <div class="meta">タップして備考・詳細を確認</div>
+ </button>`).join(''):'<div class="card">本日の予定はありません</div>';
+}
+function openScheduleDetail(id){
+ const x=db.schedules.find(v=>v.id===id);if(!x)return;
+ scheduleDetailBody.innerHTML=`<div class="card">
+  <div class="rowTitle">${x.date}　${x.time}　${x.customer}</div>
+  <div class="meta"><b>種別：</b>${x.type==='companion'?'同伴':'来店予定'}</div>
+  <div class="meta"><b>担当：</b>${x.mainCast}</div>
+  <div class="meta"><b>同行：</b>${x.companions.join('・')||'なし'}</div>
+  <div class="meta"><b>席：</b>${x.seat==='カウンター'?'カウンター':'BOX'+x.seat}</div>
+  <div class="meta"><b>人数：</b>${x.people||1}名</div>
+  <div class="meta"><b>備考：</b>${x.memo&&x.memo.trim()?x.memo:'なし'}</div>
+ </div>`;
+ scheduleDetailDialog.showModal();
+}
 function renderCustomers(){customerList.innerHTML=db.customers.length?db.customers.map(x=>`<div class="row"><div class="rowTitle">${x.name}</div><div class="meta">担当:${x.cast}</div></div>`).join(''):'<div class="card">お客様情報はありません</div>'}
-function renderBottles(){bottleList.innerHTML=db.bottles.length?db.bottles.map(x=>`<div class="row"><div class="rowTitle">${x.customer}／${x.name}</div><div class="meta">担当:${x.cast}／本数:${x.qty}</div></div>`).join(''):'<div class="card">ボトル情報はありません</div>'}
+function renderBottles(){
+ const q=(bottleSearch?.value||'').trim().toLowerCase();
+ const a=db.bottles.filter(x=>[x.number,x.customer,x.name,x.cast].join(' ').toLowerCase().includes(q));
+ bottleList.innerHTML=a.length?a.map(x=>`<div class="row">
+  <div class="rowTitle">No.${x.number}　${x.customer}</div>
+  <div class="meta">${x.name}／担当:${x.cast}／本数:${x.qty}</div>
+ </div>`).join(''):'<div class="card">該当するボトル情報はありません</div>';
+}
 function role(r){return r==='manager'?'管理者':r==='floor'?'黒服・ホール':'キャスト'}
 function renderStaff(){staffCount.textContent=db.staff.length;customerCount.textContent=db.customers.length;bottleCount.textContent=db.bottles.reduce((a,b)=>a+(+b.qty||0),0);staffList.innerHTML=db.staff.map(x=>`<div class="row"><div class="staffLine"><div><div class="rowTitle">${x.name}</div><span class="role">${role(x.role)}</span></div><button class="btn ghost" data-edit-staff="${x.id}">編集</button></div></div>`).join('')}
 function openStaff(id=null){editingStaff=id;const x=id?db.staff.find(v=>v.id===id):null;staffTitle.textContent=x?'スタッフ編集':'スタッフ追加';staffName.value=x?.name||'';staffRole.value=x?.role||'cast';deleteStaffBtn.classList.toggle('hidden',!x);staffDialog.showModal()}
 function route(){const r=location.hash.slice(1);if(r==='schedule'){showView('schedules',false);setTimeout(openSchedule,0)}else if(r==='admin'){showView('home',false);setTimeout(()=>adminDialog.showModal(),0)}else showView({shift:'shift',today:'schedules',customers:'customers',bottles:'bottles'}[r]||'home',false)}
-document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if(v)return showView(v.dataset.view);const t=e.target.closest('[data-shift-tab]');if(t){document.querySelectorAll('[data-shift-tab]').forEach(b=>b.classList.remove('active'));t.classList.add('active');shiftRegisterPane.classList.toggle('hidden',t.dataset.shiftTab!=='register');shiftCheckPane.classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderCheck();return}const m=e.target.closest('.markBtn');if(m){m.parentElement.querySelectorAll('.markBtn').forEach(b=>b.classList.remove('selected'));m.classList.add('selected');return}const c=e.target.closest('[data-comp]');if(c){companions=companions.includes(c.dataset.comp)?companions.filter(x=>x!==c.dataset.comp):[...companions,c.dataset.comp];renderChoices();return}const s=e.target.closest('[data-seat]');if(s){seat=s.dataset.seat;renderChoices();return}const ed=e.target.closest('[data-edit-staff]');if(ed)return openStaff(ed.dataset.editStaff);const cl=e.target.closest('[data-close]');if(cl)document.getElementById(cl.dataset.close).close()});
+document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if(v)return showView(v.dataset.view);const t=e.target.closest('[data-shift-tab]');if(t){document.querySelectorAll('[data-shift-tab]').forEach(b=>b.classList.remove('active'));t.classList.add('active');shiftRegisterPane.classList.toggle('hidden',t.dataset.shiftTab!=='register');shiftCheckPane.classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderCheck();return}const m=e.target.closest('.markBtn');if(m){m.parentElement.querySelectorAll('.markBtn').forEach(b=>b.classList.remove('selected'));m.classList.add('selected');return}const c=e.target.closest('[data-comp]');if(c){companions=companions.includes(c.dataset.comp)?companions.filter(x=>x!==c.dataset.comp):[...companions,c.dataset.comp];renderChoices();return}const s=e.target.closest('[data-seat]');if(s){seat=s.dataset.seat;renderChoices();return}const sd=e.target.closest('[data-schedule-detail]');if(sd)return openScheduleDetail(sd.dataset.scheduleDetail);const ed=e.target.closest('[data-edit-staff]');if(ed)return openStaff(ed.dataset.editStaff);const cl=e.target.closest('[data-close]');if(cl)document.getElementById(cl.dataset.close).close()});
 saveShiftBtn.onclick=()=>{[...document.querySelectorAll('[data-date]')].forEach(r=>{const b=r.querySelector('.markBtn.selected');if(!b)return;const x=db.shifts.find(v=>v.staff===shiftStaff.value&&v.date===r.dataset.date);if(x)x.mark=b.dataset.mark;else db.shifts.push({id:uid(),staff:shiftStaff.value,date:r.dataset.date,mark:b.dataset.mark})});save();renderCheck();renderHomeSummary();toast('1週間分を登録しました')};
-shiftStaff.onchange=renderRegister;shiftWeekStart.onchange=renderRegister;checkWeekStart.onchange=renderCheck;
+shiftStaff.onchange=renderRegister;shiftWeekStart.onchange=renderRegister;checkWeekStart.onchange=renderCheck;bottleSearch.oninput=renderBottles;
 openScheduleHome.onclick=openSchedule;addScheduleBtn.onclick=openSchedule;schType.onchange=()=>{if(schType.value==='companion'){schTime.value='21:00';schTime.readOnly=true}else schTime.readOnly=false};
-saveScheduleBtn.onclick=()=>{const o={id:uid(),date:schDate.value,type:schType.value,time:schType.value==='companion'?'21:00':schTime.value,customer:schCustomer.value.trim(),mainCast:schMainCast.value,companions:companions.filter(x=>x!==schMainCast.value),seat};if(!o.customer)return toast('お客様名を入力');db.schedules.push(o);save();scheduleDialog.close();renderSchedules();renderHomeSummary();toast('予定を登録しました')};
+saveScheduleBtn.onclick=()=>{const o={id:uid(),date:schDate.value,type:schType.value,time:schType.value==='companion'?'21:00':schTime.value,customer:schCustomer.value.trim(),mainCast:schMainCast.value,people:+schPeople.value||1,companions:companions.filter(x=>x!==schMainCast.value),seat,memo:schMemo.value.trim()};if(!o.customer)return toast('お客様名を入力');db.schedules.push(o);save();scheduleDialog.close();renderSchedules();renderHomeSummary();toast('予定を登録しました')};
 addCustomerBtn.onclick=()=>{simpleTitle.textContent='お客様登録';simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1"></label><label><span>担当</span><select id="tmp2">'+names().map(x=>`<option>${x}</option>`).join('')+'</select></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim())return;db.customers.push({id:uid(),name:tmp1.value.trim(),cast:tmp2.value});save();simpleDialog.close();renderCustomers()}};
-addBottleBtn.onclick=()=>{simpleTitle.textContent='ボトル登録';simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1"></label><label><span>ボトル名</span><input id="tmp2"></label><label><span>担当</span><select id="tmp3">'+names().map(x=>`<option>${x}</option>`).join('')+'</select></label><label><span>本数</span><input id="tmp4" type="number" value="1"></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim()||!tmp2.value.trim())return;db.bottles.push({id:uid(),customer:tmp1.value.trim(),name:tmp2.value.trim(),cast:tmp3.value,qty:+tmp4.value||1});save();simpleDialog.close();renderBottles()}};
+addBottleBtn.onclick=()=>{
+ simpleTitle.textContent='ボトル登録';
+ simpleBody.innerHTML='<label><span>管理番号</span><input id="tmp0" inputmode="numeric" placeholder="例：12"></label><label><span>お客様名</span><input id="tmp1"></label><label><span>ボトル名</span><input id="tmp2"></label><label><span>担当</span><select id="tmp3">'+names().map(x=>`<option>${x}</option>`).join('')+'</select></label><label><span>本数</span><input id="tmp4" type="number" min="1" value="1"></label><button class="btn gold full" id="tmpSave">保存</button>';
+ simpleDialog.showModal();
+ tmpSave.onclick=()=>{
+  const number=tmp0.value.trim(),customer=tmp1.value.trim(),name=tmp2.value.trim();
+  if(!number||!customer||!name)return toast('管理番号・お客様名・ボトル名を入力');
+  if(db.bottles.some(x=>String(x.number)===number))return toast('同じ管理番号が登録されています');
+  db.bottles.push({id:uid(),number,customer,name,cast:tmp3.value,qty:+tmp4.value||1});
+  save();simpleDialog.close();renderBottles();toast('ボトルを登録しました');
+ };
+};
 adminBtn.onclick=()=>adminDialog.showModal();adminLoginBtn.onclick=()=>{if(adminPass.value==='1234'){loginArea.classList.add('hidden');adminPanel.classList.remove('hidden');renderStaff();toast('ログインしました')}else toast('パスコードが違います')};addStaffBtn.onclick=()=>openStaff();
 saveStaffBtn.onclick=()=>{const n=staffName.value.trim();if(!n)return toast('名前を入力');if(editingStaff){const x=db.staff.find(v=>v.id===editingStaff),old=x.name;x.name=n;x.role=staffRole.value;db.shifts.forEach(v=>{if(v.staff===old)v.staff=n});db.schedules.forEach(v=>{if(v.mainCast===old)v.mainCast=n;v.companions=v.companions.map(c=>c===old?n:c)});db.customers.forEach(v=>{if(v.cast===old)v.cast=n});db.bottles.forEach(v=>{if(v.cast===old)v.cast=n})}else db.staff.push({id:uid(),name:n,role:staffRole.value});save();populate();renderStaff();renderRegister();renderCheck();staffDialog.close();toast('スタッフを保存しました')};
 deleteStaffBtn.onclick=()=>{if(!editingStaff||!confirm('このスタッフを削除しますか？'))return;const x=db.staff.find(v=>v.id===editingStaff);db.staff=db.staff.filter(v=>v.id!==editingStaff);db.shifts=db.shifts.filter(v=>v.staff!==x.name);save();populate();renderStaff();renderRegister();renderCheck();staffDialog.close();toast('削除しました')};
