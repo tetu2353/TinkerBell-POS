@@ -53,6 +53,7 @@ dialog{border:0;padding:0;background:#0b0b0b;color:#fff;border-radius:18px;width
   <div class="meta" style="margin-bottom:10px">〇＝出勤可　△＝相談　×＝出勤不可</div>
   <div id="shiftWeekRegister" class="week-grid"></div>
   <button class="btn gold full" id="saveShiftWeekBtn" style="margin-top:12px">1週間分を登録</button>
+  <button class="btn ghost full" data-view="shift-check" style="margin-top:9px">登録済みシフトを確認</button>
  </div>
 </section>
 
@@ -61,6 +62,7 @@ dialog{border:0;padding:0;background:#0b0b0b;color:#fff;border-radius:18px;width
  <div class="section-head"><h2>シフト確認</h2></div>
  <div class="card"><div class="form-grid"><label><span>表示</span><select id="shiftFilterStaff"></select></label><label><span>週の開始日</span><input id="shiftWeekStart" type="date"></label></div></div>
  <div id="shiftWeekView" class="week-table-wrap"></div>
+ <button class="btn ghost full" data-view="shift-register" style="margin-top:12px">シフト登録へ戻る</button>
 </section>
 
 <section id="schedules" class="hidden">
@@ -111,7 +113,23 @@ const KEY='tinkerbell_clean_v6',CASTS=['あい','れな','みく','ゆい','る�
 const todayISO=()=>new Date().toLocaleDateString('sv-SE'),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2);
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||{shifts:[],schedules:[],customers:[],bottles:[],notices:[]},selectedCompanions=[],selectedSeat='カウンター';
 const save=()=>localStorage.setItem(KEY,JSON.stringify(db)),toast=m=>{toastEl.textContent=m;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),1500)};
-function showView(id){document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');if(id==='shift-check')renderShiftCheck();if(id==='schedules')renderSchedules();if(id==='customers')renderCustomers();if(id==='bottles')renderBottles();if(id==='notices')renderNotices()}
+function showView(id,updateHash=true){
+ document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));
+ const target=document.getElementById(id)||document.getElementById('home');
+ target.classList.remove('hidden');
+ if(id==='shift-register')renderShiftRegister();
+ if(id==='shift-check')renderShiftCheck();
+ if(id==='schedules')renderSchedules();
+ if(id==='customers')renderCustomers();
+ if(id==='bottles')renderBottles();
+ if(id==='notices')renderNotices();
+ if(updateHash){
+  const reverse={'shift-register':'shift','shift-check':'shift-check','schedules':'today','customers':'customers','bottles':'bottles','notices':'notices','home':''};
+  const h=reverse[id];
+  if(h!==undefined)history.replaceState(null,'',h?'#'+h:location.pathname+location.search);
+ }
+ window.scrollTo({top:0,behavior:'smooth'});
+}
 function startOfWeek(s){const d=s?new Date(s+'T00:00:00'):new Date(),o=(d.getDay()+6)%7;d.setDate(d.getDate()-o);return d}
 function fmt(d){return d.toLocaleDateString('sv-SE')}
 function weekDates(s){const a=startOfWeek(s);return Array.from({length:7},(_,i)=>{const d=new Date(a);d.setDate(a.getDate()+i);return d})}
@@ -132,9 +150,43 @@ addCustomerBtn.onclick=()=>{simpleTitle.textContent='お客様登録';simpleBody
 addBottleBtn.onclick=()=>{simpleTitle.textContent='ボトル登録';simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1"></label><label><span>ボトル名</span><input id="tmp2"></label><label><span>担当</span><select id="tmp3">'+CASTS.map(x=>`<option>${x}</option>`).join('')+'</select></label><label><span>本数</span><input id="tmp4" type="number" value="1"></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim()||!tmp2.value.trim())return;db.bottles.push({id:uid(),customer:tmp1.value.trim(),name:tmp2.value.trim(),cast:tmp3.value,qty:+tmp4.value||1});save();simpleDialog.close();renderBottles()}};
 addNoticeBtn.onclick=()=>{simpleTitle.textContent='お知らせ追加';simpleBody.innerHTML='<label><span>タイトル</span><input id="tmp1"></label><label><span>本文</span><textarea id="tmp2"></textarea></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim())return;db.notices.push({id:uid(),title:tmp1.value.trim(),body:tmp2.value.trim()});save();simpleDialog.close();renderNotices()}};
 adminBtn.onclick=()=>adminDialog.showModal();adminLogin.onclick=()=>{if(adminPass.value==='1234')toast('ログインしました');else toast('パスコードが違います')};
+
+function openRoute(){
+ const route=(location.hash||'').replace('#','').trim();
+ const routes={
+  '':'home',
+  'home':'home',
+  'shift':'shift-register',
+  'shift-register':'shift-register',
+  'shift-check':'shift-check',
+  'today':'schedules',
+  'schedules':'schedules',
+  'customers':'customers',
+  'bottles':'bottles',
+  'notices':'notices'
+ };
+ if(route==='schedule'){
+  showView('schedules',false);
+  setTimeout(openSchedule,0);
+  return;
+ }
+ if(route==='admin'){
+  showView('home',false);
+  setTimeout(()=>adminDialog.showModal(),0);
+  return;
+ }
+ showView(routes[route]||'home',false);
+}
+window.addEventListener('hashchange',openRoute);
+
 const options=CASTS.map(x=>`<option>${x}</option>`).join('');shiftStaff.innerHTML=options;shiftFilterStaff.innerHTML='<option value="all">全員</option>'+options;schMainCast.innerHTML=options;
-const monday=fmt(startOfWeek(todayISO()));shiftRegisterWeekStart.value=monday;shiftWeekStart.value=monday;renderShiftRegister();renderShiftCheck();
+const monday=fmt(startOfWeek(todayISO()));
+shiftRegisterWeekStart.value=monday;
+shiftWeekStart.value=monday;
+renderShiftRegister();
+renderShiftCheck();
 const toastEl=document.getElementById('toast');
+openRoute();
 </script>
 </body>
 </html>
