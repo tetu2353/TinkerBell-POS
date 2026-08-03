@@ -53,6 +53,14 @@ dialog{border:0;padding:0;background:#f9f6ef;color:var(--ink);border-radius:19px
  .dayRow{grid-template-columns:88px 1fr}
 }
 
+
+.shiftTableWrap{overflow:auto;max-height:68vh;border:1px solid #d9c8a5;border-radius:15px;background:#fff;box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
+.shiftTable{min-width:820px;display:grid;grid-template-columns:130px repeat(7,minmax(96px,1fr))}
+.shiftCell{padding:11px;text-align:center;border-right:1px solid #eee4d1;border-bottom:1px solid #eee4d1;background:#fff}
+.shiftCell.head{position:sticky;top:0;z-index:3;background:#f4ead4;color:#76541d;font-weight:900}
+.shiftCell.name{position:sticky;left:0;z-index:2;text-align:left;font-weight:900;background:#fffaf0;box-shadow:3px 0 8px rgba(100,76,30,.08)}
+.shiftCell.corner{position:sticky;top:0;left:0;z-index:4;background:#ead9b8}
+
 </style>
 </head>
 <body>
@@ -136,7 +144,19 @@ function renderHomeSummary(){
 
 function showView(id,hash=true){document.querySelectorAll('main>section').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');if(id==='home')renderHomeSummary();if(id==='shift'){renderRegister();renderCheck()}if(id==='schedules')renderSchedules();if(id==='customers')renderCustomers();if(id==='bottles')renderBottles();if(hash){const h={home:'',shift:'shift',schedules:'today',customers:'customers',bottles:'bottles'}[id];history.replaceState(null,'',h?'#'+h:location.pathname+location.search)}}
 function renderRegister(){const st=shiftStaff.value||names()[0];shiftDays.innerHTML=dates(shiftWeekStart.value).map(d=>{const date=fmt(d),m=db.shifts.find(x=>x.staff===st&&x.date===date)?.mark||'';return `<div class="dayRow" data-date="${date}"><div class="dateBox"><b>${d.getMonth()+1}/${d.getDate()}</b><small>${'日月火水木金土'[d.getDay()]}</small></div><div class="markGroup"><button class="markBtn o ${m==='o'?'selected':''}" data-mark="o">〇</button><button class="markBtn tri ${m==='tri'?'selected':''}" data-mark="tri">△</button><button class="markBtn x ${m==='x'?'selected':''}" data-mark="x">×</button></div></div>`}).join('')}
-function renderCheck(){shiftCheckList.innerHTML=dates(checkWeekStart.value).map(d=>{const date=fmt(d);return `<div class="dayCheck"><h3>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）</h3>${names().map(st=>{const m=db.shifts.find(x=>x.staff===st&&x.date===date)?.mark||'';return `<div class="staffStatus"><b>${st}</b><span class="status ${m||'none'}">${m==='o'?'〇':m==='tri'?'△':m==='x'?'×':'－'}</span></div>`}).join('')}</div>`}).join('')}
+function renderCheck(){
+ const ds=dates(checkWeekStart.value);
+ const header=`<div class="shiftCell head corner">名前</div>`+
+ ds.map(d=>`<div class="shiftCell head">${d.getMonth()+1}/${d.getDate()}<br>${'日月火水木金土'[d.getDay()]}</div>`).join('');
+ const rows=names().map(st=>{
+  const cells=ds.map(d=>{
+   const m=db.shifts.find(x=>x.staff===st&&x.date===fmt(d))?.mark||'';
+   return `<div class="shiftCell"><span class="status ${m||'none'}">${m==='o'?'〇':m==='tri'?'△':m==='x'?'×':'－'}</span></div>`;
+  }).join('');
+  return `<div class="shiftCell name">${st}</div>${cells}`;
+ }).join('');
+ shiftCheckList.innerHTML=`<div class="shiftTableWrap"><div class="shiftTable">${header}${rows}</div></div>`;
+}
 function renderChoices(){companionChoices.innerHTML=names().map(n=>`<button class="choice ${companions.includes(n)?'selected':''}" data-comp="${n}">${n}</button>`).join('');seatChoices.innerHTML=SEATS.map(s=>`<button class="choice ${seat===s?'selected':''}" data-seat="${s}">${s==='カウンター'?'カウンター':'BOX'+s}</button>`).join('')}
 function openSchedule(){schDate.value=today();schType.value='companion';schTime.value='21:00';schTime.readOnly=true;schCustomer.value='';schMainCast.value=names()[0]||'';companions=[];seat='カウンター';renderChoices();scheduleDialog.showModal()}
 function renderSchedules(){const a=db.schedules.filter(x=>x.date===today()).sort((a,b)=>a.time.localeCompare(b.time));scheduleList.innerHTML=a.length?a.map(x=>`<div class="row"><div class="rowTitle">${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.mainCast}／同行:${x.companions.join('・')||'なし'}／席:${x.seat==='カウンター'?'カウンター':'BOX'+x.seat}</div></div>`).join(''):'<div class="card">本日の予定はありません</div>'}
