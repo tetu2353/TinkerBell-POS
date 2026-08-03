@@ -108,7 +108,19 @@ dialog{border:0;padding:0;background:#f9f6ef;color:var(--ink);border-radius:19px
  </div>
 </section>
 
-<section id="schedules" class="hidden"><button class="btn ghost" data-view="home">← ホーム</button><div class="sectionHead"><h2>今日の予定</h2><button class="btn gold" id="addScheduleBtn">＋予定登録</button></div><div id="scheduleList" class="list"></div></section>
+<section id="schedules" class="hidden">
+  <button class="btn ghost" data-view="home">← ホーム</button>
+  <div class="sectionHead"><h2>同伴・来店予定</h2><button class="btn gold" id="addScheduleBtn">＋予定登録</button></div>
+  <div class="card">
+    <div class="tabs" style="margin-bottom:10px">
+      <button class="tab active" data-schedule-tab="today">今日</button>
+      <button class="tab" data-schedule-tab="upcoming">今後の予定</button>
+      <button class="tab" data-schedule-tab="date">日付指定</button>
+    </div>
+    <label id="scheduleDateWrap" class="hidden"><span>表示する日付</span><input id="scheduleViewDate" type="date"></label>
+  </div>
+  <div id="scheduleList" class="list"></div>
+</section>
 <section id="customers" class="hidden"><button class="btn ghost" data-view="home">← ホーム</button><div class="sectionHead"><h2>お客様情報</h2><button class="btn gold" id="addCustomerBtn">＋登録</button></div><div id="customerList" class="list"></div></section>
 <section id="bottles" class="hidden">
       <button class="btn ghost" data-view="home">← ホーム</button>
@@ -143,7 +155,7 @@ dialog{border:0;padding:0;background:#f9f6ef;color:var(--ink);border-radius:19px
 'use strict';
 const KEY='tinkerbell_v9',DEFAULT=[{id:'1',name:'あい',role:'cast'},{id:'2',name:'れな',role:'cast'},{id:'3',name:'みく',role:'cast'}],SEATS=['カウンター','1','2','3','4','5'];
 const today=()=>new Date().toLocaleDateString('sv-SE'),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2);
-let db=load(),companions=[],seat='カウンター',editingStaff=null;
+let db=load(),companions=[],seat='カウンター',editingStaff=null,scheduleMode='today';
 function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x)return x}catch(e){}return{staff:[...DEFAULT],shifts:[],schedules:[],customers:[],bottles:[]}}
 const save=()=>localStorage.setItem(KEY,JSON.stringify(db)),toastEl=document.getElementById('toast');
 function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>toastEl.classList.remove('show'),1500)}
@@ -177,12 +189,21 @@ function renderCheck(){
 function renderChoices(){companionChoices.innerHTML=names().map(n=>`<button class="choice ${companions.includes(n)?'selected':''}" data-comp="${n}">${n}</button>`).join('');seatChoices.innerHTML=SEATS.map(s=>`<button class="choice ${seat===s?'selected':''}" data-seat="${s}">${s==='カウンター'?'カウンター':'BOX'+s}</button>`).join('')}
 function openSchedule(){schDate.value=today();schType.value='companion';schTime.value='21:00';schTime.readOnly=true;schCustomer.value='';schMainCast.value=names()[0]||'';companions=[];seat='カウンター';renderChoices();scheduleDialog.showModal()}
 function renderSchedules(){
- const a=db.schedules.filter(x=>x.date===today()).sort((a,b)=>a.time.localeCompare(b.time));
+ let a=[...db.schedules];
+ if(scheduleMode==='today'){
+  a=a.filter(x=>x.date===today());
+ }else if(scheduleMode==='upcoming'){
+  a=a.filter(x=>x.date>=today());
+ }else if(scheduleMode==='date'){
+  const d=scheduleViewDate.value||today();
+  a=a.filter(x=>x.date===d);
+ }
+ a.sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));
  scheduleList.innerHTML=a.length?a.map(x=>`<button class="row full" data-schedule-detail="${x.id}">
-  <div class="rowTitle">${x.time} ${x.customer}</div>
+  <div class="rowTitle">${x.date}　${x.time}　${x.customer}</div>
   <div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.mainCast}／同行:${x.companions.join('・')||'なし'}／席:${x.seat==='カウンター'?'カウンター':'BOX'+x.seat}</div>
   <div class="meta">タップして備考・詳細を確認</div>
- </button>`).join(''):'<div class="card">本日の予定はありません</div>';
+ </button>`).join(''):'<div class="card">該当する予定はありません</div>';
 }
 function openScheduleDetail(id){
  const x=db.schedules.find(v=>v.id===id);if(!x)return;
@@ -242,7 +263,17 @@ function role(r){return r==='manager'?'管理者':r==='floor'?'黒服・ホー�
 function renderStaff(){staffCount.textContent=db.staff.length;customerCount.textContent=db.customers.length;bottleCount.textContent=db.bottles.reduce((a,b)=>a+(+b.qty||0),0);staffList.innerHTML=db.staff.map(x=>`<div class="row"><div class="staffLine"><div><div class="rowTitle">${x.name}</div><span class="role">${role(x.role)}</span></div><button class="btn ghost" data-edit-staff="${x.id}">編集</button></div></div>`).join('')}
 function openStaff(id=null){editingStaff=id;const x=id?db.staff.find(v=>v.id===id):null;staffTitle.textContent=x?'スタッフ編集':'スタッフ追加';staffName.value=x?.name||'';staffRole.value=x?.role||'cast';deleteStaffBtn.classList.toggle('hidden',!x);staffDialog.showModal()}
 function route(){const r=location.hash.slice(1);if(r==='schedule'){showView('schedules',false);setTimeout(openSchedule,0)}else if(r==='admin'){showView('home',false);setTimeout(()=>adminDialog.showModal(),0)}else showView({shift:'shift',today:'schedules',customers:'customers',bottles:'bottles'}[r]||'home',false)}
-document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if(v)return showView(v.dataset.view);const t=e.target.closest('[data-shift-tab]');if(t){document.querySelectorAll('[data-shift-tab]').forEach(b=>b.classList.remove('active'));t.classList.add('active');shiftRegisterPane.classList.toggle('hidden',t.dataset.shiftTab!=='register');shiftCheckPane.classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderCheck();return}const m=e.target.closest('.markBtn');if(m){m.parentElement.querySelectorAll('.markBtn').forEach(b=>b.classList.remove('selected'));m.classList.add('selected');return}const c=e.target.closest('[data-comp]');if(c){companions=companions.includes(c.dataset.comp)?companions.filter(x=>x!==c.dataset.comp):[...companions,c.dataset.comp];renderChoices();return}const s=e.target.closest('[data-seat]');if(s){seat=s.dataset.seat;renderChoices();return}const sd=e.target.closest('[data-schedule-detail]');if(sd)return openScheduleDetail(sd.dataset.scheduleDetail);const bd=e.target.closest('[data-bottle-detail]');if(bd)return openBottleDetail(bd.dataset.bottleDetail);
+document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if(v)return showView(v.dataset.view);const st=e.target.closest('[data-schedule-tab]');
+ if(st){
+  document.querySelectorAll('[data-schedule-tab]').forEach(b=>b.classList.remove('active'));
+  st.classList.add('active');
+  scheduleMode=st.dataset.scheduleTab;
+  scheduleDateWrap.classList.toggle('hidden',scheduleMode!=='date');
+  if(scheduleMode==='date'&&!scheduleViewDate.value)scheduleViewDate.value=today();
+  renderSchedules();
+  return;
+ }
+ const t=e.target.closest('[data-shift-tab]');if(t){document.querySelectorAll('[data-shift-tab]').forEach(b=>b.classList.remove('active'));t.classList.add('active');shiftRegisterPane.classList.toggle('hidden',t.dataset.shiftTab!=='register');shiftCheckPane.classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderCheck();return}const m=e.target.closest('.markBtn');if(m){m.parentElement.querySelectorAll('.markBtn').forEach(b=>b.classList.remove('selected'));m.classList.add('selected');return}const c=e.target.closest('[data-comp]');if(c){companions=companions.includes(c.dataset.comp)?companions.filter(x=>x!==c.dataset.comp):[...companions,c.dataset.comp];renderChoices();return}const s=e.target.closest('[data-seat]');if(s){seat=s.dataset.seat;renderChoices();return}const sd=e.target.closest('[data-schedule-detail]');if(sd)return openScheduleDetail(sd.dataset.scheduleDetail);const bd=e.target.closest('[data-bottle-detail]');if(bd)return openBottleDetail(bd.dataset.bottleDetail);
  const be=e.target.closest('[data-edit-bottle]');if(be)return openBottleEdit(be.dataset.editBottle);
  const empty=e.target.closest('[data-empty-bottle]');if(empty){
   const x=db.bottles.find(v=>v.id===empty.dataset.emptyBottle);if(!x)return;
@@ -258,7 +289,7 @@ document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if
  }
  const ed=e.target.closest('[data-edit-staff]');if(ed)return openStaff(ed.dataset.editStaff);const cl=e.target.closest('[data-close]');if(cl)document.getElementById(cl.dataset.close).close()});
 saveShiftBtn.onclick=()=>{[...document.querySelectorAll('[data-date]')].forEach(r=>{const b=r.querySelector('.markBtn.selected');if(!b)return;const x=db.shifts.find(v=>v.staff===shiftStaff.value&&v.date===r.dataset.date);if(x)x.mark=b.dataset.mark;else db.shifts.push({id:uid(),staff:shiftStaff.value,date:r.dataset.date,mark:b.dataset.mark})});save();renderCheck();renderHomeSummary();toast('1週間分を登録しました')};
-shiftStaff.onchange=renderRegister;shiftWeekStart.onchange=renderRegister;checkWeekStart.onchange=renderCheck;bottleSearch.oninput=renderBottles;
+shiftStaff.onchange=renderRegister;shiftWeekStart.onchange=renderRegister;checkWeekStart.onchange=renderCheck;bottleSearch.oninput=renderBottles;scheduleViewDate.onchange=renderSchedules;
 openScheduleHome.onclick=openSchedule;addScheduleBtn.onclick=openSchedule;schType.onchange=()=>{if(schType.value==='companion'){schTime.value='21:00';schTime.readOnly=true}else schTime.readOnly=false};
 saveScheduleBtn.onclick=()=>{const o={id:uid(),date:schDate.value,type:schType.value,time:schType.value==='companion'?'21:00':schTime.value,customer:schCustomer.value.trim(),mainCast:schMainCast.value,people:+schPeople.value||1,companions:companions.filter(x=>x!==schMainCast.value),seat,memo:schMemo.value.trim()};if(!o.customer)return toast('お客様名を入力');db.schedules.push(o);save();scheduleDialog.close();renderSchedules();renderHomeSummary();toast('予定を登録しました')};
 addCustomerBtn.onclick=()=>{simpleTitle.textContent='お客様登録';simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1"></label><label><span>担当</span><select id="tmp2">'+names().map(x=>`<option>${x}</option>`).join('')+'</select></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim())return;db.customers.push({id:uid(),name:tmp1.value.trim(),cast:tmp2.value});save();simpleDialog.close();renderCustomers()}};
