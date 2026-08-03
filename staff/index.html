@@ -3,365 +3,138 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#050505">
-<title>Tinker Bell</title>
-
+<title>Tinker Bell Staff</title>
 <style>
-:root{
- --bg:#050505;--panel:#111;--gold:#d8aa43;--gold2:#f5dc91;--cream:#f7f1e8;
- --ink:#171717;--muted:#afa596;--red:#8a162e;--purple:#32123e;--teal:#063b37;
- --brown:#3a2409;--navy:#081d42;--line:#6f5221;
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
- margin:0;color:#fff;
- background:
- radial-gradient(circle at 15% 0%,rgba(96,49,9,.22),transparent 30%),
- radial-gradient(circle at 90% 10%,rgba(110,77,14,.16),transparent 26%),
- #050505;
- font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;
-}
-button,input,select,textarea{font:inherit}
-button{cursor:pointer}
-.hidden{display:none!important}
-header{
- position:sticky;top:0;z-index:20;
- background:rgba(5,5,5,.97);backdrop-filter:blur(12px);
- border-bottom:1px solid rgba(216,170,67,.45);
- padding:12px 15px;
-}
-.header-inner{max-width:1050px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.brand-wrap{display:flex;align-items:center;gap:11px}
-.brand-mark{
- width:44px;height:44px;border:1px solid var(--gold);border-radius:50%;
- display:grid;place-items:center;color:var(--gold2);font-size:21px;
- box-shadow:0 0 20px rgba(216,170,67,.15),inset 0 0 16px rgba(216,170,67,.08)
-}
-.brand{font-family:Georgia,serif;color:var(--gold2);font-size:31px;font-style:italic;letter-spacing:.02em;text-shadow:0 0 20px rgba(245,220,145,.2)}
-.jp{font-size:11px;color:var(--gold);letter-spacing:.18em}
-.greeting{font-size:12px;color:#ddd;text-align:right}
-main{max-width:1050px;margin:auto;padding:15px 14px 96px}
-.ornate{
- position:relative;border:1px solid var(--gold);border-radius:20px;
- background:linear-gradient(145deg,#171717,#080808);
- box-shadow:0 14px 34px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.04);
- overflow:hidden;
-}
-.ornate:before,.ornate:after{
- content:"✦";position:absolute;color:rgba(245,220,145,.6);font-size:14px
-}
-.ornate:before{top:8px;left:10px}.ornate:after{right:10px;bottom:8px}
-.intro{padding:18px;margin-bottom:12px;display:flex;align-items:center;gap:14px}
-.intro-emblem{
- width:58px;height:58px;border-radius:50%;display:grid;place-items:center;
- background:linear-gradient(145deg,#f7dc8f,#a36b16);color:#111;font-size:27px;
- box-shadow:0 0 22px rgba(216,170,67,.25)
-}
-.intro-title{font-size:21px;color:var(--gold2);font-weight:900}
-.meta{color:#c5bbad;font-size:12px;line-height:1.6;margin-top:5px}
-.menu{
- display:grid;grid-template-columns:repeat(10,1fr);gap:10px;
-}
-.tile{
- position:relative;min-height:180px;border:1px solid var(--gold);border-radius:18px;
- color:#fff;padding:18px 14px;text-align:center;overflow:hidden;
- display:flex;flex-direction:column;align-items:center;justify-content:center;
- box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 12px 24px rgba(0,0,0,.26);
- transition:transform .15s ease,border-color .15s ease;
-}
-.tile:active{transform:scale(.985);border-color:var(--gold2)}
-.tile:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.08),transparent 46%);pointer-events:none}
-.tile .ico{font-size:48px;display:block;margin-bottom:13px;filter:sepia(1) saturate(.85) brightness(1.45)}
-.tile b{display:block;color:var(--gold2);font-size:21px;line-height:1.25}
-.tile small{display:block;color:#eee;font-size:12px;line-height:1.55;margin-top:9px}
-.tile-purple{background:linear-gradient(145deg,#43134d,#130b19)}
-.tile-purple2{background:linear-gradient(145deg,#33204e,#100a18)}
-.tile-teal{background:linear-gradient(145deg,#07564d,#071615)}
-.tile-brown{background:linear-gradient(145deg,#49300e,#140d05)}
-.tile-navy{background:linear-gradient(145deg,#0c3266,#070e1c)}
-.tile-red{background:linear-gradient(145deg,#651228,#17070c)}
-.span2{grid-column:span 2}.span3{grid-column:span 3}.span5{grid-column:span 5}
-.lower-grid{display:grid;grid-template-columns:1.2fr 2.4fr .9fr;gap:10px;margin-top:10px}
-.compact{min-height:160px}
-.compact .ico{font-size:43px}
-.admin-small{
- min-height:160px;border:1px solid var(--gold);border-radius:18px;
- background:linear-gradient(145deg,#161616,#070707);color:#fff;padding:16px;
- display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
-}
-.admin-small .lock{font-size:39px;margin-bottom:8px}
-.admin-small b{font-size:18px;color:var(--gold2)}
-.admin-small small{font-size:11px;color:#ddd;line-height:1.5;margin:6px 0 11px}
-.today-fixed{padding:16px;text-align:center;display:flex;flex-direction:column;justify-content:center}
-.today-fixed h3{color:var(--gold2);margin:0 0 10px;font-size:20px}
-.today-fixed p{color:#ddd;font-size:12px;margin:0 0 14px}
-.request-panel{
- margin-top:11px;padding:14px 17px;display:grid;grid-template-columns:1.2fr .6fr 1fr;gap:14px;align-items:center;
- background:linear-gradient(90deg,#1d0d24,#080808,#1a0b1f);
-}
-.request-panel h3{margin:0 0 7px;color:var(--gold2);font-size:17px}
-.request-panel p{margin:3px 0;color:#eee;font-size:11px}
-.heart{font-size:44px;text-align:center;color:#f0b1cf;text-shadow:0 0 22px rgba(240,177,207,.4)}
-.signature{text-align:center;color:#fff}.signature strong{display:block;font-family:Georgia,serif;color:var(--gold2);font-size:24px;font-style:italic}
-.card{background:linear-gradient(145deg,#181818,#0b0b0b);border:1px solid var(--gold);border-radius:18px;padding:15px;margin-bottom:13px}
-.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.section-head h2{margin:0;color:var(--gold2)}
-.hero{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-.metric{background:var(--cream);color:var(--ink);border:0;border-radius:15px;padding:16px;text-align:left}.metric strong{display:block;font-size:38px}.metric.red strong{color:#c3294e}.metric.blue strong{color:#164b83}
-.btn{border:0;border-radius:11px;padding:11px 13px;font-weight:850;background:#2a2a2a;color:#fff}.btn.gold{background:linear-gradient(#f0d079,#b78326);color:#111}.btn.red{background:#8d263b}.btn.ghost{border:1px solid var(--gold);background:transparent;color:var(--gold2)}
-.tabs{display:flex;gap:7px;margin:12px 0}.tabs button{flex:1;border:1px solid #5f4922;background:#151515;color:#ddd;border-radius:10px;padding:10px}.tabs button.active{background:var(--gold);color:#111;font-weight:900}
-.list{display:grid;gap:9px}.row{background:#111;border:1px solid #46371e;border-radius:13px;padding:12px;text-align:left;color:#fff}.row-top{display:flex;justify-content:space-between;gap:10px}.time{font-size:21px;font-weight:900;color:var(--gold2)}.name{font-size:18px;font-weight:900}.tag{border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900}.tag.comp{background:#5d1726;color:#ffc0cc}.tag.visit{background:#11375d;color:#b9d8ff}
-label{display:block;margin-bottom:10px}label span{display:block;font-size:12px;color:#d9c38c;font-weight:800;margin-bottom:5px}input,select,textarea{width:100%;border:1px solid #6a5325;border-radius:11px;background:var(--cream);color:#111;padding:12px}textarea{min-height:80px}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}.choice-wrap{display:flex;gap:7px;flex-wrap:wrap}.choice{border:1px solid #6a5325;background:#161616;color:#ddd;border-radius:999px;padding:9px 11px}.choice.selected{background:var(--gold);color:#111;font-weight:900}
-.actions{display:flex;gap:8px;margin-top:12px}.actions .btn{flex:1}.empty{text-align:center;color:#8f877c;padding:24px}
-dialog{border:0;padding:0;background:#0b0b0b;color:#fff;border-radius:18px;width:min(680px,95vw);max-height:92vh;overflow:auto}dialog::backdrop{background:rgba(0,0,0,.75)}.modal{padding:16px}.modal-head{display:flex;justify-content:space-between;align-items:center}.modal-head h2{margin:0;color:var(--gold2)}.x{width:38px;height:38px;border-radius:50%;border:0;background:#222;color:#fff;font-size:20px}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#fff;color:#111;padding:11px 16px;border-radius:999px;opacity:0;transition:.2s;z-index:99}.toast.show{opacity:1}
-@media(max-width:760px){
- .header-inner{align-items:flex-start}.brand{font-size:27px}.greeting{font-size:10px}
- .menu{grid-template-columns:repeat(2,1fr)}
- .span2,.span3,.span5{grid-column:span 1}
- .tile{min-height:150px;padding:14px 10px}.tile .ico{font-size:39px}.tile b{font-size:17px}
- .lower-grid{grid-template-columns:1fr 1fr}
- .today-fixed{grid-column:1/-1;order:-1}
- .request-panel{grid-template-columns:1fr}.heart{display:none}
-}
+:root{--bg:#050505;--panel:#111;--gold:#d8aa43;--gold2:#f5dc91;--cream:#f7f1e8;--muted:#b8ae9e;--red:#d64d68;--blue:#1b4f89}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1a130b,#050505 35%);color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+header{position:sticky;top:0;z-index:10;background:rgba(5,5,5,.96);border-bottom:1px solid #3a2b13;padding:14px 16px}
+.brand{font:italic 32px Georgia,serif;color:var(--gold2)}.sub{font-size:11px;color:var(--gold)}
+main{max-width:900px;margin:auto;padding:14px 14px 90px}
+.card{background:linear-gradient(145deg,#181818,#090909);border:1px solid var(--gold);border-radius:18px;padding:15px;margin-bottom:13px}
+.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.tile{min-height:135px;border:1px solid var(--gold);border-radius:18px;background:linear-gradient(145deg,#26112d,#0b0b0b);color:#fff;padding:16px;text-align:center}.tile .ico{font-size:38px;display:block;margin-bottom:10px}.tile b{display:block;color:var(--gold2);font-size:18px}.tile small{display:block;color:#ddd;margin-top:6px;font-size:12px}
+.btn{border:0;border-radius:10px;padding:10px 13px;font-weight:800;background:#292929;color:#fff}.btn.gold{background:linear-gradient(#f0d079,#b78326);color:#111}.btn.ghost{border:1px solid var(--gold);background:transparent;color:var(--gold2)}.btn.red{background:#8d263b}.full{width:100%}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:10px 0}.section-head h2{margin:0;color:var(--gold2)}
+label{display:block;margin-bottom:10px}label span{display:block;color:#d9c38c;font-size:12px;font-weight:800;margin-bottom:5px}input,select,textarea{width:100%;padding:11px;border-radius:10px;border:1px solid #6a5325;background:var(--cream);color:#111}
+.week-grid{display:grid;grid-template-columns:repeat(7,minmax(112px,1fr));gap:8px;overflow-x:auto;padding-bottom:5px}
+.week-day{min-width:112px;border:1px solid #4d3a1b;border-radius:14px;background:#111;padding:10px;text-align:center}.week-day .date{font-weight:900;color:var(--gold2)}.week-day .dow{font-size:11px;color:#aaa;margin:4px 0 8px}
+.mark-group{display:flex;gap:5px;justify-content:center}.mark-btn{width:34px;height:34px;border-radius:50%;border:1px solid #6a5325;background:#1a1a1a;color:#ddd;font-weight:900}.mark-btn.selected{background:var(--gold);color:#111}
+.week-table-wrap{overflow-x:auto}.week-table{min-width:760px;display:grid;grid-template-columns:130px repeat(7,1fr);border:1px solid #4d3a1b;border-radius:14px;overflow:hidden}.cell{padding:10px;text-align:center;border-right:1px solid #392d18;border-bottom:1px solid #392d18;background:#101010}.cell.head{background:#1a1409;color:var(--gold2);font-weight:900}.cell.name{text-align:left;font-weight:900}.mark{font-size:24px;font-weight:900}.o{color:#65d78a}.tri{color:#f2c94c}.x{color:#ff7070}.none{color:#666}
+.list{display:grid;gap:9px}.row{background:#111;border:1px solid #46371e;border-radius:13px;padding:12px;color:#fff;text-align:left}.row .title{font-size:18px;font-weight:900}.meta{color:#c2b8aa;font-size:12px;line-height:1.6;margin-top:5px}
+dialog{border:0;padding:0;background:#0b0b0b;color:#fff;border-radius:18px;width:min(680px,95vw);max-height:92vh;overflow:auto}dialog::backdrop{background:rgba(0,0,0,.75)}.modal{padding:16px}.modal-head{display:flex;justify-content:space-between;align-items:center}.modal-head h2{margin:0;color:var(--gold2)}.close{border:0;border-radius:50%;width:38px;height:38px;background:#222;color:#fff}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.span2{grid-column:1/-1}.choices{display:flex;flex-wrap:wrap;gap:7px}.choice{border:1px solid #6a5325;background:#161616;color:#ddd;border-radius:999px;padding:8px 11px}.choice.selected{background:var(--gold);color:#111}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#fff;color:#111;padding:10px 15px;border-radius:999px;opacity:0;transition:.2s}.toast.show{opacity:1}
+@media(min-width:700px){.menu{grid-template-columns:repeat(4,1fr)}}@media(max-width:760px){.week-grid{grid-template-columns:repeat(7,112px)}}
 </style>
-
 </head>
 <body>
-<header><div class="header-inner">
-      <div class="brand-wrap"><div class="brand-mark">✦</div><div><div class="brand">Tinker Bell</div><div class="jp">ティンカーベル</div></div></div>
-      <div class="greeting">必要な情報を、すぐに確認・操作できます</div>
-    </div></header>
+<header><div class="brand">Tinker Bell</div><div class="sub">ティンカーベル</div></header>
 <main>
 <section id="home">
- <div class="ornate intro">
-  <div class="intro-emblem">✦</div>
-  <div><div class="intro-title">スタッフメニュー</div><div class="meta">固定メニューです。各ボタンを押すと最新情報の画面が開きます。</div></div>
- </div>
-
+ <div class="card"><div style="font-size:20px;font-weight:900;color:var(--gold2)">スタッフメニュー</div><div class="meta">必要な項目をタップしてください</div></div>
  <div class="menu">
-  <button class="tile tile-purple span2" data-view="shift-register"><span class="ico">🗓️</span><b>シフト登録</b><small>自分のシフトを登録・編集します</small></button>
-  <button class="tile tile-purple2 span2" data-view="shift-check"><span class="ico">📅</span><b>シフト確認</b><small>登録済みシフトを確認します</small></button>
-  <button class="tile tile-teal span2" id="openScheduleBtn"><span class="ico">🥂</span><b>同伴・来店予定を登録</b><small>同伴・来店予定を入力します</small></button>
-  <button class="tile tile-brown span2" data-view="customers"><span class="ico">👤</span><b>お客様情報</b><small>登録・検索・編集ができます</small></button>
-  <button class="tile tile-navy span2" data-view="bottles"><span class="ico">🍾</span><b>ボトル確認</b><small>キープ状況を確認・編集します</small></button>
- </div>
-
- <div class="lower-grid">
-  <button class="tile tile-red compact" data-view="notices"><span class="ico">📣</span><b>お知らせ</b><small>最新のお知らせを確認します</small></button>
-
-  <button class="ornate today-fixed" data-view="today">
-   <h3>今日の同伴・来店予定</h3>
-   <p>押すと本日の件数と予定一覧を表示します</p>
-   <span class="btn gold">詳細を見る　›</span>
-  </button>
-
-  <button class="admin-small" id="adminBtn">
-   <span class="lock">🔒</span><b>管理者専用</b>
-   <small>店内状況・売上状況・各種管理</small>
-   <span class="btn ghost">ログイン</span>
-  </button>
- </div>
-
- <div class="ornate request-panel">
-  <div><h3>ティンカーベルからのお願い</h3><p>✓ 無断欠勤・遅刻は絶対にしないでください</p><p>✓ お客様情報やお店の情報は口外厳禁です</p><p>✓ みんなで楽しく働ける環境を作りましょう</p></div>
-  <div class="heart">♥</div>
-  <div class="signature">今日も一日よろしくお願いします！<strong>Tinker Bell</strong></div>
+  <button class="tile" data-view="shift-register"><span class="ico">🗓️</span><b>シフト登録</b><small>〇・△・×で1週間登録</small></button>
+  <button class="tile" data-view="shift-check"><span class="ico">📅</span><b>シフト確認</b><small>全員分を1週間表示</small></button>
+  <button class="tile" id="addScheduleHome"><span class="ico">🥂</span><b>同伴・来店予定を登録</b><small>予定を入力</small></button>
+  <button class="tile" data-view="schedules"><span class="ico">📋</span><b>同伴・来店予定</b><small>日程一覧を確認</small></button>
+  <button class="tile" data-view="customers"><span class="ico">👤</span><b>お客様情報</b><small>登録・検索・編集</small></button>
+  <button class="tile" data-view="bottles"><span class="ico">🍾</span><b>ボトル確認</b><small>キープ状況を管理</small></button>
+  <button class="tile" data-view="notices"><span class="ico">📣</span><b>お知らせ</b><small>最新情報を確認</small></button>
+  <button class="tile" id="adminBtn"><span class="ico">🔒</span><b>管理者専用</b><small>店内状況・売上状況</small></button>
  </div>
 </section>
-
-<section id="today" class="hidden">
- <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="section-head" style="margin-top:12px"><h2>今日の同伴・来店予定</h2><button class="btn gold" id="addFromToday">＋追加</button></div>
- <div class="hero" style="margin:12px 0">
-  <div class="metric red"><small>本日の同伴</small><strong id="detailCompCount">0</strong>件</div>
-  <div class="metric blue"><small>本日の来店予定</small><strong id="detailVisitCount">0</strong>件</div>
- </div>
- <div class="tabs"><button class="active" data-tab="all">すべて</button><button data-tab="companion">同伴</button><button data-tab="visit">来店予定</button></div>
- <div id="todayList" class="list"></div>
-</section>
-
 
 <section id="shift-register" class="hidden">
  <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="card" style="margin-top:12px"><h2>シフト登録</h2>
-  <div class="form-grid"><label><span>名前</span><select id="shiftStaff"></select></label><label><span>日付</span><input id="shiftDate" type="date"></label><label><span>出勤可否</span><select id="shiftStatus"><option value="available">出勤可能</option><option value="unavailable">出勤不可</option></select></label><label><span>出勤予定</span><input id="shiftStart" type="time" value="21:00"></label><label><span>退勤予定</span><input id="shiftEnd" type="time" value="01:00"></label><label class="full"><span>備考</span><textarea id="shiftMemo"></textarea></label></div>
-  <button class="btn gold" id="saveShiftBtn" style="width:100%">シフトを登録</button>
+ <div class="card" style="margin-top:12px">
+  <div class="section-head"><h2>シフト登録</h2></div>
+  <label><span>名前</span><select id="shiftStaff"></select></label>
+  <label><span>週の開始日</span><input id="shiftRegisterWeekStart" type="date"></label>
+  <div class="meta" style="margin-bottom:10px">〇＝出勤可　△＝相談　×＝出勤不可</div>
+  <div id="shiftWeekRegister" class="week-grid"></div>
+  <button class="btn gold full" id="saveShiftWeekBtn" style="margin-top:12px">1週間分を登録</button>
  </div>
 </section>
+
 <section id="shift-check" class="hidden">
  <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="card" style="margin-top:12px"><h2>シフト確認</h2><label><span>表示する名前</span><select id="shiftFilterStaff"></select></label><label><span>月</span><input id="shiftMonth" type="month"></label></div>
- <div id="shiftList" class="list"></div>
+ <div class="section-head"><h2>シフト確認</h2></div>
+ <div class="card"><div class="form-grid"><label><span>表示</span><select id="shiftFilterStaff"></select></label><label><span>週の開始日</span><input id="shiftWeekStart" type="date"></label></div></div>
+ <div id="shiftWeekView" class="week-table-wrap"></div>
 </section>
+
+<section id="schedules" class="hidden">
+ <button class="btn ghost" data-view="home">← ホーム</button>
+ <div class="section-head"><h2>同伴・来店予定</h2><button class="btn gold" id="addScheduleBtn">＋追加</button></div>
+ <div id="scheduleList" class="list"></div>
+</section>
+
 <section id="customers" class="hidden">
  <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="section-head" style="margin-top:12px"><h2>お客様情報</h2><button class="btn gold" id="addCustomerBtn">＋登録</button></div>
- <input id="customerSearch" placeholder="名前・担当・電話番号で検索" style="margin-bottom:10px">
+ <div class="section-head"><h2>お客様情報</h2><button class="btn gold" id="addCustomerBtn">＋登録</button></div>
  <div id="customerList" class="list"></div>
 </section>
+
 <section id="bottles" class="hidden">
  <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="section-head" style="margin-top:12px"><h2>ボトル確認</h2><button class="btn gold" id="addBottleBtn">＋登録</button></div>
- <input id="bottleSearch" placeholder="お客様名・ボトル名・担当で検索" style="margin-bottom:10px">
+ <div class="section-head"><h2>ボトル確認</h2><button class="btn gold" id="addBottleBtn">＋登録</button></div>
  <div id="bottleList" class="list"></div>
 </section>
+
 <section id="notices" class="hidden">
  <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="section-head" style="margin-top:12px"><h2>お知らせ</h2><button class="btn gold" id="addNoticeBtn">＋追加</button></div>
+ <div class="section-head"><h2>お知らせ</h2><button class="btn gold" id="addNoticeBtn">＋追加</button></div>
  <div id="noticeList" class="list"></div>
 </section>
 </main>
 
-<dialog id="scheduleDialog">
-<div class="modal">
- <div class="modal-head"><h2 id="scheduleTitle">同伴・来店予定を登録</h2><button class="x" data-close="scheduleDialog">×</button></div>
- <div class="form-grid">
-  <label><span>日付</span><input id="schDate" type="date"></label>
-  <label><span>種別</span><select id="schType"><option value="companion">同伴</option><option value="visit">来店予定</option></select></label>
-  <label><span>時間</span><input id="schTime" type="time"></label>
-  <label><span>お客様名</span><input id="schCustomer" placeholder="例：田中様"></label>
-  <label><span>担当（代表）</span><select id="schMainCast"></select></label>
-  <label><span>人数</span><input id="schPeople" type="number" min="1" value="1"></label>
-  <div class="full"><span style="display:block;color:#d9c38c;font-size:12px;font-weight:800;margin-bottom:6px">同行キャスト（複数選択）</span><div id="companionCastChoices" class="choice-wrap"></div></div>
-  <div class="full"><span style="display:block;color:#d9c38c;font-size:12px;font-weight:800;margin-bottom:6px">席</span><div id="seatChoices" class="choice-wrap"></div></div>
-  <label class="full"><span>備考</span><textarea id="schMemo" placeholder="シャンパン予約、ボトルあり等"></textarea></label>
- </div>
- <div class="actions"><button class="btn red hidden" id="deleteScheduleBtn">削除</button><button class="btn gold" id="saveScheduleBtn">登録する</button></div>
-</div>
-</dialog>
+<dialog id="scheduleDialog"><div class="modal"><div class="modal-head"><h2>同伴・来店予定を登録</h2><button class="close" data-close="scheduleDialog">×</button></div>
+<div class="form-grid">
+<label><span>日付</span><input id="schDate" type="date"></label>
+<label><span>種別</span><select id="schType"><option value="companion">同伴</option><option value="visit">来店予定</option></select></label>
+<label><span>時間</span><input id="schTime" type="time"></label>
+<label><span>お客様名</span><input id="schCustomer"></label>
+<label><span>担当</span><select id="schMainCast"></select></label>
+<label><span>人数</span><input id="schPeople" type="number" min="1" value="1"></label>
+<div class="span2"><span style="display:block;color:#d9c38c;font-size:12px;font-weight:800;margin-bottom:5px">同行キャスト</span><div id="companionChoices" class="choices"></div></div>
+<div class="span2"><span style="display:block;color:#d9c38c;font-size:12px;font-weight:800;margin-bottom:5px">席</span><div id="seatChoices" class="choices"></div></div>
+<label class="span2"><span>備考</span><textarea id="schMemo"></textarea></label>
+</div><button class="btn gold full" id="saveScheduleBtn">登録</button></div></dialog>
 
-<dialog id="detailDialog">
-<div class="modal">
- <div class="modal-head"><h2>予定の詳細</h2><button class="x" data-close="detailDialog">×</button></div>
- <div id="detailBody"></div>
- <div class="actions"><button class="btn ghost" id="editScheduleBtn">編集する</button></div>
-</div>
-</dialog>
-
-
-<dialog id="customerDialog"><div class="modal"><div class="modal-head"><h2 id="customerTitle">お客様登録</h2><button class="x" data-close="customerDialog">×</button></div><label><span>お客様名</span><input id="custName"></label><label><span>担当</span><select id="custCast"></select></label><label><span>電話番号</span><input id="custPhone"></label><label><span>誕生日</span><input id="custBirthday" type="date"></label><label><span>メモ</span><textarea id="custMemo"></textarea></label><div class="actions"><button class="btn red hidden" id="deleteCustomerBtn">削除</button><button class="btn gold" id="saveCustomerBtn">保存</button></div></div></dialog>
-<dialog id="bottleDialog"><div class="modal"><div class="modal-head"><h2 id="bottleTitle">ボトル登録</h2><button class="x" data-close="bottleDialog">×</button></div><label><span>お客様名</span><input id="bottleCustomer"></label><label><span>担当</span><select id="bottleCast"></select></label><label><span>ボトル名</span><input id="bottleName"></label><label><span>本数</span><input id="bottleQty" type="number" min="1" value="1"></label><label><span>残量</span><select id="bottleLevel"><option>満量</option><option>3/4</option><option>半分</option><option>1/4</option><option>残りわずか</option></select></label><label><span>キープ期限</span><input id="bottleExpiry" type="date"></label><label><span>メモ</span><textarea id="bottleMemo"></textarea></label><div class="actions"><button class="btn red hidden" id="deleteBottleBtn">削除</button><button class="btn gold" id="saveBottleBtn">保存</button></div></div></dialog>
-<dialog id="noticeDialog"><div class="modal"><div class="modal-head"><h2 id="noticeTitle">お知らせ追加</h2><button class="x" data-close="noticeDialog">×</button></div><label><span>タイトル</span><input id="noticeName"></label><label><span>本文</span><textarea id="noticeBody"></textarea></label><div class="actions"><button class="btn red hidden" id="deleteNoticeBtn">削除</button><button class="btn gold" id="saveNoticeBtn">保存</button></div></div></dialog>
-<dialog id="adminDialog">
-<div class="modal">
- <div class="modal-head"><h2>管理者ログイン</h2><button class="x" data-close="adminDialog">×</button></div>
- <label><span>パスコード</span><input id="adminPass" type="password" inputmode="numeric"></label>
- <button class="btn gold" id="adminLoginBtn" style="width:100%">ログイン</button>
- <div id="adminPanel" class="hidden" style="margin-top:14px"><div class="card"><h3>管理者専用</h3><p>店内状況</p><p>売上状況</p><p>各種管理</p></div></div>
-</div>
-</dialog>
-
+<dialog id="simpleDialog"><div class="modal"><div class="modal-head"><h2 id="simpleTitle"></h2><button class="close" data-close="simpleDialog">×</button></div><div id="simpleBody"></div></div></dialog>
+<dialog id="adminDialog"><div class="modal"><div class="modal-head"><h2>管理者ログイン</h2><button class="close" data-close="adminDialog">×</button></div><label><span>パスコード</span><input id="adminPass" type="password"></label><button class="btn gold full" id="adminLogin">ログイン</button></div></dialog>
 <div id="toast" class="toast"></div>
 
 <script>
 'use strict';
-const KEY='tinkerbell_staff_complete_v2';
-const CASTS=['あい','れな','みく','ゆい','るな','りか'];
-const SEATS=['カウンター','1','2','3','4','5'];
-const todayISO=()=>new Date().toLocaleDateString('sv-SE');
-const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2);
-const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-let db=load(),currentTab='all',editingId=null,detailId=null,selectedCompanions=[],selectedSeat='カウンター',editCustomerId=null,editBottleId=null,editNoticeId=null;
-
-function load(){try{const v=JSON.parse(localStorage.getItem(KEY));if(v)return Object.assign({schedules:[],shifts:[],customers:[],bottles:[],notices:[]},v)}catch(e){}return{schedules:[],shifts:[],customers:[],bottles:[],notices:[{id:uid(),title:'ティンカーベルからのお願い',body:'無断欠勤・遅刻は絶対にしないでください。お客様情報やお店の情報は口外厳禁です。みんなで楽しく働ける環境を作りましょう。',createdAt:new Date().toISOString()}]}}
-function save(){localStorage.setItem(KEY,JSON.stringify(db))}
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),1600)}
-function showView(id){document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');if(id==='today'){updateCounts();renderToday();}if(id==='shift-check')renderShifts();if(id==='customers')renderCustomers();if(id==='bottles')renderBottles();if(id==='notices')renderNotices();window.scrollTo({top:0,behavior:'smooth'})}
-function todaySchedules(){return db.schedules.filter(x=>x.date===todayISO()).sort((a,b)=>a.time.localeCompare(b.time))}
-function updateCounts(){
- const a=todaySchedules();
- const comp=document.getElementById('detailCompCount');
- const visit=document.getElementById('detailVisitCount');
- if(comp)comp.textContent=a.filter(x=>x.type==='companion').length;
- if(visit)visit.textContent=a.filter(x=>x.type==='visit').length;
-}
-function renderToday(){
- document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===currentTab));
- const arr=todaySchedules().filter(x=>currentTab==='all'||x.type===currentTab);
- document.getElementById('todayList').innerHTML=arr.length?arr.map(x=>`<button class="row" data-detail="${x.id}">
-  <div class="row-top"><div><div class="time">${esc(x.time)}</div><div class="name">${esc(x.customer)}</div></div><span class="tag ${x.type==='companion'?'comp':'visit'}">${x.type==='companion'?'同伴':'来店予定'}</span></div>
-  <div class="meta">担当：${esc(x.mainCast)}／同行：${x.companions.length?x.companions.map(esc).join('・'):'なし'}／席：${esc(x.seat==='カウンター'?'カウンター':'BOX'+x.seat)}／${x.people}名</div>${x.memo?`<div class="meta">備考：${esc(x.memo)}</div>`:''}
- </button>`).join(''):'<div class="empty">本日の予定はありません</div>';
-}
-function renderChoices(){
- document.getElementById('schMainCast').innerHTML=CASTS.map(c=>`<option>${esc(c)}</option>`).join('');
- document.getElementById('companionCastChoices').innerHTML=CASTS.map(c=>`<button type="button" class="choice ${selectedCompanions.includes(c)?'selected':''}" data-companion="${esc(c)}">${esc(c)}</button>`).join('');
- document.getElementById('seatChoices').innerHTML=SEATS.map(s=>`<button type="button" class="choice ${selectedSeat===s?'selected':''}" data-seat-choice="${esc(s)}">${s==='カウンター'?'カウンター':'BOX'+s}</button>`).join('');
-}
-function openSchedule(id=null){
- editingId=id;const x=id?db.schedules.find(s=>s.id===id):null;
- document.getElementById('scheduleTitle').textContent=x?'予定を編集':'同伴・来店予定を登録';
- document.getElementById('schDate').value=x?.date||todayISO();
- document.getElementById('schType').value=x?.type||'companion';
- document.getElementById('schTime').value=x?.time||'21:00';
- document.getElementById('schCustomer').value=x?.customer||'';
- selectedCompanions=[...(x?.companions||[])];selectedSeat=x?.seat||'カウンター';
- renderChoices();
- document.getElementById('schMainCast').value=x?.mainCast||CASTS[0];
- document.getElementById('schPeople').value=x?.people||1;
- document.getElementById('schMemo').value=x?.memo||'';
- document.getElementById('deleteScheduleBtn').classList.toggle('hidden',!x);
- document.getElementById('saveScheduleBtn').textContent=x?'更新する':'登録する';
- syncTimeRule();document.getElementById('scheduleDialog').showModal();
-}
-function syncTimeRule(){const type=document.getElementById('schType').value,time=document.getElementById('schTime');if(type==='companion'){time.value='21:00';time.readOnly=true}else time.readOnly=false}
-function saveSchedule(){
- const date=document.getElementById('schDate').value,type=document.getElementById('schType').value,time=type==='companion'?'21:00':document.getElementById('schTime').value,customer=document.getElementById('schCustomer').value.trim(),mainCast=document.getElementById('schMainCast').value,people=Math.max(1,Number(document.getElementById('schPeople').value)||1),memo=document.getElementById('schMemo').value.trim();
- if(!date||!time||!customer)return toast('日付・時間・お客様名を入力してください');
- const obj={id:editingId||uid(),date,type,time,customer,mainCast,companions:selectedCompanions.filter(c=>c!==mainCast),people,seat:selectedSeat,memo};
- db.schedules=editingId?db.schedules.map(x=>x.id===editingId?obj:x):[...db.schedules,obj];
- save();document.getElementById('scheduleDialog').close();
-document.getElementById('saveShiftBtn').onclick=()=>{const status=shiftStatus.value,obj={id:uid(),staff:shiftStaff.value,date:shiftDate.value,status,start:status==='available'?shiftStart.value:'',end:status==='available'?shiftEnd.value:'',memo:shiftMemo.value.trim()};if(!obj.date)return toast('日付を選んでください');db.shifts.push(obj);save();toast('シフトを登録しました')};
-shiftFilterStaff.onchange=renderShifts;shiftMonth.onchange=renderShifts;
-addCustomerBtn.onclick=()=>openCustomer();customerSearch.oninput=renderCustomers;saveCustomerBtn.onclick=()=>{const o={id:editCustomerId||uid(),name:custName.value.trim(),cast:custCast.value,phone:custPhone.value.trim(),birthday:custBirthday.value,memo:custMemo.value.trim()};if(!o.name)return toast('お客様名を入力してください');db.customers=editCustomerId?db.customers.map(x=>x.id===editCustomerId?o:x):[...db.customers,o];save();customerDialog.close();renderCustomers();toast('保存しました')};deleteCustomerBtn.onclick=()=>{if(editCustomerId&&confirm('削除しますか？')){db.customers=db.customers.filter(x=>x.id!==editCustomerId);save();customerDialog.close();renderCustomers()}};
-addBottleBtn.onclick=()=>openBottle();bottleSearch.oninput=renderBottles;saveBottleBtn.onclick=()=>{const o={id:editBottleId||uid(),customer:bottleCustomer.value.trim(),cast:bottleCast.value,name:bottleName.value.trim(),qty:Math.max(1,Number(bottleQty.value)||1),level:bottleLevel.value,expiry:bottleExpiry.value,memo:bottleMemo.value.trim()};if(!o.customer||!o.name)return toast('お客様名とボトル名を入力してください');db.bottles=editBottleId?db.bottles.map(x=>x.id===editBottleId?o:x):[...db.bottles,o];save();bottleDialog.close();renderBottles();toast('保存しました')};deleteBottleBtn.onclick=()=>{if(editBottleId&&confirm('削除しますか？')){db.bottles=db.bottles.filter(x=>x.id!==editBottleId);save();bottleDialog.close();renderBottles()}};
-addNoticeBtn.onclick=()=>openNotice();saveNoticeBtn.onclick=()=>{const o={id:editNoticeId||uid(),title:noticeName.value.trim(),body:noticeBody.value.trim(),createdAt:new Date().toISOString()};if(!o.title||!o.body)return toast('タイトルと本文を入力してください');db.notices=editNoticeId?db.notices.map(x=>x.id===editNoticeId?o:x):[...db.notices,o];save();noticeDialog.close();renderNotices();toast('保存しました')};deleteNoticeBtn.onclick=()=>{if(editNoticeId&&confirm('削除しますか？')){db.notices=db.notices.filter(x=>x.id!==editNoticeId);save();noticeDialog.close();renderNotices()}};
-populateExtraSelects();shiftDate.value=todayISO();shiftMonth.value=todayISO().slice(0,7);
-updateCounts();renderToday();toast(editingId?'予定を更新しました':'予定を登録しました');
-}
-function openDetail(id){detailId=id;const x=db.schedules.find(s=>s.id===id);if(!x)return;document.getElementById('detailBody').innerHTML=`<div class="card"><p><b>日付：</b>${esc(x.date)}</p><p><b>時間：</b>${esc(x.time)}</p><p><b>種別：</b>${x.type==='companion'?'同伴':'来店予定'}</p><p><b>お客様：</b>${esc(x.customer)}</p><p><b>担当：</b>${esc(x.mainCast)}</p><p><b>同行：</b>${x.companions.length?x.companions.map(esc).join('・'):'なし'}</p><p><b>人数：</b>${x.people}名</p><p><b>席：</b>${esc(x.seat==='カウンター'?'カウンター':'BOX'+x.seat)}</p><p><b>備考：</b>${esc(x.memo||'なし')}</p></div>`;document.getElementById('detailDialog').showModal()}
-
-function populateExtraSelects(){const o=CASTS.map(c=>`<option>${esc(c)}</option>`).join('');['shiftStaff','custCast','bottleCast'].forEach(id=>document.getElementById(id).innerHTML=o);document.getElementById('shiftFilterStaff').innerHTML='<option value="all">全員</option>'+o}
-function renderShifts(){const st=document.getElementById('shiftFilterStaff').value||'all',m=document.getElementById('shiftMonth').value;const a=db.shifts.filter(x=>(st==='all'||x.staff===st)&&(!m||x.date.startsWith(m))).sort((a,b)=>a.date.localeCompare(b.date));document.getElementById('shiftList').innerHTML=a.length?a.map(x=>`<div class="row"><div class="row-top"><div><div class="name">${esc(x.staff)}</div><div class="time">${esc(x.date)}</div></div><span class="tag visit">${x.status==='available'?'出勤可能':'出勤不可'}</span></div><div class="meta">${x.status==='available'?esc(x.start)+'〜'+esc(x.end):'時間なし'}${x.memo?'／'+esc(x.memo):''}</div></div>`).join(''):'<div class="empty">シフトはありません</div>'}
-function openCustomer(id=null){editCustomerId=id;const x=id?db.customers.find(v=>v.id===id):null;document.getElementById('customerTitle').textContent=x?'お客様情報を編集':'お客様登録';custName.value=x?.name||'';custCast.value=x?.cast||CASTS[0];custPhone.value=x?.phone||'';custBirthday.value=x?.birthday||'';custMemo.value=x?.memo||'';deleteCustomerBtn.classList.toggle('hidden',!x);customerDialog.showModal()}
-function renderCustomers(){const q=customerSearch.value.trim().toLowerCase(),a=db.customers.filter(x=>[x.name,x.cast,x.phone,x.memo].join(' ').toLowerCase().includes(q));customerList.innerHTML=a.length?a.map(x=>`<button class="row" data-edit-customer="${x.id}"><div class="name">${esc(x.name)}</div><div class="meta">担当：${esc(x.cast)}／電話：${esc(x.phone||'未登録')}／誕生日：${esc(x.birthday||'未登録')}</div>${x.memo?`<div class="meta">${esc(x.memo)}</div>`:''}</button>`).join(''):'<div class="empty">お客様情報はありません</div>'}
-function openBottle(id=null){editBottleId=id;const x=id?db.bottles.find(v=>v.id===id):null;bottleTitle.textContent=x?'ボトル情報を編集':'ボトル登録';bottleCustomer.value=x?.customer||'';bottleCast.value=x?.cast||CASTS[0];bottleName.value=x?.name||'';bottleQty.value=x?.qty||1;bottleLevel.value=x?.level||'満量';bottleExpiry.value=x?.expiry||'';bottleMemo.value=x?.memo||'';deleteBottleBtn.classList.toggle('hidden',!x);bottleDialog.showModal()}
-function renderBottles(){const q=bottleSearch.value.trim().toLowerCase(),a=db.bottles.filter(x=>[x.customer,x.cast,x.name,x.memo].join(' ').toLowerCase().includes(q));bottleList.innerHTML=a.length?a.map(x=>`<button class="row" data-edit-bottle="${x.id}"><div class="name">${esc(x.customer)}／${esc(x.name)} × ${x.qty}</div><div class="meta">担当：${esc(x.cast)}／残量：${esc(x.level)}／期限：${esc(x.expiry||'未設定')}</div>${x.memo?`<div class="meta">${esc(x.memo)}</div>`:''}</button>`).join(''):'<div class="empty">ボトル情報はありません</div>'}
-function openNotice(id=null){editNoticeId=id;const x=id?db.notices.find(v=>v.id===id):null;noticeTitle.textContent=x?'お知らせ編集':'お知らせ追加';noticeName.value=x?.title||'';noticeBody.value=x?.body||'';deleteNoticeBtn.classList.toggle('hidden',!x);noticeDialog.showModal()}
-function renderNotices(){const a=db.notices.slice().sort((a,b)=>b.createdAt.localeCompare(a.createdAt));noticeList.innerHTML=a.length?a.map(x=>`<button class="row" data-edit-notice="${x.id}"><div class="name">${esc(x.title)}</div><div class="meta">${esc(x.body)}</div></button>`).join(''):'<div class="empty">お知らせはありません</div>'}
-document.addEventListener('click',e=>{
- const v=e.target.closest('[data-view]');if(v)return showView(v.dataset.view);
- const t=e.target.closest('[data-tab]');if(t){currentTab=t.dataset.tab;renderToday();return}
- const c=e.target.closest('[data-companion]');if(c){const n=c.dataset.companion;selectedCompanions=selectedCompanions.includes(n)?selectedCompanions.filter(x=>x!==n):[...selectedCompanions,n];renderChoices();return}
- const s=e.target.closest('[data-seat-choice]');if(s){selectedSeat=s.dataset.seatChoice;renderChoices();return}
- const d=e.target.closest('[data-detail]');if(d)return openDetail(d.dataset.detail); const ec=e.target.closest('[data-edit-customer]');if(ec)return openCustomer(ec.dataset.editCustomer); const eb=e.target.closest('[data-edit-bottle]');if(eb)return openBottle(eb.dataset.editBottle); const en=e.target.closest('[data-edit-notice]');if(en)return openNotice(en.dataset.editNotice);
- const x=e.target.closest('[data-close]');if(x)return document.getElementById(x.dataset.close).close();
-});
-document.getElementById('openScheduleBtn').onclick=()=>openSchedule();
-document.getElementById('addFromToday').onclick=()=>openSchedule();
-document.getElementById('schType').onchange=syncTimeRule;
-document.getElementById('saveScheduleBtn').onclick=saveSchedule;
-document.getElementById('deleteScheduleBtn').onclick=()=>{if(!editingId||!confirm('この予定を削除しますか？'))return;db.schedules=db.schedules.filter(x=>x.id!==editingId);save();document.getElementById('scheduleDialog').close();
-document.getElementById('saveShiftBtn').onclick=()=>{const status=shiftStatus.value,obj={id:uid(),staff:shiftStaff.value,date:shiftDate.value,status,start:status==='available'?shiftStart.value:'',end:status==='available'?shiftEnd.value:'',memo:shiftMemo.value.trim()};if(!obj.date)return toast('日付を選んでください');db.shifts.push(obj);save();toast('シフトを登録しました')};
-shiftFilterStaff.onchange=renderShifts;shiftMonth.onchange=renderShifts;
-addCustomerBtn.onclick=()=>openCustomer();customerSearch.oninput=renderCustomers;saveCustomerBtn.onclick=()=>{const o={id:editCustomerId||uid(),name:custName.value.trim(),cast:custCast.value,phone:custPhone.value.trim(),birthday:custBirthday.value,memo:custMemo.value.trim()};if(!o.name)return toast('お客様名を入力してください');db.customers=editCustomerId?db.customers.map(x=>x.id===editCustomerId?o:x):[...db.customers,o];save();customerDialog.close();renderCustomers();toast('保存しました')};deleteCustomerBtn.onclick=()=>{if(editCustomerId&&confirm('削除しますか？')){db.customers=db.customers.filter(x=>x.id!==editCustomerId);save();customerDialog.close();renderCustomers()}};
-addBottleBtn.onclick=()=>openBottle();bottleSearch.oninput=renderBottles;saveBottleBtn.onclick=()=>{const o={id:editBottleId||uid(),customer:bottleCustomer.value.trim(),cast:bottleCast.value,name:bottleName.value.trim(),qty:Math.max(1,Number(bottleQty.value)||1),level:bottleLevel.value,expiry:bottleExpiry.value,memo:bottleMemo.value.trim()};if(!o.customer||!o.name)return toast('お客様名とボトル名を入力してください');db.bottles=editBottleId?db.bottles.map(x=>x.id===editBottleId?o:x):[...db.bottles,o];save();bottleDialog.close();renderBottles();toast('保存しました')};deleteBottleBtn.onclick=()=>{if(editBottleId&&confirm('削除しますか？')){db.bottles=db.bottles.filter(x=>x.id!==editBottleId);save();bottleDialog.close();renderBottles()}};
-addNoticeBtn.onclick=()=>openNotice();saveNoticeBtn.onclick=()=>{const o={id:editNoticeId||uid(),title:noticeName.value.trim(),body:noticeBody.value.trim(),createdAt:new Date().toISOString()};if(!o.title||!o.body)return toast('タイトルと本文を入力してください');db.notices=editNoticeId?db.notices.map(x=>x.id===editNoticeId?o:x):[...db.notices,o];save();noticeDialog.close();renderNotices();toast('保存しました')};deleteNoticeBtn.onclick=()=>{if(editNoticeId&&confirm('削除しますか？')){db.notices=db.notices.filter(x=>x.id!==editNoticeId);save();noticeDialog.close();renderNotices()}};
-populateExtraSelects();shiftDate.value=todayISO();shiftMonth.value=todayISO().slice(0,7);
-updateCounts();renderToday();toast('削除しました')};
-document.getElementById('editScheduleBtn').onclick=()=>{document.getElementById('detailDialog').close();openSchedule(detailId)};
-document.getElementById('adminBtn').onclick=()=>{document.getElementById('adminPass').value='';document.getElementById('adminPanel').classList.add('hidden');document.getElementById('adminDialog').showModal()};
-document.getElementById('adminLoginBtn').onclick=()=>{if(document.getElementById('adminPass').value==='1234'){document.getElementById('adminPanel').classList.remove('hidden');toast('ログインしました')}else toast('パスコードが違います')};
-
-document.getElementById('saveShiftBtn').onclick=()=>{const status=shiftStatus.value,obj={id:uid(),staff:shiftStaff.value,date:shiftDate.value,status,start:status==='available'?shiftStart.value:'',end:status==='available'?shiftEnd.value:'',memo:shiftMemo.value.trim()};if(!obj.date)return toast('日付を選んでください');db.shifts.push(obj);save();toast('シフトを登録しました')};
-shiftFilterStaff.onchange=renderShifts;shiftMonth.onchange=renderShifts;
-addCustomerBtn.onclick=()=>openCustomer();customerSearch.oninput=renderCustomers;saveCustomerBtn.onclick=()=>{const o={id:editCustomerId||uid(),name:custName.value.trim(),cast:custCast.value,phone:custPhone.value.trim(),birthday:custBirthday.value,memo:custMemo.value.trim()};if(!o.name)return toast('お客様名を入力してください');db.customers=editCustomerId?db.customers.map(x=>x.id===editCustomerId?o:x):[...db.customers,o];save();customerDialog.close();renderCustomers();toast('保存しました')};deleteCustomerBtn.onclick=()=>{if(editCustomerId&&confirm('削除しますか？')){db.customers=db.customers.filter(x=>x.id!==editCustomerId);save();customerDialog.close();renderCustomers()}};
-addBottleBtn.onclick=()=>openBottle();bottleSearch.oninput=renderBottles;saveBottleBtn.onclick=()=>{const o={id:editBottleId||uid(),customer:bottleCustomer.value.trim(),cast:bottleCast.value,name:bottleName.value.trim(),qty:Math.max(1,Number(bottleQty.value)||1),level:bottleLevel.value,expiry:bottleExpiry.value,memo:bottleMemo.value.trim()};if(!o.customer||!o.name)return toast('お客様名とボトル名を入力してください');db.bottles=editBottleId?db.bottles.map(x=>x.id===editBottleId?o:x):[...db.bottles,o];save();bottleDialog.close();renderBottles();toast('保存しました')};deleteBottleBtn.onclick=()=>{if(editBottleId&&confirm('削除しますか？')){db.bottles=db.bottles.filter(x=>x.id!==editBottleId);save();bottleDialog.close();renderBottles()}};
-addNoticeBtn.onclick=()=>openNotice();saveNoticeBtn.onclick=()=>{const o={id:editNoticeId||uid(),title:noticeName.value.trim(),body:noticeBody.value.trim(),createdAt:new Date().toISOString()};if(!o.title||!o.body)return toast('タイトルと本文を入力してください');db.notices=editNoticeId?db.notices.map(x=>x.id===editNoticeId?o:x):[...db.notices,o];save();noticeDialog.close();renderNotices();toast('保存しました')};deleteNoticeBtn.onclick=()=>{if(editNoticeId&&confirm('削除しますか？')){db.notices=db.notices.filter(x=>x.id!==editNoticeId);save();noticeDialog.close();renderNotices()}};
-populateExtraSelects();shiftDate.value=todayISO();shiftMonth.value=todayISO().slice(0,7);
-updateCounts();renderToday();
+const KEY='tinkerbell_clean_v6',CASTS=['あい','れな','みく','ゆい','るな','りか'],SEATS=['カウンター','1','2','3','4','5'];
+const todayISO=()=>new Date().toLocaleDateString('sv-SE'),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2);
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||{shifts:[],schedules:[],customers:[],bottles:[],notices:[]},selectedCompanions=[],selectedSeat='カウンター';
+const save=()=>localStorage.setItem(KEY,JSON.stringify(db)),toast=m=>{toastEl.textContent=m;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),1500)};
+function showView(id){document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');if(id==='shift-check')renderShiftCheck();if(id==='schedules')renderSchedules();if(id==='customers')renderCustomers();if(id==='bottles')renderBottles();if(id==='notices')renderNotices()}
+function startOfWeek(s){const d=s?new Date(s+'T00:00:00'):new Date(),o=(d.getDay()+6)%7;d.setDate(d.getDate()-o);return d}
+function fmt(d){return d.toLocaleDateString('sv-SE')}
+function weekDates(s){const a=startOfWeek(s);return Array.from({length:7},(_,i)=>{const d=new Date(a);d.setDate(a.getDate()+i);return d})}
+function renderShiftRegister(){const staff=shiftStaff.value,dates=weekDates(shiftRegisterWeekStart.value);shiftWeekRegister.innerHTML=dates.map(d=>{const date=fmt(d),x=db.shifts.find(v=>v.staff===staff&&v.date===date),m=x?.mark||'';return `<div class="week-day" data-date="${date}"><div class="date">${d.getMonth()+1}/${d.getDate()}</div><div class="dow">${'日月火水木金土'[d.getDay()]}</div><div class="mark-group"><button class="mark-btn ${m==='o'?'selected':''}" data-mark="o">〇</button><button class="mark-btn ${m==='tri'?'selected':''}" data-mark="tri">△</button><button class="mark-btn ${m==='x'?'selected':''}" data-mark="x">×</button></div></div>`}).join('')}
+function renderShiftCheck(){const dates=weekDates(shiftWeekStart.value),selected=shiftFilterStaff.value,staffs=selected==='all'?CASTS:[selected];const head=`<div class="cell head">名前</div>`+dates.map(d=>`<div class="cell head">${d.getMonth()+1}/${d.getDate()}<br>${'日月火水木金土'[d.getDay()]}</div>`).join('');const rows=staffs.map(st=>`<div class="cell name">${st}</div>`+dates.map(d=>{const m=db.shifts.find(x=>x.staff===st&&x.date===fmt(d))?.mark||'';return `<div class="cell"><span class="mark ${m||'none'}">${m==='o'?'〇':m==='tri'?'△':m==='x'?'×':'－'}</span></div>`}).join('')).join('');shiftWeekView.innerHTML=`<div class="week-table">${head}${rows}</div>`}
+function openSchedule(){schDate.value=todayISO();schType.value='companion';schTime.value='21:00';schTime.readOnly=true;schCustomer.value='';schMainCast.value=CASTS[0];schPeople.value=1;schMemo.value='';selectedCompanions=[];selectedSeat='カウンター';renderChoices();scheduleDialog.showModal()}
+function renderChoices(){companionChoices.innerHTML=CASTS.map(c=>`<button type="button" class="choice ${selectedCompanions.includes(c)?'selected':''}" data-comp="${c}">${c}</button>`).join('');seatChoices.innerHTML=SEATS.map(s=>`<button type="button" class="choice ${selectedSeat===s?'selected':''}" data-seat="${s}">${s==='カウンター'?'カウンター':'BOX'+s}</button>`).join('')}
+function renderSchedules(){scheduleList.innerHTML=db.schedules.length?db.schedules.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(x=>`<div class="row"><div class="title">${x.date} ${x.time}　${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.mainCast}／同行:${x.companions.join('・')||'なし'}／席:${x.seat==='カウンター'?'カウンター':'BOX'+x.seat}</div></div>`).join(''):'<div class="card">予定はありません</div>'}
+function renderCustomers(){customerList.innerHTML=db.customers.length?db.customers.map(x=>`<div class="row"><div class="title">${x.name}</div><div class="meta">担当:${x.cast}</div></div>`).join(''):'<div class="card">お客様情報はありません</div>'}
+function renderBottles(){bottleList.innerHTML=db.bottles.length?db.bottles.map(x=>`<div class="row"><div class="title">${x.customer}／${x.name}</div><div class="meta">担当:${x.cast}／本数:${x.qty}</div></div>`).join(''):'<div class="card">ボトル情報はありません</div>'}
+function renderNotices(){noticeList.innerHTML=db.notices.length?db.notices.map(x=>`<div class="row"><div class="title">${x.title}</div><div class="meta">${x.body}</div></div>`).join(''):'<div class="card">お知らせはありません</div>'}
+document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if(v)return showView(v.dataset.view);const m=e.target.closest('.mark-btn');if(m){m.parentElement.querySelectorAll('.mark-btn').forEach(b=>b.classList.remove('selected'));m.classList.add('selected');return}const c=e.target.closest('[data-comp]');if(c){selectedCompanions=selectedCompanions.includes(c.dataset.comp)?selectedCompanions.filter(x=>x!==c.dataset.comp):[...selectedCompanions,c.dataset.comp];renderChoices();return}const s=e.target.closest('[data-seat]');if(s){selectedSeat=s.dataset.seat;renderChoices();return}const cl=e.target.closest('[data-close]');if(cl)document.getElementById(cl.dataset.close).close()});
+saveShiftWeekBtn.onclick=()=>{[...document.querySelectorAll('[data-date]')].forEach(card=>{const sel=card.querySelector('.mark-btn.selected');if(!sel)return;const ex=db.shifts.find(x=>x.staff===shiftStaff.value&&x.date===card.dataset.date);if(ex)ex.mark=sel.dataset.mark;else db.shifts.push({id:uid(),staff:shiftStaff.value,date:card.dataset.date,mark:sel.dataset.mark})});save();toast('1週間分を登録しました');renderShiftCheck()};
+shiftStaff.onchange=renderShiftRegister;shiftRegisterWeekStart.onchange=renderShiftRegister;shiftFilterStaff.onchange=renderShiftCheck;shiftWeekStart.onchange=renderShiftCheck;
+addScheduleHome.onclick=openSchedule;addScheduleBtn.onclick=openSchedule;schType.onchange=()=>{if(schType.value==='companion'){schTime.value='21:00';schTime.readOnly=true}else schTime.readOnly=false};
+saveScheduleBtn.onclick=()=>{const o={id:uid(),date:schDate.value,type:schType.value,time:schType.value==='companion'?'21:00':schTime.value,customer:schCustomer.value.trim(),mainCast:schMainCast.value,people:+schPeople.value||1,companions:selectedCompanions.filter(x=>x!==schMainCast.value),seat:selectedSeat,memo:schMemo.value.trim()};if(!o.customer)return toast('お客様名を入力');db.schedules.push(o);save();scheduleDialog.close();toast('予定を登録しました')};
+addCustomerBtn.onclick=()=>{simpleTitle.textContent='お客様登録';simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1"></label><label><span>担当</span><select id="tmp2">'+CASTS.map(x=>`<option>${x}</option>`).join('')+'</select></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim())return;db.customers.push({id:uid(),name:tmp1.value.trim(),cast:tmp2.value});save();simpleDialog.close();renderCustomers()}};
+addBottleBtn.onclick=()=>{simpleTitle.textContent='ボトル登録';simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1"></label><label><span>ボトル名</span><input id="tmp2"></label><label><span>担当</span><select id="tmp3">'+CASTS.map(x=>`<option>${x}</option>`).join('')+'</select></label><label><span>本数</span><input id="tmp4" type="number" value="1"></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim()||!tmp2.value.trim())return;db.bottles.push({id:uid(),customer:tmp1.value.trim(),name:tmp2.value.trim(),cast:tmp3.value,qty:+tmp4.value||1});save();simpleDialog.close();renderBottles()}};
+addNoticeBtn.onclick=()=>{simpleTitle.textContent='お知らせ追加';simpleBody.innerHTML='<label><span>タイトル</span><input id="tmp1"></label><label><span>本文</span><textarea id="tmp2"></textarea></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim())return;db.notices.push({id:uid(),title:tmp1.value.trim(),body:tmp2.value.trim()});save();simpleDialog.close();renderNotices()}};
+adminBtn.onclick=()=>adminDialog.showModal();adminLogin.onclick=()=>{if(adminPass.value==='1234')toast('ログインしました');else toast('パスコードが違います')};
+const options=CASTS.map(x=>`<option>${x}</option>`).join('');shiftStaff.innerHTML=options;shiftFilterStaff.innerHTML='<option value="all">全員</option>'+options;schMainCast.innerHTML=options;
+const monday=fmt(startOfWeek(todayISO()));shiftRegisterWeekStart.value=monday;shiftWeekStart.value=monday;renderShiftRegister();renderShiftCheck();
+const toastEl=document.getElementById('toast');
 </script>
 </body>
 </html>
