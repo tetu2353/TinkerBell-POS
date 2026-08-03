@@ -1,11 +1,10 @@
 <!doctype html>
-<!-- Tinker Bell Staff v20: birthday month/day -->
 <html lang="ja">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#faf7ef">
-<title>Tinker Bell Staff v20</title>
+<title>Tinker Bell Staff v9</title>
 <style>
 :root{--ivory:#faf7ef;--white:#fff;--gold:#c89b45;--gold2:#eed493;--ink:#332c23;--muted:#766e62;--line:#e3d7bd;--green:#2c9a60;--yellow:#d5a600;--red:#d04c5b;--shadow:0 10px 28px rgba(100,76,30,.11)}
 *{box-sizing:border-box}body{margin:0;color:var(--ink);background:radial-gradient(circle at 10% 0,rgba(237,212,154,.25),transparent 28%),linear-gradient(155deg,#fff,#f8f3e9 58%,#edf7f3);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
@@ -182,14 +181,7 @@ function load(){
  try{
   const x=JSON.parse(localStorage.getItem(KEY));
   if(x){
-   x.customers=(x.customers||[]).map(c=>{
-    if(c.birthday&&!c.birthMonth&&!c.birthDay){
-     c.birthMonth=Number(c.birthday.slice(5,7))||'';
-     c.birthDay=Number(c.birthday.slice(8,10))||'';
-     delete c.birthday;
-    }
-    return c;
-   });
+   x.bottles=(x.bottles||[]).map(b=>{const c={...b};delete c.shelf;return c});
    return x;
   }
  }catch(e){}
@@ -256,29 +248,12 @@ function openScheduleDetail(id){
  </div>`;
  scheduleDetailDialog.showModal();
 }
-function birthdayLabel(x){
- return x.birthMonth&&x.birthDay?`${x.birthMonth}月${x.birthDay}日`:'未登録';
-}
-function birthdayStatus(x){
- if(!x.birthMonth||!x.birthDay)return '';
- const now=new Date();
- const year=now.getFullYear();
- let target=new Date(year,Number(x.birthMonth)-1,Number(x.birthDay));
- if(target<new Date(year,now.getMonth(),now.getDate()))target=new Date(year+1,Number(x.birthMonth)-1,Number(x.birthDay));
- const todayOnly=new Date(year,now.getMonth(),now.getDate());
- const diff=Math.round((target-todayOnly)/86400000);
- if(diff===0)return '🎉 本日お誕生日';
- if(diff>0&&diff<=7)return `🎂 あと${diff}日`;
- return '';
-}
 function renderCustomers(){
  customerList.innerHTML=db.customers.length?db.customers.map(x=>{
   const bottleCount=db.bottles.filter(b=>b.customerId===x.id||(!b.customerId&&b.customer===x.name)).length;
-  const status=birthdayStatus(x);
   return `<button class="row full" data-customer-detail="${x.id}">
    <div class="rowTitle">${x.name}</div>
-   <div class="meta">誕生日:${birthdayLabel(x)}／担当:${x.cast||'担当不明'}</div>
-   ${status?`<div class="meta"><b>${status}</b></div>`:''}
+   <div class="meta">誕生日:${x.birthday||'未登録'}／担当:${x.cast||'担当不明'}</div>
    <div class="meta">キープボトル:${bottleCount}本</div>
   </button>`;
  }).join(''):'<div class="card">お客様情報はありません</div>';
@@ -286,11 +261,9 @@ function renderCustomers(){
 function openCustomerDetail(id){
  const x=db.customers.find(v=>v.id===id);if(!x)return;
  const bottles=db.bottles.filter(b=>b.customerId===x.id||(!b.customerId&&b.customer===x.name));
- const status=birthdayStatus(x);
  customerDetailBody.innerHTML=`<div class="card">
   <div class="rowTitle">${x.name}</div>
-  <div class="meta"><b>誕生日：</b>${birthdayLabel(x)}</div>
-  ${status?`<div class="meta"><b>${status}</b></div>`:''}
+  <div class="meta"><b>誕生日：</b>${x.birthday||'未登録'}</div>
   <div class="meta"><b>担当：</b>${x.cast||'担当不明'}</div>
   <div class="meta"><b>備考：</b>${x.memo&&x.memo.trim()?x.memo:'なし'}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
@@ -309,26 +282,19 @@ function openCustomerDetail(id){
  </div>`;
  customerDetailDialog.showModal();
 }
-
 function openCustomerEdit(id=null){
  const x=id?db.customers.find(v=>v.id===id):null;
- const oldBirthday=x?.birthday||'';
- const oldMonth=x?.birthMonth||Number(oldBirthday.slice(5,7))||'';
- const oldDay=x?.birthDay||Number(oldBirthday.slice(8,10))||'';
  simpleTitle.textContent=x?'お客様編集':'お客様登録';
- simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1" value="'+(x?.name||'')+'"></label><div class="form2"><label><span>誕生月</span><select id="tmpBirthMonth"><option value="">未登録</option>'+Array.from({length:12},(_,i)=>`<option value="${i+1}" ${Number(oldMonth)===i+1?'selected':''}>${i+1}月</option>`).join('')+'</select></label><label><span>誕生日</span><select id="tmpBirthDay"><option value="">未登録</option>'+Array.from({length:31},(_,i)=>`<option value="${i+1}" ${Number(oldDay)===i+1?'selected':''}>${i+1}日</option>`).join('')+'</select></label></div><label><span>担当</span><select id="tmp2"><option>担当不明</option>'+names().map(n=>`<option ${n===x?.cast?'selected':''}>${n}</option>`).join('')+'</select></label><label><span>備考</span><textarea id="tmpMemo">'+(x?.memo||'')+'</textarea></label><button class="btn gold full" id="tmpSave">保存</button>';
+ simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1" value="'+(x?.name||'')+'"></label><label><span>誕生日</span><input id="tmpBirthday" type="date" value="'+(x?.birthday||'')+'"></label><label><span>担当</span><select id="tmp2"><option>担当不明</option>'+names().map(n=>`<option ${n===x?.cast?'selected':''}>${n}</option>`).join('')+'</select></label><label><span>備考</span><textarea id="tmpMemo">'+(x?.memo||'')+'</textarea></label><button class="btn gold full" id="tmpSave">保存</button>';
  if(customerDetailDialog.open)customerDetailDialog.close();
  simpleDialog.showModal();
  tmpSave.onclick=()=>{
   const name=tmp1.value.trim();if(!name)return toast('お客様名を入力');
-  const birthMonth=tmpBirthMonth.value?Number(tmpBirthMonth.value):'';
-  const birthDay=tmpBirthDay.value?Number(tmpBirthDay.value):'';
-  if((birthMonth&&!birthDay)||(!birthMonth&&birthDay))return toast('誕生日は月と日を両方選択');
   if(x){
-   const old=x.name;x.name=name;x.birthMonth=birthMonth;x.birthDay=birthDay;delete x.birthday;x.cast=tmp2.value;x.memo=tmpMemo.value.trim();
+   const old=x.name;x.name=name;x.birthday=tmpBirthday.value;x.cast=tmp2.value;x.memo=tmpMemo.value.trim();
    db.bottles.forEach(b=>{if(b.customerId===x.id||(!b.customerId&&b.customer===old)){b.customerId=x.id;b.customer=name}});
   }else{
-   db.customers.push({id:uid(),name,birthMonth,birthDay,cast:tmp2.value,memo:tmpMemo.value.trim()});
+   db.customers.push({id:uid(),name,birthday:tmpBirthday.value,cast:tmp2.value,memo:tmpMemo.value.trim()});
   }
   save();simpleDialog.close();renderCustomers();renderBirthdayHome();toast('お客様情報を保存しました');
  };
@@ -380,20 +346,54 @@ function deleteCustomer(id,mode){
 }
 
 function renderBirthdayHome(){
- const now=new Date();
- const month=now.getMonth()+1;
- const a=db.customers.filter(x=>Number(x.birthMonth)===month&&x.birthDay)
-  .sort((a,b)=>Number(a.birthDay)-Number(b.birthDay));
- birthdayListHome.innerHTML=a.length?a.map(x=>{
-  const status=birthdayStatus(x);
-  return `<button class="row full" data-customer-detail="${x.id}">
-   <div class="rowTitle">${x.birthMonth}/${x.birthDay}　${x.name}</div>
-   <div class="meta">担当:${x.cast||'担当不明'}</div>
-   ${status?`<div class="meta"><b>${status}</b></div>`:''}
-  </button>`;
- }).join(''):'<div class="meta">今月の誕生日登録はありません</div>';
+ const month=new Date().getMonth()+1;
+ const a=db.customers.filter(x=>x.birthday&&Number(x.birthday.slice(5,7))===month)
+  .sort((a,b)=>a.birthday.slice(5).localeCompare(b.birthday.slice(5)));
+ birthdayListHome.innerHTML=a.length?a.map(x=>`<button class="row full" data-customer-detail="${x.id}">
+  <div class="rowTitle">${Number(x.birthday.slice(8,10))}日　${x.name}</div>
+  <div class="meta">担当:${x.cast||'担当不明'}</div>
+ </button>`).join(''):'<div class="meta">今月の誕生日登録はありません</div>';
 }
-
+function renderBottles(){
+ const q=(bottleSearch?.value||'').trim().toLowerCase();
+ const a=db.bottles.filter(x=>[x.number,x.customer,x.name,x.cast,x.status].join(' ').toLowerCase().includes(q));
+ bottleList.innerHTML=a.length?a.map(x=>`<button class="row full" data-bottle-detail="${x.id}" style="${x.status==='empty'?'opacity:.62':''}">
+  <div class="rowTitle">No.${x.number}　${x.customer}</div>
+  <div class="meta">${x.name}／担当:${x.cast||'担当不明'}／本数:${x.qty}</div>
+  <div class="meta">${x.status==='empty'?'【空ボトル】':'保管中'}</div>
+ </button>`).join(''):'<div class="card">該当するボトル情報はありません</div>';
+}
+function openBottleDetail(id){
+ const x=db.bottles.find(v=>v.id===id);if(!x)return;
+ bottleDetailBody.innerHTML=`<div class="card">
+  <div class="rowTitle">No.${x.number}　${x.customer}</div>
+  <div class="meta"><b>ボトル：</b>${x.name}</div>
+  <div class="meta"><b>担当：</b>${x.cast||'担当不明'}</div>
+  <div class="meta"><b>本数：</b>${x.qty}</div>
+  <div class="meta"><b>状態：</b>${x.status==='empty'?'空ボトル':'保管中'}</div>
+  <div class="meta"><b>空になった日：</b>${x.emptyDate||'－'}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px">
+   <button class="btn ghost" data-edit-bottle="${x.id}">編集</button>
+   <button class="btn" data-empty-bottle="${x.id}">${x.status==='empty'?'保管中へ戻す':'空ボトル'}</button>
+   <button class="btn red" data-delete-bottle="${x.id}">削除</button>
+  </div>
+ </div>`;
+ bottleDetailDialog.showModal();
+}
+function openBottleEdit(id){
+ const x=db.bottles.find(v=>v.id===id);if(!x)return;
+ simpleTitle.textContent='ボトル編集';
+ simpleBody.innerHTML='<label><span>管理番号</span><input id="tmp0" value="'+x.number+'"></label><label><span>お客様</span><select id="tmpCustomer">'+db.customers.map(c=>`<option value="${c.id}" ${c.id===x.customerId||(!x.customerId&&c.name===x.customer)?'selected':''}>${c.name}</option>`).join('')+'</select></label><label><span>ボトル名</span><input id="tmp2" value="'+x.name+'"></label><label><span>担当</span><select id="tmp3"><option>担当不明</option>'+names().map(n=>`<option ${n===x.cast?'selected':''}>${n}</option>`).join('')+'</select></label><label><span>本数</span><input id="tmp4" type="number" min="1" value="'+x.qty+'"></label><button class="btn gold full" id="tmpSave">保存</button>';
+ bottleDetailDialog.close();
+ simpleDialog.showModal();
+ tmpSave.onclick=()=>{
+  const number=tmp0.value.trim(),customerId=tmpCustomer.value,customer=db.customers.find(c=>c.id===customerId)?.name||'',name=tmp2.value.trim();
+  if(!number||!customerId||!name)return toast('管理番号・お客様・ボトル名を入力');
+  if(db.bottles.some(v=>v.id!==x.id&&String(v.number)===number))return toast('同じ管理番号が登録されています');
+  x.number=number;x.customerId=customerId;x.customer=customer;x.name=name;x.cast=tmp3.value;x.qty=+tmp4.value||1;
+  save();simpleDialog.close();renderBottles();renderCustomers();toast('ボトルを更新しました');
+ };
+}
 function renderStaff(){staffCount.textContent=db.staff.length;customerCount.textContent=db.customers.length;bottleCount.textContent=db.bottles.reduce((a,b)=>a+(+b.qty||0),0);staffList.innerHTML=db.staff.map(x=>`<div class="row"><div class="staffLine"><div><div class="rowTitle">${x.name}</div><span class="role">${role(x.role)}</span></div><button class="btn ghost" data-edit-staff="${x.id}">編集</button></div></div>`).join('')}
 function openStaff(id=null){editingStaff=id;const x=id?db.staff.find(v=>v.id===id):null;staffTitle.textContent=x?'スタッフ編集':'スタッフ追加';staffName.value=x?.name||'';staffRole.value=x?.role||'cast';deleteStaffBtn.classList.toggle('hidden',!x);staffDialog.showModal()}
 function route(){const r=location.hash.slice(1);if(r==='schedule'){showView('schedules',false);setTimeout(openSchedule,0)}else if(r==='admin'){showView('home',false);setTimeout(()=>adminDialog.showModal(),0)}else showView({shift:'shift',today:'schedules',customers:'customers',bottles:'bottles'}[r]||'home',false)}
