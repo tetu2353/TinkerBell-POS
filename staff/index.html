@@ -3,332 +3,116 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f7f4ec">
-<title>Tinker Bell Staff</title>
+<meta name="theme-color" content="#faf7ef">
+<title>Tinker Bell Staff v9</title>
 <style>
-:root{
- --ivory:#f8f5ed;--white:#fff;--gold:#c69a43;--gold2:#e7c77d;--ink:#30291f;
- --muted:#776f63;--line:#e2d6bc;--green:#2f9d62;--yellow:#d5a600;--red:#d34c5c;
- --purple:#6a4f7d;--shadow:0 12px 30px rgba(90,67,25,.12);
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
- margin:0;color:var(--ink);
- background:
- radial-gradient(circle at 8% 0%,rgba(230,202,143,.23),transparent 30%),
- linear-gradient(160deg,#fff,#f6f1e7 55%,#eef7f4);
- font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;
-}
-button,input,select,textarea{font:inherit}
-button{cursor:pointer}
-.hidden{display:none!important}
-header{
- position:sticky;top:0;z-index:20;
- background:rgba(255,255,255,.92);backdrop-filter:blur(12px);
- border-bottom:1px solid var(--line);
-}
-.header-inner{max-width:980px;margin:auto;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.brand{font:italic 31px Georgia,serif;color:#a97a26;text-shadow:0 2px 10px rgba(198,154,67,.2)}
-.sub{font-size:10px;letter-spacing:.18em;color:#9a7739}
-.header-note{font-size:11px;color:var(--muted);text-align:right}
-main{max-width:980px;margin:auto;padding:14px 14px 92px}
-.card{
- background:rgba(255,255,255,.91);
- border:1px solid var(--line);border-radius:19px;padding:15px;margin-bottom:13px;
- box-shadow:var(--shadow);
-}
-.hero-card{
- background:linear-gradient(135deg,#fff,#fbf4e4);
- border:1px solid #dcc48f;display:flex;align-items:center;gap:13px;
-}
-.hero-mark{
- width:54px;height:54px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
- background:linear-gradient(145deg,#f5dc93,#b98529);color:#fff;font-size:25px;
- box-shadow:0 8px 20px rgba(185,133,41,.24);
-}
-.hero-title{font-size:20px;font-weight:900;color:#76541d}
-.meta{font-size:12px;color:var(--muted);line-height:1.6;margin-top:4px}
-.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.tile{
- min-height:132px;border:1px solid #dfc991;border-radius:18px;padding:15px;text-align:center;
- background:linear-gradient(145deg,#fff,#fbf5e8);color:var(--ink);
- box-shadow:0 9px 22px rgba(103,77,26,.1);
-}
-.tile:active{transform:scale(.985)}
-.tile .ico{font-size:35px;display:block;margin-bottom:8px}
-.tile b{font-size:17px;color:#79581e;display:block}
-.tile small{display:block;color:var(--muted);font-size:11px;line-height:1.45;margin-top:5px}
-.section-head{display:flex;justify-content:space-between;align-items:center;gap:9px;margin:11px 0}
-.section-head h2{margin:0;color:#76541d;font-size:22px}
-.btn{border:0;border-radius:11px;padding:10px 13px;font-weight:850;background:#eee7da;color:var(--ink)}
-.btn.gold{background:linear-gradient(#efd486,#c08c31);color:#fff}
-.btn.ghost{background:#fff;border:1px solid #d6ba7a;color:#805d1e}
-.btn.red{background:#b84350;color:#fff}
-.btn.full{width:100%}
-label{display:block;margin-bottom:10px}
-label span{display:block;font-size:12px;font-weight:850;color:#806128;margin-bottom:5px}
-input,select,textarea{
- width:100%;padding:11px;border-radius:11px;border:1px solid #d8c7a4;
- background:#fff;color:var(--ink);
-}
-textarea{min-height:78px;resize:vertical}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.span2{grid-column:1/-1}
-.week-grid{
- display:grid;grid-template-columns:repeat(7,minmax(114px,1fr));gap:8px;
- overflow-x:auto;padding-bottom:5px;
-}
-.week-day{
- min-width:114px;background:#fff;border:1px solid #ded0b4;border-radius:15px;padding:10px;text-align:center;
- box-shadow:0 6px 14px rgba(89,65,20,.08);
-}
-.week-day .date{font-weight:900;color:#76541d;font-size:14px}
-.week-day .dow{font-size:11px;color:var(--muted);margin:3px 0 9px}
-.mark-group{display:flex;gap:5px;justify-content:center}
-.mark-btn{
- width:35px;height:35px;border-radius:50%;border:1px solid #d7c29a;
- background:#faf8f2;color:#777;font-weight:900;
-}
-.mark-btn[data-mark="o"].selected{background:var(--green);color:#fff;border-color:var(--green)}
-.mark-btn[data-mark="tri"].selected{background:#e8bc24;color:#fff;border-color:#e8bc24}
-.mark-btn[data-mark="x"].selected{background:var(--red);color:#fff;border-color:var(--red)}
-.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin:6px 0 12px}
-.legend b{font-size:17px}.legend .o{color:var(--green)}.legend .tri{color:var(--yellow)}.legend .x{color:var(--red)}
-.week-table-wrap{overflow-x:auto}
-.week-table{
- min-width:770px;display:grid;grid-template-columns:130px repeat(7,1fr);
- border:1px solid #d9c8a5;border-radius:15px;overflow:hidden;background:#fff;box-shadow:var(--shadow);
-}
-.cell{padding:11px;text-align:center;border-right:1px solid #eee4d1;border-bottom:1px solid #eee4d1;background:#fff}
-.cell.head{background:#f4ead4;color:#76541d;font-weight:900}
-.cell.name{text-align:left;font-weight:900;background:#fffaf0}
-.mark{font-size:25px;font-weight:900}.mark.o{color:var(--green)}.mark.tri{color:var(--yellow)}.mark.x{color:var(--red)}.mark.none{color:#c9c3b9}
-.list{display:grid;gap:9px}
-.row{
- background:#fff;border:1px solid #dfd3ba;border-radius:14px;padding:12px;color:var(--ink);
- box-shadow:0 6px 15px rgba(89,65,20,.07);
-}
-.row button{margin-top:8px}
-.row-title{font-size:17px;font-weight:900;color:#76541d}
-.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.chip{font-size:11px;border-radius:999px;padding:5px 8px;background:#f2e7cf;color:#75551e}
-.choices{display:flex;flex-wrap:wrap;gap:7px}
-.choice{border:1px solid #d6c29b;background:#fff;color:#665c50;border-radius:999px;padding:8px 11px}
-.choice.selected{background:linear-gradient(#efd486,#c08c31);color:#fff}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat{background:#fff;border:1px solid #dfd1b4;border-radius:13px;padding:11px}
-.stat small{display:block;color:var(--muted)}.stat strong{display:block;color:#76541d;font-size:21px;margin-top:3px}
-.admin-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:12px}
-.admin-card{border:1px solid #dfd1b4;background:#fffaf1;border-radius:14px;padding:13px;text-align:left}
-.staff-line{display:flex;justify-content:space-between;gap:10px;align-items:center}
-.role{font-size:10px;padding:4px 7px;border-radius:999px;background:#eee4cf;color:#775a25}
-dialog{
- border:0;padding:0;background:#f9f6ef;color:var(--ink);border-radius:19px;
- width:min(700px,95vw);max-height:92vh;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.3);
-}
-dialog::backdrop{background:rgba(35,28,17,.55)}
-.modal{padding:16px}.modal-head{display:flex;justify-content:space-between;align-items:center}
-.modal-head h2{margin:0;color:#76541d}.close{border:0;border-radius:50%;width:38px;height:38px;background:#eee6d7;color:#5c4d38}
+:root{--ivory:#faf7ef;--white:#fff;--gold:#c89b45;--gold2:#eed493;--ink:#332c23;--muted:#766e62;--line:#e3d7bd;--green:#2c9a60;--yellow:#d5a600;--red:#d04c5b;--shadow:0 10px 28px rgba(100,76,30,.11)}
+*{box-sizing:border-box}body{margin:0;color:var(--ink);background:radial-gradient(circle at 10% 0,rgba(237,212,154,.25),transparent 28%),linear-gradient(155deg,#fff,#f8f3e9 58%,#edf7f3);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.93);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.header{max-width:850px;margin:auto;padding:13px 15px;display:flex;justify-content:space-between;align-items:center}
+.brand{font:italic 31px Georgia,serif;color:#a87925}.sub{font-size:10px;letter-spacing:.16em;color:#99753a}.small{font-size:11px;color:var(--muted)}
+main{max-width:850px;margin:auto;padding:14px 14px 92px}.card{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:19px;padding:15px;margin-bottom:13px;box-shadow:var(--shadow)}
+.hero{display:flex;gap:13px;align-items:center;background:linear-gradient(135deg,#fff,#fbf1dc)}.heroIcon{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#f2d687,#b98327);color:#fff;font-size:26px}.hero b{font-size:20px;color:#76551e}
+.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.tile{min-height:128px;border:1px solid #dfc991;border-radius:18px;padding:15px;text-align:center;background:linear-gradient(145deg,#fff,#fbf5e8);color:var(--ink);box-shadow:0 8px 20px rgba(105,79,28,.09)}.tile .ico{font-size:35px;display:block;margin-bottom:8px}.tile b{display:block;color:#79581e;font-size:17px}.tile small{display:block;color:var(--muted);font-size:11px;line-height:1.45;margin-top:5px}
+.btn{border:0;border-radius:11px;padding:10px 13px;font-weight:850;background:#eee7da;color:var(--ink)}.btn.gold{background:linear-gradient(#efd486,#c08c31);color:#fff}.btn.ghost{background:#fff;border:1px solid #d6ba7a;color:#805d1e}.btn.red{background:#b84350;color:#fff}.full{width:100%}
+.sectionHead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:11px 0}.sectionHead h2{margin:0;color:#76541d;font-size:22px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px}.tab{border:1px solid #d9c69d;border-radius:13px;padding:12px;background:#fff;color:#725725;font-weight:900}.tab.active{background:linear-gradient(#efd486,#c08c31);color:#fff}
+label{display:block;margin-bottom:10px}label span{display:block;font-size:12px;font-weight:850;color:#806128;margin-bottom:5px}input,select,textarea{width:100%;padding:11px;border-radius:11px;border:1px solid #d8c7a4;background:#fff;color:var(--ink)}textarea{min-height:78px}.form2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.span2{grid-column:1/-1}
+.dayList{display:grid;gap:9px}.dayRow{background:#fff;border:1px solid #ded0b4;border-radius:15px;padding:11px;display:grid;grid-template-columns:92px 1fr;gap:9px;align-items:center;box-shadow:0 6px 14px rgba(89,65,20,.07)}.dateBox{text-align:center}.dateBox b{display:block;color:#76541d;font-size:16px}.dateBox small{color:var(--muted)}
+.markGroup{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.markBtn{min-height:46px;border-radius:12px;border:1px solid #d7c29a;background:#faf8f2;color:#777;font-size:22px;font-weight:900}.markBtn.o.selected{background:var(--green);color:#fff}.markBtn.tri.selected{background:#e3b51d;color:#fff}.markBtn.x.selected{background:var(--red);color:#fff}
+.dayCheck{background:#fff;border:1px solid #dfd1b4;border-radius:16px;padding:12px;margin-bottom:10px;box-shadow:var(--shadow)}.dayCheck h3{margin:0 0 9px;color:#76541d}.staffStatus{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 4px;border-top:1px solid #f0e7d7}.staffStatus:first-of-type{border-top:0}.status{font-size:22px;font-weight:900;min-width:38px;text-align:center}.status.o{color:var(--green)}.status.tri{color:var(--yellow)}.status.x{color:var(--red)}.status.none{color:#c5bfb5}
+.list{display:grid;gap:9px}.row{background:#fff;border:1px solid #dfd3ba;border-radius:14px;padding:12px;box-shadow:0 6px 15px rgba(89,65,20,.07)}.rowTitle{font-size:17px;font-weight:900;color:#76541d}.meta{font-size:12px;color:var(--muted);line-height:1.6;margin-top:4px}
+.choices{display:flex;flex-wrap:wrap;gap:7px}.choice{border:1px solid #d6c29b;background:#fff;color:#665c50;border-radius:999px;padding:8px 11px}.choice.selected{background:linear-gradient(#efd486,#c08c31);color:#fff}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#fff;border:1px solid #dfd1b4;border-radius:13px;padding:11px}.stat small{display:block;color:var(--muted)}.stat strong{display:block;color:#76541d;font-size:21px}.staffLine{display:flex;justify-content:space-between;align-items:center;gap:8px}.role{font-size:10px;padding:4px 7px;border-radius:999px;background:#eee4cf;color:#775a25}
+dialog{border:0;padding:0;background:#f9f6ef;color:var(--ink);border-radius:19px;width:min(700px,95vw);max-height:92vh;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.3)}dialog::backdrop{background:rgba(35,28,17,.55)}.modal{padding:16px}.modalHead{display:flex;justify-content:space-between;align-items:center}.modalHead h2{margin:0;color:#76541d}.close{border:0;border-radius:50%;width:38px;height:38px;background:#eee6d7;color:#5c4d38}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#42351f;color:#fff;padding:10px 15px;border-radius:999px;opacity:0;transition:.2s;z-index:99}.toast.show{opacity:1}
-@media(min-width:720px){.menu{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:760px){.week-grid{grid-template-columns:repeat(7,114px)}.header-note{display:none}.admin-grid{grid-template-columns:1fr}}
+@media(min-width:720px){.menu{grid-template-columns:repeat(3,1fr)}}@media(max-width:520px){.dayRow{grid-template-columns:78px 1fr}.form2{grid-template-columns:1fr}.span2{grid-column:auto}}
 </style>
 </head>
 <body>
-<header><div class="header-inner"><div><div class="brand">Tinker Bell</div><div class="sub">ティンカーベル</div></div><div class="header-note">スタッフ専用システム</div></div></header>
+<header><div class="header"><div><div class="brand">Tinker Bell</div><div class="sub">ティンカーベル</div></div><div class="small">スタッフ専用</div></div></header>
 <main>
 <section id="home">
- <div class="card hero-card"><div class="hero-mark">✦</div><div><div class="hero-title">スタッフメニュー</div><div class="meta">白大理石とシャンパンゴールドで全画面を統一しました</div></div></div>
+ <div class="card hero"><div class="heroIcon">✦</div><div><b>スタッフメニュー</b><div class="meta">爽やかなアイボリー×シャンパンゴールドで統一</div></div></div>
  <div class="menu">
-  <button class="tile" data-view="shift-register"><span class="ico">🗓️</span><b>シフト登録・確認</b><small>〇・△・×で1週間登録／全員分を確認</small></button>
-  <button class="tile" data-view="schedules"><span class="ico">📋</span><b>今日の予定</b><small>同伴・来店予定の一覧</small></button>
-  <button class="tile" id="addScheduleHome"><span class="ico">🥂</span><b>予定登録・変更</b><small>同伴・来店予定を登録</small></button>
+  <button class="tile" data-view="shift"><span class="ico">🗓️</span><b>シフト登録・確認</b><small>1画面で登録と確認を切替</small></button>
+  <button class="tile" data-view="schedules"><span class="ico">📋</span><b>今日の予定</b><small>同伴・来店予定を確認</small></button>
+  <button class="tile" id="openScheduleHome"><span class="ico">🥂</span><b>予定登録・変更</b><small>同伴・来店予定を登録</small></button>
   <button class="tile" data-view="customers"><span class="ico">👤</span><b>お客様情報</b><small>登録・検索・編集</small></button>
   <button class="tile" data-view="bottles"><span class="ico">🍾</span><b>ボトル確認</b><small>キープ状況を管理</small></button>
   <button class="tile" id="adminBtn"><span class="ico">🔒</span><b>その他・管理</b><small>スタッフ登録・各種管理</small></button>
  </div>
 </section>
 
-<section id="shift-register" class="hidden">
+<section id="shift" class="hidden">
  <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="section-head"><h2>シフト登録</h2><button class="btn ghost" data-view="shift-check">シフト確認へ</button></div>
- <div class="card">
-  <div class="form-grid"><label><span>名前</span><select id="shiftStaff"></select></label><label><span>週の開始日</span><input id="shiftRegisterWeekStart" type="date"></label></div>
-  <div class="legend"><span><b class="o">〇</b> 出勤可</span><span><b class="tri">△</b> 相談</span><span><b class="x">×</b> 出勤不可</span></div>
-  <div id="shiftWeekRegister" class="week-grid"></div>
-  <button class="btn gold full" id="saveShiftWeekBtn" style="margin-top:12px">1週間分を登録</button>
+ <div class="sectionHead"><h2>シフト</h2></div>
+ <div class="tabs"><button class="tab active" data-shift-tab="register">シフト登録</button><button class="tab" data-shift-tab="check">シフト確認</button></div>
+
+ <div id="shiftRegisterPane">
+  <div class="card">
+   <div class="form2"><label><span>自分の名前</span><select id="shiftStaff"></select></label><label><span>週の開始日</span><input id="shiftWeekStart" type="date"></label></div>
+   <div class="meta" style="margin-bottom:10px">〇＝出勤可　△＝相談　×＝出勤不可</div>
+   <div id="shiftDays" class="dayList"></div>
+   <button id="saveShiftBtn" class="btn gold full" style="margin-top:12px">1週間分を登録</button>
+  </div>
+ </div>
+
+ <div id="shiftCheckPane" class="hidden">
+  <div class="card"><label><span>週の開始日</span><input id="checkWeekStart" type="date"></label></div>
+  <div id="shiftCheckList"></div>
  </div>
 </section>
 
-<section id="shift-check" class="hidden">
- <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="section-head"><h2>シフト確認</h2><button class="btn ghost" data-view="shift-register">登録へ戻る</button></div>
- <div class="card"><div class="form-grid"><label><span>表示</span><select id="shiftFilterStaff"></select></label><label><span>週の開始日</span><input id="shiftWeekStart" type="date"></label></div></div>
- <div id="shiftWeekView" class="week-table-wrap"></div>
-</section>
-
-<section id="schedules" class="hidden">
- <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="section-head"><h2>同伴・来店予定</h2><button class="btn gold" id="addScheduleBtn">＋予定登録</button></div>
- <div id="scheduleList" class="list"></div>
-</section>
-
-<section id="customers" class="hidden">
- <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="section-head"><h2>お客様情報</h2><button class="btn gold" id="addCustomerBtn">＋登録</button></div>
- <div id="customerList" class="list"></div>
-</section>
-
-<section id="bottles" class="hidden">
- <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="section-head"><h2>ボトル確認</h2><button class="btn gold" id="addBottleBtn">＋登録</button></div>
- <div id="bottleList" class="list"></div>
-</section>
+<section id="schedules" class="hidden"><button class="btn ghost" data-view="home">← ホーム</button><div class="sectionHead"><h2>今日の予定</h2><button class="btn gold" id="addScheduleBtn">＋予定登録</button></div><div id="scheduleList" class="list"></div></section>
+<section id="customers" class="hidden"><button class="btn ghost" data-view="home">← ホーム</button><div class="sectionHead"><h2>お客様情報</h2><button class="btn gold" id="addCustomerBtn">＋登録</button></div><div id="customerList" class="list"></div></section>
+<section id="bottles" class="hidden"><button class="btn ghost" data-view="home">← ホーム</button><div class="sectionHead"><h2>ボトル確認</h2><button class="btn gold" id="addBottleBtn">＋登録</button></div><div id="bottleList" class="list"></div></section>
 </main>
 
-<dialog id="scheduleDialog"><div class="modal"><div class="modal-head"><h2>同伴・来店予定を登録</h2><button class="close" data-close="scheduleDialog">×</button></div>
-<div class="form-grid">
-<label><span>日付</span><input id="schDate" type="date"></label>
-<label><span>種別</span><select id="schType"><option value="companion">同伴</option><option value="visit">来店予定</option></select></label>
-<label><span>時間</span><input id="schTime" type="time"></label>
-<label><span>お客様名</span><input id="schCustomer"></label>
-<label><span>担当</span><select id="schMainCast"></select></label>
-<label><span>人数</span><input id="schPeople" type="number" min="1" value="1"></label>
-<div class="span2"><span style="display:block;font-size:12px;font-weight:850;color:#806128;margin-bottom:6px">同行キャスト</span><div id="companionChoices" class="choices"></div></div>
-<div class="span2"><span style="display:block;font-size:12px;font-weight:850;color:#806128;margin-bottom:6px">席</span><div id="seatChoices" class="choices"></div></div>
-<label class="span2"><span>備考</span><textarea id="schMemo"></textarea></label>
-</div><button class="btn gold full" id="saveScheduleBtn">登録</button></div></dialog>
+<dialog id="scheduleDialog"><div class="modal"><div class="modalHead"><h2>同伴・来店予定を登録</h2><button class="close" data-close="scheduleDialog">×</button></div>
+<div class="form2"><label><span>日付</span><input id="schDate" type="date"></label><label><span>種別</span><select id="schType"><option value="companion">同伴</option><option value="visit">来店予定</option></select></label><label><span>時間</span><input id="schTime" type="time"></label><label><span>お客様名</span><input id="schCustomer"></label><label><span>担当</span><select id="schMainCast"></select></label><label><span>人数</span><input id="schPeople" type="number" min="1" value="1"></label><div class="span2"><span class="small">同行キャスト</span><div id="companionChoices" class="choices"></div></div><div class="span2"><span class="small">席</span><div id="seatChoices" class="choices"></div></div><label class="span2"><span>備考</span><textarea id="schMemo"></textarea></label></div>
+<button class="btn gold full" id="saveScheduleBtn">登録</button></div></dialog>
 
-<dialog id="simpleDialog"><div class="modal"><div class="modal-head"><h2 id="simpleTitle"></h2><button class="close" data-close="simpleDialog">×</button></div><div id="simpleBody"></div></div></dialog>
-
-<dialog id="adminDialog"><div class="modal"><div class="modal-head"><h2>その他・管理</h2><button class="close" data-close="adminDialog">×</button></div>
-<div id="adminLoginArea"><label><span>管理者パスコード</span><input id="adminPass" type="password" inputmode="numeric"></label><button class="btn gold full" id="adminLogin">ログイン</button></div>
-<div id="adminPanel" class="hidden">
- <div class="stats"><div class="stat"><small>スタッフ</small><strong id="staffCount">0</strong></div><div class="stat"><small>顧客</small><strong id="customerCount">0</strong></div><div class="stat"><small>ボトル</small><strong id="bottleCount">0</strong></div></div>
- <div class="section-head"><h2 style="font-size:19px">スタッフ管理</h2><button class="btn gold" id="addStaffBtn">＋スタッフ追加</button></div>
- <div id="staffList" class="list"></div>
-</div>
-</div></dialog>
-
-<dialog id="staffDialog"><div class="modal"><div class="modal-head"><h2 id="staffDialogTitle">スタッフ追加</h2><button class="close" data-close="staffDialog">×</button></div>
-<label><span>表示名・源氏名</span><input id="staffName"></label>
-<label><span>区分</span><select id="staffRole"><option value="cast">キャスト</option><option value="floor">黒服・ホール</option><option value="manager">管理者</option></select></label>
-<div style="display:flex;gap:8px"><button class="btn red hidden" id="deleteStaffBtn">削除</button><button class="btn gold full" id="saveStaffBtn">保存</button></div>
-</div></dialog>
-
+<dialog id="simpleDialog"><div class="modal"><div class="modalHead"><h2 id="simpleTitle"></h2><button class="close" data-close="simpleDialog">×</button></div><div id="simpleBody"></div></div></dialog>
+<dialog id="adminDialog"><div class="modal"><div class="modalHead"><h2>その他・管理</h2><button class="close" data-close="adminDialog">×</button></div><div id="loginArea"><label><span>管理者パスコード</span><input id="adminPass" type="password"></label><button class="btn gold full" id="adminLoginBtn">ログイン</button></div><div id="adminPanel" class="hidden"><div class="stats"><div class="stat"><small>スタッフ</small><strong id="staffCount">0</strong></div><div class="stat"><small>顧客</small><strong id="customerCount">0</strong></div><div class="stat"><small>ボトル</small><strong id="bottleCount">0</strong></div></div><div class="sectionHead"><h2 style="font-size:19px">スタッフ管理</h2><button class="btn gold" id="addStaffBtn">＋追加</button></div><div id="staffList" class="list"></div></div></div></dialog>
+<dialog id="staffDialog"><div class="modal"><div class="modalHead"><h2 id="staffTitle">スタッフ追加</h2><button class="close" data-close="staffDialog">×</button></div><label><span>表示名・源氏名</span><input id="staffName"></label><label><span>区分</span><select id="staffRole"><option value="cast">キャスト</option><option value="floor">黒服・ホール</option><option value="manager">管理者</option></select></label><div style="display:flex;gap:8px"><button class="btn red hidden" id="deleteStaffBtn">削除</button><button class="btn gold full" id="saveStaffBtn">保存</button></div></div></dialog>
 <div id="toast" class="toast"></div>
+
 <script>
 'use strict';
-const KEY='tinkerbell_staff_v8';
-const DEFAULT_STAFF=[
- {id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'},
- {id:'s4',name:'ゆい',role:'cast'},{id:'s5',name:'るな',role:'cast'},{id:'s6',name:'りか',role:'cast'}
-];
-const SEATS=['カウンター','1','2','3','4','5'];
-const todayISO=()=>new Date().toLocaleDateString('sv-SE');
-const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2);
-let db=load(),selectedCompanions=[],selectedSeat='カウンター',editingStaffId=null;
-function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x){if(!Array.isArray(x.staff)||!x.staff.length)x.staff=DEFAULT_STAFF;return x}}catch(e){}return{staff:[...DEFAULT_STAFF],shifts:[],schedules:[],customers:[],bottles:[]}}
-const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
-const toastEl=document.getElementById('toast');
+const KEY='tinkerbell_v9',DEFAULT=[{id:'1',name:'あい',role:'cast'},{id:'2',name:'れな',role:'cast'},{id:'3',name:'みく',role:'cast'}],SEATS=['カウンター','1','2','3','4','5'];
+const today=()=>new Date().toLocaleDateString('sv-SE'),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2);
+let db=load(),companions=[],seat='カウンター',editingStaff=null;
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x)return x}catch(e){}return{staff:[...DEFAULT],shifts:[],schedules:[],customers:[],bottles:[]}}
+const save=()=>localStorage.setItem(KEY,JSON.stringify(db)),toastEl=document.getElementById('toast');
 function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>toastEl.classList.remove('show'),1500)}
-function staffNames(){return db.staff.map(x=>x.name)}
-function roleLabel(r){return r==='manager'?'管理者':r==='floor'?'黒服・ホール':'キャスト'}
-function populateStaffSelects(){
- const names=staffNames(),opts=names.map(x=>`<option>${x}</option>`).join('');
- shiftStaff.innerHTML=opts;
- shiftFilterStaff.innerHTML='<option value="all">全員</option>'+opts;
- schMainCast.innerHTML=opts;
-}
-function showView(id,updateHash=true){
- document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));
- (document.getElementById(id)||home).classList.remove('hidden');
- if(id==='shift-register')renderShiftRegister();
- if(id==='shift-check')renderShiftCheck();
- if(id==='schedules')renderSchedules();
- if(id==='customers')renderCustomers();
- if(id==='bottles')renderBottles();
- if(updateHash){
-  const h={'home':'','shift-register':'shift','shift-check':'shift-check','schedules':'today','customers':'customers','bottles':'bottles'}[id];
-  if(h!==undefined)history.replaceState(null,'',h?'#'+h:location.pathname+location.search);
- }
- window.scrollTo({top:0,behavior:'smooth'});
-}
-function startOfWeek(s){const d=s?new Date(s+'T00:00:00'):new Date(),o=(d.getDay()+6)%7;d.setDate(d.getDate()-o);return d}
-function fmt(d){return d.toLocaleDateString('sv-SE')}
-function weekDates(s){const a=startOfWeek(s);return Array.from({length:7},(_,i)=>{const d=new Date(a);d.setDate(a.getDate()+i);return d})}
-function renderShiftRegister(){
- const staff=shiftStaff.value||staffNames()[0],dates=weekDates(shiftRegisterWeekStart.value);
- shiftWeekRegister.innerHTML=dates.map(d=>{const date=fmt(d),m=db.shifts.find(v=>v.staff===staff&&v.date===date)?.mark||'';return `<div class="week-day" data-date="${date}"><div class="date">${d.getMonth()+1}/${d.getDate()}</div><div class="dow">${'日月火水木金土'[d.getDay()]}</div><div class="mark-group"><button class="mark-btn ${m==='o'?'selected':''}" data-mark="o">〇</button><button class="mark-btn ${m==='tri'?'selected':''}" data-mark="tri">△</button><button class="mark-btn ${m==='x'?'selected':''}" data-mark="x">×</button></div></div>`}).join('');
-}
-function renderShiftCheck(){
- const dates=weekDates(shiftWeekStart.value),selected=shiftFilterStaff.value,staffs=selected==='all'?staffNames():[selected];
- const head=`<div class="cell head">名前</div>`+dates.map(d=>`<div class="cell head">${d.getMonth()+1}/${d.getDate()}<br>${'日月火水木金土'[d.getDay()]}</div>`).join('');
- const rows=staffs.map(st=>`<div class="cell name">${st}</div>`+dates.map(d=>{const m=db.shifts.find(x=>x.staff===st&&x.date===fmt(d))?.mark||'';return `<div class="cell"><span class="mark ${m||'none'}">${m==='o'?'〇':m==='tri'?'△':m==='x'?'×':'－'}</span></div>`}).join('')).join('');
- shiftWeekView.innerHTML=`<div class="week-table">${head}${rows}</div>`;
-}
-function renderChoices(){
- companionChoices.innerHTML=staffNames().map(c=>`<button type="button" class="choice ${selectedCompanions.includes(c)?'selected':''}" data-comp="${c}">${c}</button>`).join('');
- seatChoices.innerHTML=SEATS.map(s=>`<button type="button" class="choice ${selectedSeat===s?'selected':''}" data-seat="${s}">${s==='カウンター'?'カウンター':'BOX'+s}</button>`).join('');
-}
-function openSchedule(){
- schDate.value=todayISO();schType.value='companion';schTime.value='21:00';schTime.readOnly=true;schCustomer.value='';schMainCast.value=staffNames()[0]||'';schPeople.value=1;schMemo.value='';selectedCompanions=[];selectedSeat='カウンター';renderChoices();scheduleDialog.showModal()
-}
-function renderSchedules(){
- const today=db.schedules.filter(x=>x.date===todayISO()).sort((a,b)=>a.time.localeCompare(b.time));
- scheduleList.innerHTML=today.length?today.map(x=>`<div class="row"><div class="row-title">${x.time}　${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当：${x.mainCast}／同行：${x.companions.join('・')||'なし'}／席：${x.seat==='カウンター'?'カウンター':'BOX'+x.seat}</div></div>`).join(''):'<div class="card">本日の予定はありません</div>';
-}
-function renderCustomers(){customerList.innerHTML=db.customers.length?db.customers.map(x=>`<div class="row"><div class="row-title">${x.name}</div><div class="meta">担当：${x.cast}</div></div>`).join(''):'<div class="card">お客様情報はありません</div>'}
-function renderBottles(){bottleList.innerHTML=db.bottles.length?db.bottles.map(x=>`<div class="row"><div class="row-title">${x.customer}／${x.name}</div><div class="meta">担当：${x.cast}／本数：${x.qty}</div></div>`).join(''):'<div class="card">ボトル情報はありません</div>'}
-function renderStaff(){
- staffCount.textContent=db.staff.length;customerCount.textContent=db.customers.length;bottleCount.textContent=db.bottles.reduce((a,b)=>a+(+b.qty||0),0);
- staffList.innerHTML=db.staff.map(x=>`<div class="row"><div class="staff-line"><div><div class="row-title">${x.name}</div><span class="role">${roleLabel(x.role)}</span></div><button class="btn ghost" data-edit-staff="${x.id}">編集</button></div></div>`).join('');
-}
-function openStaff(id=null){
- editingStaffId=id;const x=id?db.staff.find(s=>s.id===id):null;
- staffDialogTitle.textContent=x?'スタッフ編集':'スタッフ追加';staffName.value=x?.name||'';staffRole.value=x?.role||'cast';deleteStaffBtn.classList.toggle('hidden',!x);staffDialog.showModal()
-}
-function openRoute(){
- const r=(location.hash||'').slice(1);
- if(r==='schedule'){showView('schedules',false);setTimeout(openSchedule,0);return}
- if(r==='admin'){showView('home',false);setTimeout(()=>adminDialog.showModal(),0);return}
- showView({'shift':'shift-register','shift-check':'shift-check','today':'schedules','customers':'customers','bottles':'bottles'}[r]||'home',false)
-}
-document.addEventListener('click',e=>{
- const v=e.target.closest('[data-view]');if(v)return showView(v.dataset.view);
- const m=e.target.closest('.mark-btn');if(m){m.parentElement.querySelectorAll('.mark-btn').forEach(b=>b.classList.remove('selected'));m.classList.add('selected');return}
- const c=e.target.closest('[data-comp]');if(c){selectedCompanions=selectedCompanions.includes(c.dataset.comp)?selectedCompanions.filter(x=>x!==c.dataset.comp):[...selectedCompanions,c.dataset.comp];renderChoices();return}
- const s=e.target.closest('[data-seat]');if(s){selectedSeat=s.dataset.seat;renderChoices();return}
- const es=e.target.closest('[data-edit-staff]');if(es)return openStaff(es.dataset.editStaff);
- const cl=e.target.closest('[data-close]');if(cl)document.getElementById(cl.dataset.close).close();
-});
-saveShiftWeekBtn.onclick=()=>{
- [...document.querySelectorAll('[data-date]')].forEach(card=>{const sel=card.querySelector('.mark-btn.selected');if(!sel)return;const ex=db.shifts.find(x=>x.staff===shiftStaff.value&&x.date===card.dataset.date);if(ex)ex.mark=sel.dataset.mark;else db.shifts.push({id:uid(),staff:shiftStaff.value,date:card.dataset.date,mark:sel.dataset.mark})});
- save();renderShiftCheck();toast('1週間分を登録しました');
-};
-shiftStaff.onchange=renderShiftRegister;shiftRegisterWeekStart.onchange=renderShiftRegister;shiftFilterStaff.onchange=renderShiftCheck;shiftWeekStart.onchange=renderShiftCheck;
-addScheduleHome.onclick=openSchedule;addScheduleBtn.onclick=openSchedule;
-schType.onchange=()=>{if(schType.value==='companion'){schTime.value='21:00';schTime.readOnly=true}else schTime.readOnly=false};
-saveScheduleBtn.onclick=()=>{const o={id:uid(),date:schDate.value,type:schType.value,time:schType.value==='companion'?'21:00':schTime.value,customer:schCustomer.value.trim(),mainCast:schMainCast.value,people:+schPeople.value||1,companions:selectedCompanions.filter(x=>x!==schMainCast.value),seat:selectedSeat,memo:schMemo.value.trim()};if(!o.customer)return toast('お客様名を入力');db.schedules.push(o);save();scheduleDialog.close();renderSchedules();toast('予定を登録しました')};
-addCustomerBtn.onclick=()=>{simpleTitle.textContent='お客様登録';simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1"></label><label><span>担当</span><select id="tmp2">'+staffNames().map(x=>`<option>${x}</option>`).join('')+'</select></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim())return;db.customers.push({id:uid(),name:tmp1.value.trim(),cast:tmp2.value});save();simpleDialog.close();renderCustomers()}};
-addBottleBtn.onclick=()=>{simpleTitle.textContent='ボトル登録';simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1"></label><label><span>ボトル名</span><input id="tmp2"></label><label><span>担当</span><select id="tmp3">'+staffNames().map(x=>`<option>${x}</option>`).join('')+'</select></label><label><span>本数</span><input id="tmp4" type="number" value="1"></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim()||!tmp2.value.trim())return;db.bottles.push({id:uid(),customer:tmp1.value.trim(),name:tmp2.value.trim(),cast:tmp3.value,qty:+tmp4.value||1});save();simpleDialog.close();renderBottles()}};
-adminBtn.onclick=()=>adminDialog.showModal();
-adminLogin.onclick=()=>{if(adminPass.value==='1234'){adminLoginArea.classList.add('hidden');adminPanel.classList.remove('hidden');renderStaff();toast('ログインしました')}else toast('パスコードが違います')};
-addStaffBtn.onclick=()=>openStaff();
-saveStaffBtn.onclick=()=>{
- const name=staffName.value.trim();if(!name)return toast('名前を入力');
- if(editingStaffId){const x=db.staff.find(s=>s.id===editingStaffId),old=x.name;x.name=name;x.role=staffRole.value;db.shifts.forEach(v=>{if(v.staff===old)v.staff=name});db.schedules.forEach(v=>{if(v.mainCast===old)v.mainCast=name;v.companions=v.companions.map(c=>c===old?name:c)});db.customers.forEach(v=>{if(v.cast===old)v.cast=name});db.bottles.forEach(v=>{if(v.cast===old)v.cast=name})}
- else db.staff.push({id:uid(),name,role:staffRole.value});
- save();populateStaffSelects();renderStaff();renderShiftRegister();renderShiftCheck();staffDialog.close();toast('スタッフを保存しました');
-};
-deleteStaffBtn.onclick=()=>{
- if(!editingStaffId||!confirm('このスタッフを削除しますか？'))return;
- const x=db.staff.find(s=>s.id===editingStaffId);db.staff=db.staff.filter(s=>s.id!==editingStaffId);db.shifts=db.shifts.filter(v=>v.staff!==x.name);save();populateStaffSelects();renderStaff();renderShiftRegister();renderShiftCheck();staffDialog.close();toast('削除しました');
-};
-window.addEventListener('hashchange',openRoute);
-populateStaffSelects();
-const monday=fmt(startOfWeek(todayISO()));shiftRegisterWeekStart.value=monday;shiftWeekStart.value=monday;renderShiftRegister();renderShiftCheck();openRoute();
+const names=()=>db.staff.map(x=>x.name),fmt=d=>d.toLocaleDateString('sv-SE');
+function monday(s){const d=s?new Date(s+'T00:00:00'):new Date(),o=(d.getDay()+6)%7;d.setDate(d.getDate()-o);return d}
+function dates(s){const a=monday(s);return Array.from({length:7},(_,i)=>{const d=new Date(a);d.setDate(a.getDate()+i);return d})}
+function populate(){const o=names().map(n=>`<option>${n}</option>`).join('');shiftStaff.innerHTML=o;schMainCast.innerHTML=o}
+function showView(id,hash=true){document.querySelectorAll('main>section').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');if(id==='shift'){renderRegister();renderCheck()}if(id==='schedules')renderSchedules();if(id==='customers')renderCustomers();if(id==='bottles')renderBottles();if(hash){const h={home:'',shift:'shift',schedules:'today',customers:'customers',bottles:'bottles'}[id];history.replaceState(null,'',h?'#'+h:location.pathname+location.search)}}
+function renderRegister(){const st=shiftStaff.value||names()[0];shiftDays.innerHTML=dates(shiftWeekStart.value).map(d=>{const date=fmt(d),m=db.shifts.find(x=>x.staff===st&&x.date===date)?.mark||'';return `<div class="dayRow" data-date="${date}"><div class="dateBox"><b>${d.getMonth()+1}/${d.getDate()}</b><small>${'日月火水木金土'[d.getDay()]}</small></div><div class="markGroup"><button class="markBtn o ${m==='o'?'selected':''}" data-mark="o">〇</button><button class="markBtn tri ${m==='tri'?'selected':''}" data-mark="tri">△</button><button class="markBtn x ${m==='x'?'selected':''}" data-mark="x">×</button></div></div>`}).join('')}
+function renderCheck(){shiftCheckList.innerHTML=dates(checkWeekStart.value).map(d=>{const date=fmt(d);return `<div class="dayCheck"><h3>${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）</h3>${names().map(st=>{const m=db.shifts.find(x=>x.staff===st&&x.date===date)?.mark||'';return `<div class="staffStatus"><b>${st}</b><span class="status ${m||'none'}">${m==='o'?'〇':m==='tri'?'△':m==='x'?'×':'－'}</span></div>`}).join('')}</div>`}).join('')}
+function renderChoices(){companionChoices.innerHTML=names().map(n=>`<button class="choice ${companions.includes(n)?'selected':''}" data-comp="${n}">${n}</button>`).join('');seatChoices.innerHTML=SEATS.map(s=>`<button class="choice ${seat===s?'selected':''}" data-seat="${s}">${s==='カウンター'?'カウンター':'BOX'+s}</button>`).join('')}
+function openSchedule(){schDate.value=today();schType.value='companion';schTime.value='21:00';schTime.readOnly=true;schCustomer.value='';schMainCast.value=names()[0]||'';companions=[];seat='カウンター';renderChoices();scheduleDialog.showModal()}
+function renderSchedules(){const a=db.schedules.filter(x=>x.date===today()).sort((a,b)=>a.time.localeCompare(b.time));scheduleList.innerHTML=a.length?a.map(x=>`<div class="row"><div class="rowTitle">${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.mainCast}／同行:${x.companions.join('・')||'なし'}／席:${x.seat==='カウンター'?'カウンター':'BOX'+x.seat}</div></div>`).join(''):'<div class="card">本日の予定はありません</div>'}
+function renderCustomers(){customerList.innerHTML=db.customers.length?db.customers.map(x=>`<div class="row"><div class="rowTitle">${x.name}</div><div class="meta">担当:${x.cast}</div></div>`).join(''):'<div class="card">お客様情報はありません</div>'}
+function renderBottles(){bottleList.innerHTML=db.bottles.length?db.bottles.map(x=>`<div class="row"><div class="rowTitle">${x.customer}／${x.name}</div><div class="meta">担当:${x.cast}／本数:${x.qty}</div></div>`).join(''):'<div class="card">ボトル情報はありません</div>'}
+function role(r){return r==='manager'?'管理者':r==='floor'?'黒服・ホール':'キャスト'}
+function renderStaff(){staffCount.textContent=db.staff.length;customerCount.textContent=db.customers.length;bottleCount.textContent=db.bottles.reduce((a,b)=>a+(+b.qty||0),0);staffList.innerHTML=db.staff.map(x=>`<div class="row"><div class="staffLine"><div><div class="rowTitle">${x.name}</div><span class="role">${role(x.role)}</span></div><button class="btn ghost" data-edit-staff="${x.id}">編集</button></div></div>`).join('')}
+function openStaff(id=null){editingStaff=id;const x=id?db.staff.find(v=>v.id===id):null;staffTitle.textContent=x?'スタッフ編集':'スタッフ追加';staffName.value=x?.name||'';staffRole.value=x?.role||'cast';deleteStaffBtn.classList.toggle('hidden',!x);staffDialog.showModal()}
+function route(){const r=location.hash.slice(1);if(r==='schedule'){showView('schedules',false);setTimeout(openSchedule,0)}else if(r==='admin'){showView('home',false);setTimeout(()=>adminDialog.showModal(),0)}else showView({shift:'shift',today:'schedules',customers:'customers',bottles:'bottles'}[r]||'home',false)}
+document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if(v)return showView(v.dataset.view);const t=e.target.closest('[data-shift-tab]');if(t){document.querySelectorAll('[data-shift-tab]').forEach(b=>b.classList.remove('active'));t.classList.add('active');shiftRegisterPane.classList.toggle('hidden',t.dataset.shiftTab!=='register');shiftCheckPane.classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderCheck();return}const m=e.target.closest('.markBtn');if(m){m.parentElement.querySelectorAll('.markBtn').forEach(b=>b.classList.remove('selected'));m.classList.add('selected');return}const c=e.target.closest('[data-comp]');if(c){companions=companions.includes(c.dataset.comp)?companions.filter(x=>x!==c.dataset.comp):[...companions,c.dataset.comp];renderChoices();return}const s=e.target.closest('[data-seat]');if(s){seat=s.dataset.seat;renderChoices();return}const ed=e.target.closest('[data-edit-staff]');if(ed)return openStaff(ed.dataset.editStaff);const cl=e.target.closest('[data-close]');if(cl)document.getElementById(cl.dataset.close).close()});
+saveShiftBtn.onclick=()=>{[...document.querySelectorAll('[data-date]')].forEach(r=>{const b=r.querySelector('.markBtn.selected');if(!b)return;const x=db.shifts.find(v=>v.staff===shiftStaff.value&&v.date===r.dataset.date);if(x)x.mark=b.dataset.mark;else db.shifts.push({id:uid(),staff:shiftStaff.value,date:r.dataset.date,mark:b.dataset.mark})});save();renderCheck();toast('1週間分を登録しました')};
+shiftStaff.onchange=renderRegister;shiftWeekStart.onchange=renderRegister;checkWeekStart.onchange=renderCheck;
+openScheduleHome.onclick=openSchedule;addScheduleBtn.onclick=openSchedule;schType.onchange=()=>{if(schType.value==='companion'){schTime.value='21:00';schTime.readOnly=true}else schTime.readOnly=false};
+saveScheduleBtn.onclick=()=>{const o={id:uid(),date:schDate.value,type:schType.value,time:schType.value==='companion'?'21:00':schTime.value,customer:schCustomer.value.trim(),mainCast:schMainCast.value,companions:companions.filter(x=>x!==schMainCast.value),seat};if(!o.customer)return toast('お客様名を入力');db.schedules.push(o);save();scheduleDialog.close();renderSchedules();toast('予定を登録しました')};
+addCustomerBtn.onclick=()=>{simpleTitle.textContent='お客様登録';simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1"></label><label><span>担当</span><select id="tmp2">'+names().map(x=>`<option>${x}</option>`).join('')+'</select></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim())return;db.customers.push({id:uid(),name:tmp1.value.trim(),cast:tmp2.value});save();simpleDialog.close();renderCustomers()}};
+addBottleBtn.onclick=()=>{simpleTitle.textContent='ボトル登録';simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1"></label><label><span>ボトル名</span><input id="tmp2"></label><label><span>担当</span><select id="tmp3">'+names().map(x=>`<option>${x}</option>`).join('')+'</select></label><label><span>本数</span><input id="tmp4" type="number" value="1"></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim()||!tmp2.value.trim())return;db.bottles.push({id:uid(),customer:tmp1.value.trim(),name:tmp2.value.trim(),cast:tmp3.value,qty:+tmp4.value||1});save();simpleDialog.close();renderBottles()}};
+adminBtn.onclick=()=>adminDialog.showModal();adminLoginBtn.onclick=()=>{if(adminPass.value==='1234'){loginArea.classList.add('hidden');adminPanel.classList.remove('hidden');renderStaff();toast('ログインしました')}else toast('パスコードが違います')};addStaffBtn.onclick=()=>openStaff();
+saveStaffBtn.onclick=()=>{const n=staffName.value.trim();if(!n)return toast('名前を入力');if(editingStaff){const x=db.staff.find(v=>v.id===editingStaff),old=x.name;x.name=n;x.role=staffRole.value;db.shifts.forEach(v=>{if(v.staff===old)v.staff=n});db.schedules.forEach(v=>{if(v.mainCast===old)v.mainCast=n;v.companions=v.companions.map(c=>c===old?n:c)});db.customers.forEach(v=>{if(v.cast===old)v.cast=n});db.bottles.forEach(v=>{if(v.cast===old)v.cast=n})}else db.staff.push({id:uid(),name:n,role:staffRole.value});save();populate();renderStaff();renderRegister();renderCheck();staffDialog.close();toast('スタッフを保存しました')};
+deleteStaffBtn.onclick=()=>{if(!editingStaff||!confirm('このスタッフを削除しますか？'))return;const x=db.staff.find(v=>v.id===editingStaff);db.staff=db.staff.filter(v=>v.id!==editingStaff);db.shifts=db.shifts.filter(v=>v.staff!==x.name);save();populate();renderStaff();renderRegister();renderCheck();staffDialog.close();toast('削除しました')};
+window.addEventListener('hashchange',route);populate();const mon=fmt(monday(today()));shiftWeekStart.value=mon;checkWeekStart.value=mon;renderRegister();renderCheck();route();
 </script>
-</body>
-</html>
+</body></html>
