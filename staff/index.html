@@ -212,7 +212,7 @@ saveScheduleBtn.onclick=()=>{const o={id:uid(),date:schDate.value,type:schType.v
 addCustomerBtn.onclick=()=>{simpleTitle.textContent='お客様登録';simpleBody.innerHTML='<label><span>お客様名</span><input id="tmp1"></label><label><span>担当</span><select id="tmp2">'+names().map(x=>`<option>${x}</option>`).join('')+'</select></label><button class="btn gold full" id="tmpSave">保存</button>';simpleDialog.showModal();tmpSave.onclick=()=>{if(!tmp1.value.trim())return;db.customers.push({id:uid(),name:tmp1.value.trim(),cast:tmp2.value});save();simpleDialog.close();renderCustomers()}};
 addBottleBtn.onclick=()=>{
  simpleTitle.textContent='ボトル登録';
- simpleBody.innerHTML='<label><span>管理番号</span><input id="tmp0" inputmode="numeric" placeholder="例：12"></label><label><span>お客様名</span><input id="tmp1"></label><label><span>ボトル名</span><input id="tmp2"></label><label><span>担当</span><select id="tmp3">'+names().map(x=>`<option>${x}</option>`).join('')+'</select></label><label><span>本数</span><input id="tmp4" type="number" min="1" value="1"></label><button class="btn gold full" id="tmpSave">保存</button>';
+ simpleBody.innerHTML='<label><span>管理番号</span><input id="tmp0" inputmode="numeric" placeholder="例：12"></label><label><span>お客様名</span><input id="tmp1"></label><label><span>ボトル名</span><input id="tmp2"></label><label><span>担当</span><select id="tmp3"><option>担当不明</option>'+names().map(x=>`<option>${x}</option>`).join('')+'</select></label><label><span>本数</span><input id="tmp4" type="number" min="1" value="1"></label><button class="btn gold full" id="tmpSave">保存</button>';
  simpleDialog.showModal();
  tmpSave.onclick=()=>{
   const number=tmp0.value.trim(),customer=tmp1.value.trim(),name=tmp2.value.trim();
