@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Tinker Bell Staff v17 -->
 <html lang="ja">
 <head>
 <meta charset="utf-8">
@@ -163,8 +164,21 @@ dialog{border:0;padding:0;background:#f9f6ef;color:var(--ink);border-radius:19px
 'use strict';
 const KEY='tinkerbell_v9',DEFAULT=[{id:'1',name:'あい',role:'cast'},{id:'2',name:'れな',role:'cast'},{id:'3',name:'みく',role:'cast'}],SEATS=['カウンター','1','2','3','4','5'];
 const today=()=>new Date().toLocaleDateString('sv-SE'),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2);
-let db=load(),companions=[],seat='カウンター',editingStaff=null,scheduleMode='today';
-function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x)return x}catch(e){}return{staff:[...DEFAULT],shifts:[],schedules:[],customers:[],bottles:[]}}
+let db=load(),companions=[],seat='カウンター',editingStaff=null,scheduleMode='today';localStorage.setItem(KEY,JSON.stringify(db));
+function load(){
+ try{
+  const x=JSON.parse(localStorage.getItem(KEY));
+  if(x){
+   x.bottles=(x.bottles||[]).map(b=>{
+    const copy={...b};
+    delete copy.shelf;
+    return copy;
+   });
+   return x;
+  }
+ }catch(e){}
+ return{staff:[...DEFAULT],shifts:[],schedules:[],customers:[],bottles:[]};
+}
 const save=()=>localStorage.setItem(KEY,JSON.stringify(db)),toastEl=document.getElementById('toast');
 function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>toastEl.classList.remove('show'),1500)}
 const names=()=>db.staff.map(x=>x.name),fmt=d=>d.toLocaleDateString('sv-SE');
