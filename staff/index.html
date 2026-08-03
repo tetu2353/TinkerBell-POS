@@ -1,5 +1,4 @@
 <!doctype html>
-<!-- Tinker Bell Staff v17 -->
 <html lang="ja">
 <head>
 <meta charset="utf-8">
@@ -128,11 +127,18 @@ dialog{border:0;padding:0;background:#f9f6ef;color:var(--ink);border-radius:19px
 </section>
 <section id="customers" class="hidden"><button class="btn ghost" data-view="home">← ホーム</button><div class="sectionHead"><h2>お客様情報</h2><button class="btn gold" id="addCustomerBtn">＋登録</button></div><div id="customerList" class="list"></div></section>
 <section id="bottles" class="hidden">
-      <button class="btn ghost" data-view="home">← ホーム</button>
-      <div class="sectionHead"><h2>ボトル確認</h2><button class="btn gold" id="addBottleBtn">＋登録</button></div>
-      <div class="card"><label><span>管理番号・お客様名・ボトル名で検索</span><input id="bottleSearch" placeholder="例：12、田中様、吉四六"></label></div>
-      <div id="bottleList" class="list"></div>
-    </section>
+  <button class="btn ghost" data-view="home">← ホーム</button>
+  <div class="sectionHead">
+    <h2>ボトル確認</h2>
+    <button class="btn gold" id="addBottleBtn">＋ボトル登録</button>
+  </div>
+  <div class="card">
+    <label><span>管理番号・お客様名・ボトル名で検索</span>
+      <input id="bottleSearch" placeholder="例：12、田中様、吉四六">
+    </label>
+  </div>
+  <div id="bottleList" class="list"></div>
+</section>
 </main>
 
 <dialog id="scheduleDialog"><div class="modal"><div class="modalHead"><h2>同伴・来店予定を登録</h2><button class="close" data-close="scheduleDialog">×</button></div>
@@ -150,7 +156,13 @@ dialog{border:0;padding:0;background:#f9f6ef;color:var(--ink);border-radius:19px
       <div class="modalHead"><h2>お客様詳細</h2><button class="close" data-close="customerDetailDialog">×</button></div>
       <div id="customerDetailBody"></div>
     </div></dialog>
-    <dialog id="bottleDetailDialog"><div class="modal">
+    
+<dialog id="customerDeleteDialog"><div class="modal">
+  <div class="modalHead"><h2>お客様削除</h2><button class="close" data-close="customerDeleteDialog">×</button></div>
+  <div id="customerDeleteBody"></div>
+</div></dialog>
+
+<dialog id="bottleDetailDialog"><div class="modal">
   <div class="modalHead"><h2>ボトル詳細</h2><button class="close" data-close="bottleDetailDialog">×</button></div>
   <div id="bottleDetailBody"></div>
 </div></dialog>
@@ -164,16 +176,12 @@ dialog{border:0;padding:0;background:#f9f6ef;color:var(--ink);border-radius:19px
 'use strict';
 const KEY='tinkerbell_v9',DEFAULT=[{id:'1',name:'あい',role:'cast'},{id:'2',name:'れな',role:'cast'},{id:'3',name:'みく',role:'cast'}],SEATS=['カウンター','1','2','3','4','5'];
 const today=()=>new Date().toLocaleDateString('sv-SE'),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2);
-let db=load(),companions=[],seat='カウンター',editingStaff=null,scheduleMode='today';localStorage.setItem(KEY,JSON.stringify(db));
+let db=load(),companions=[],seat='カウンター',editingStaff=null,scheduleMode='today';
 function load(){
  try{
   const x=JSON.parse(localStorage.getItem(KEY));
   if(x){
-   x.bottles=(x.bottles||[]).map(b=>{
-    const copy={...b};
-    delete copy.shelf;
-    return copy;
-   });
+   x.bottles=(x.bottles||[]).map(b=>{const c={...b};delete c.shelf;return c});
    return x;
   }
  }catch(e){}
@@ -258,7 +266,10 @@ function openCustomerDetail(id){
   <div class="meta"><b>誕生日：</b>${x.birthday||'未登録'}</div>
   <div class="meta"><b>担当：</b>${x.cast||'担当不明'}</div>
   <div class="meta"><b>備考：</b>${x.memo&&x.memo.trim()?x.memo:'なし'}</div>
-  <button class="btn ghost full" data-edit-customer="${x.id}" style="margin-top:12px">編集</button>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+   <button class="btn ghost" data-edit-customer="${x.id}">編集</button>
+   <button class="btn red" data-delete-customer="${x.id}">お客様削除</button>
+  </div>
  </div>
  <div class="card">
   <div class="rowTitle">🍾 キープボトル</div>
@@ -288,6 +299,52 @@ function openCustomerEdit(id=null){
   save();simpleDialog.close();renderCustomers();renderBirthdayHome();toast('お客様情報を保存しました');
  };
 }
+
+function openCustomerDelete(id){
+ const x=db.customers.find(v=>v.id===id);if(!x)return;
+ const bottles=db.bottles.filter(b=>b.customerId===x.id||(!b.customerId&&b.customer===x.name));
+ customerDeleteBody.innerHTML=`<div class="card">
+  <div class="rowTitle">${x.name} を削除します</div>
+  <div class="meta">登録されているキープボトル：${bottles.length}本</div>
+  ${bottles.length?`<label style="margin-top:12px"><span>ボトルの扱い</span>
+   <select id="customerDeleteMode">
+    <option value="keep">ボトルは残す（お客様未設定・担当不明）</option>
+    <option value="delete">ボトルも一緒に削除</option>
+   </select>
+  </label>`:'<input type="hidden" id="customerDeleteMode" value="keep">'}
+  <div class="meta" style="margin-top:10px">この操作は取り消せません。</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+   <button class="btn ghost" data-close="customerDeleteDialog">キャンセル</button>
+   <button class="btn red" data-confirm-delete-customer="${x.id}">削除</button>
+  </div>
+ </div>`;
+ customerDetailDialog.close();
+ customerDeleteDialog.showModal();
+}
+function deleteCustomer(id,mode){
+ const x=db.customers.find(v=>v.id===id);if(!x)return;
+ const linked=b=>b.customerId===x.id||(!b.customerId&&b.customer===x.name);
+ if(mode==='delete'){
+  db.bottles=db.bottles.filter(b=>!linked(b));
+ }else{
+  db.bottles.forEach(b=>{
+   if(linked(b)){
+    b.customerId='';
+    b.customer='未設定';
+    b.cast='担当不明';
+   }
+  });
+ }
+ db.customers=db.customers.filter(v=>v.id!==id);
+ save();
+ customerDeleteDialog.close();
+ renderCustomers();
+ renderBottles();
+ renderBirthdayHome();
+ renderHomeSummary();
+ toast('お客様を削除しました');
+}
+
 function renderBirthdayHome(){
  const month=new Date().getMonth()+1;
  const a=db.customers.filter(x=>x.birthday&&Number(x.birthday.slice(5,7))===month)
@@ -327,7 +384,8 @@ function openBottleEdit(id){
  const x=db.bottles.find(v=>v.id===id);if(!x)return;
  simpleTitle.textContent='ボトル編集';
  simpleBody.innerHTML='<label><span>管理番号</span><input id="tmp0" value="'+x.number+'"></label><label><span>お客様</span><select id="tmpCustomer">'+db.customers.map(c=>`<option value="${c.id}" ${c.id===x.customerId||(!x.customerId&&c.name===x.customer)?'selected':''}>${c.name}</option>`).join('')+'</select></label><label><span>ボトル名</span><input id="tmp2" value="'+x.name+'"></label><label><span>担当</span><select id="tmp3"><option>担当不明</option>'+names().map(n=>`<option ${n===x.cast?'selected':''}>${n}</option>`).join('')+'</select></label><label><span>本数</span><input id="tmp4" type="number" min="1" value="'+x.qty+'"></label><button class="btn gold full" id="tmpSave">保存</button>';
- bottleDetailDialog.close();simpleDialog.showModal();
+ bottleDetailDialog.close();
+ simpleDialog.showModal();
  tmpSave.onclick=()=>{
   const number=tmp0.value.trim(),customerId=tmpCustomer.value,customer=db.customers.find(c=>c.id===customerId)?.name||'',name=tmp2.value.trim();
   if(!number||!customerId||!name)return toast('管理番号・お客様・ボトル名を入力');
@@ -350,6 +408,12 @@ document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if
   return;
  }
  const t=e.target.closest('[data-shift-tab]');if(t){document.querySelectorAll('[data-shift-tab]').forEach(b=>b.classList.remove('active'));t.classList.add('active');shiftRegisterPane.classList.toggle('hidden',t.dataset.shiftTab!=='register');shiftCheckPane.classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderCheck();return}const m=e.target.closest('.markBtn');if(m){m.parentElement.querySelectorAll('.markBtn').forEach(b=>b.classList.remove('selected'));m.classList.add('selected');return}const c=e.target.closest('[data-comp]');if(c){companions=companions.includes(c.dataset.comp)?companions.filter(x=>x!==c.dataset.comp):[...companions,c.dataset.comp];renderChoices();return}const s=e.target.closest('[data-seat]');if(s){seat=s.dataset.seat;renderChoices();return}const sd=e.target.closest('[data-schedule-detail]');if(sd)return openScheduleDetail(sd.dataset.scheduleDetail);const cd=e.target.closest('[data-customer-detail]');if(cd)return openCustomerDetail(cd.dataset.customerDetail);
+ const dc=e.target.closest('[data-delete-customer]');if(dc)return openCustomerDelete(dc.dataset.deleteCustomer);
+ const cdc=e.target.closest('[data-confirm-delete-customer]');if(cdc){
+  const mode=document.getElementById('customerDeleteMode')?.value||'keep';
+  deleteCustomer(cdc.dataset.confirmDeleteCustomer,mode);
+  return;
+ }
  const ce=e.target.closest('[data-edit-customer]');if(ce)return openCustomerEdit(ce.dataset.editCustomer);
  const bd=e.target.closest('[data-bottle-detail]');if(bd)return openBottleDetail(bd.dataset.bottleDetail);
  const be=e.target.closest('[data-edit-bottle]');if(be)return openBottleEdit(be.dataset.editBottle);
