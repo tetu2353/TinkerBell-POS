@@ -4,62 +4,213 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#050505">
-<title>Tinker Bell Staff</title>
+<title>Tinker Bell</title>
+
 <style>
-:root{--bg:#050505;--panel:#141414;--gold:#d7aa49;--gold2:#f5da8f;--cream:#f7f1e8;--ink:#171717;--muted:#a79e91;--red:#d94b68;--blue:#164b83}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1a130b 0,#050505 35%);color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
-button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
-header{padding:18px 16px 14px;border-bottom:1px solid #3a2b13}.brand{font-family:Georgia,serif;color:var(--gold2);font-size:34px;font-style:italic}.jp{font-size:12px;color:var(--gold)}.greeting{margin-top:8px;color:#eee}
-main{max-width:800px;margin:auto;padding:14px 14px 90px}.card{background:linear-gradient(145deg,#181818,#0b0b0b);border:1px solid var(--gold);border-radius:18px;padding:15px;margin-bottom:13px}
+:root{
+ --bg:#050505;--panel:#111;--gold:#d8aa43;--gold2:#f5dc91;--cream:#f7f1e8;
+ --ink:#171717;--muted:#afa596;--red:#8a162e;--purple:#32123e;--teal:#063b37;
+ --brown:#3a2409;--navy:#081d42;--line:#6f5221;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+ margin:0;color:#fff;
+ background:
+ radial-gradient(circle at 15% 0%,rgba(96,49,9,.22),transparent 30%),
+ radial-gradient(circle at 90% 10%,rgba(110,77,14,.16),transparent 26%),
+ #050505;
+ font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;
+}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+header{
+ position:sticky;top:0;z-index:20;
+ background:rgba(5,5,5,.97);backdrop-filter:blur(12px);
+ border-bottom:1px solid rgba(216,170,67,.45);
+ padding:12px 15px;
+}
+.header-inner{max-width:1050px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand-wrap{display:flex;align-items:center;gap:11px}
+.brand-mark{
+ width:44px;height:44px;border:1px solid var(--gold);border-radius:50%;
+ display:grid;place-items:center;color:var(--gold2);font-size:21px;
+ box-shadow:0 0 20px rgba(216,170,67,.15),inset 0 0 16px rgba(216,170,67,.08)
+}
+.brand{font-family:Georgia,serif;color:var(--gold2);font-size:31px;font-style:italic;letter-spacing:.02em;text-shadow:0 0 20px rgba(245,220,145,.2)}
+.jp{font-size:11px;color:var(--gold);letter-spacing:.18em}
+.greeting{font-size:12px;color:#ddd;text-align:right}
+main{max-width:1050px;margin:auto;padding:15px 14px 96px}
+.ornate{
+ position:relative;border:1px solid var(--gold);border-radius:20px;
+ background:linear-gradient(145deg,#171717,#080808);
+ box-shadow:0 14px 34px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.04);
+ overflow:hidden;
+}
+.ornate:before,.ornate:after{
+ content:"✦";position:absolute;color:rgba(245,220,145,.6);font-size:14px
+}
+.ornate:before{top:8px;left:10px}.ornate:after{right:10px;bottom:8px}
+.intro{padding:18px;margin-bottom:12px;display:flex;align-items:center;gap:14px}
+.intro-emblem{
+ width:58px;height:58px;border-radius:50%;display:grid;place-items:center;
+ background:linear-gradient(145deg,#f7dc8f,#a36b16);color:#111;font-size:27px;
+ box-shadow:0 0 22px rgba(216,170,67,.25)
+}
+.intro-title{font-size:21px;color:var(--gold2);font-weight:900}
+.meta{color:#c5bbad;font-size:12px;line-height:1.6;margin-top:5px}
+.menu{
+ display:grid;grid-template-columns:repeat(10,1fr);gap:10px;
+}
+.tile{
+ position:relative;min-height:180px;border:1px solid var(--gold);border-radius:18px;
+ color:#fff;padding:18px 14px;text-align:center;overflow:hidden;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 12px 24px rgba(0,0,0,.26);
+ transition:transform .15s ease,border-color .15s ease;
+}
+.tile:active{transform:scale(.985);border-color:var(--gold2)}
+.tile:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.08),transparent 46%);pointer-events:none}
+.tile .ico{font-size:48px;display:block;margin-bottom:13px;filter:sepia(1) saturate(.85) brightness(1.45)}
+.tile b{display:block;color:var(--gold2);font-size:21px;line-height:1.25}
+.tile small{display:block;color:#eee;font-size:12px;line-height:1.55;margin-top:9px}
+.tile-purple{background:linear-gradient(145deg,#43134d,#130b19)}
+.tile-purple2{background:linear-gradient(145deg,#33204e,#100a18)}
+.tile-teal{background:linear-gradient(145deg,#07564d,#071615)}
+.tile-brown{background:linear-gradient(145deg,#49300e,#140d05)}
+.tile-navy{background:linear-gradient(145deg,#0c3266,#070e1c)}
+.tile-red{background:linear-gradient(145deg,#651228,#17070c)}
+.span2{grid-column:span 2}.span3{grid-column:span 3}.span5{grid-column:span 5}
+.lower-grid{display:grid;grid-template-columns:1.2fr 2.4fr .9fr;gap:10px;margin-top:10px}
+.compact{min-height:160px}
+.compact .ico{font-size:43px}
+.admin-small{
+ min-height:160px;border:1px solid var(--gold);border-radius:18px;
+ background:linear-gradient(145deg,#161616,#070707);color:#fff;padding:16px;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+}
+.admin-small .lock{font-size:39px;margin-bottom:8px}
+.admin-small b{font-size:18px;color:var(--gold2)}
+.admin-small small{font-size:11px;color:#ddd;line-height:1.5;margin:6px 0 11px}
+.today-fixed{padding:16px;text-align:center;display:flex;flex-direction:column;justify-content:center}
+.today-fixed h3{color:var(--gold2);margin:0 0 10px;font-size:20px}
+.today-fixed p{color:#ddd;font-size:12px;margin:0 0 14px}
+.request-panel{
+ margin-top:11px;padding:14px 17px;display:grid;grid-template-columns:1.2fr .6fr 1fr;gap:14px;align-items:center;
+ background:linear-gradient(90deg,#1d0d24,#080808,#1a0b1f);
+}
+.request-panel h3{margin:0 0 7px;color:var(--gold2);font-size:17px}
+.request-panel p{margin:3px 0;color:#eee;font-size:11px}
+.heart{font-size:44px;text-align:center;color:#f0b1cf;text-shadow:0 0 22px rgba(240,177,207,.4)}
+.signature{text-align:center;color:#fff}.signature strong{display:block;font-family:Georgia,serif;color:var(--gold2);font-size:24px;font-style:italic}
+.card{background:linear-gradient(145deg,#181818,#0b0b0b);border:1px solid var(--gold);border-radius:18px;padding:15px;margin-bottom:13px}
 .section-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.section-head h2{margin:0;color:var(--gold2)}
-.hero{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.metric{background:var(--cream);color:var(--ink);border:0;border-radius:15px;padding:16px;text-align:left}.metric strong{display:block;font-size:38px}.metric.red strong{color:var(--red)}.metric.blue strong{color:var(--blue)}
-.notice{display:flex;gap:12px;align-items:center;width:100%;text-align:left}.notice .ico{font-size:31px}.notice b{color:var(--gold2)}
-.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.tile{min-height:130px;background:linear-gradient(145deg,#1b1b1b,#0b0b0b);border:1px solid var(--gold);border-radius:17px;color:#fff;padding:15px;text-align:left}.tile .ico{font-size:31px;display:block;margin-bottom:10px}.tile b{display:block;font-size:18px}.tile small{display:block;color:#c8bfb1;font-size:12px;line-height:1.5;margin-top:6px}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.metric{background:var(--cream);color:var(--ink);border:0;border-radius:15px;padding:16px;text-align:left}.metric strong{display:block;font-size:38px}.metric.red strong{color:#c3294e}.metric.blue strong{color:#164b83}
 .btn{border:0;border-radius:11px;padding:11px 13px;font-weight:850;background:#2a2a2a;color:#fff}.btn.gold{background:linear-gradient(#f0d079,#b78326);color:#111}.btn.red{background:#8d263b}.btn.ghost{border:1px solid var(--gold);background:transparent;color:var(--gold2)}
 .tabs{display:flex;gap:7px;margin:12px 0}.tabs button{flex:1;border:1px solid #5f4922;background:#151515;color:#ddd;border-radius:10px;padding:10px}.tabs button.active{background:var(--gold);color:#111;font-weight:900}
-.list{display:grid;gap:9px}.row{background:#111;border:1px solid #46371e;border-radius:13px;padding:12px;text-align:left;color:#fff}.row-top{display:flex;justify-content:space-between;gap:10px}.time{font-size:21px;font-weight:900;color:var(--gold2)}.name{font-size:18px;font-weight:900}.meta{color:#c2b8aa;font-size:12px;line-height:1.6;margin-top:6px}.tag{border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900}.tag.comp{background:#5d1726;color:#ffc0cc}.tag.visit{background:#11375d;color:#b9d8ff}
+.list{display:grid;gap:9px}.row{background:#111;border:1px solid #46371e;border-radius:13px;padding:12px;text-align:left;color:#fff}.row-top{display:flex;justify-content:space-between;gap:10px}.time{font-size:21px;font-weight:900;color:var(--gold2)}.name{font-size:18px;font-weight:900}.tag{border-radius:999px;padding:4px 8px;font-size:11px;font-weight:900}.tag.comp{background:#5d1726;color:#ffc0cc}.tag.visit{background:#11375d;color:#b9d8ff}
 label{display:block;margin-bottom:10px}label span{display:block;font-size:12px;color:#d9c38c;font-weight:800;margin-bottom:5px}input,select,textarea{width:100%;border:1px solid #6a5325;border-radius:11px;background:var(--cream);color:#111;padding:12px}textarea{min-height:80px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}.choice-wrap{display:flex;gap:7px;flex-wrap:wrap}.choice{border:1px solid #6a5325;background:#161616;color:#ddd;border-radius:999px;padding:9px 11px}.choice.selected{background:var(--gold);color:#111;font-weight:900}
 .actions{display:flex;gap:8px;margin-top:12px}.actions .btn{flex:1}.empty{text-align:center;color:#8f877c;padding:24px}
 dialog{border:0;padding:0;background:#0b0b0b;color:#fff;border-radius:18px;width:min(680px,95vw);max-height:92vh;overflow:auto}dialog::backdrop{background:rgba(0,0,0,.75)}.modal{padding:16px}.modal-head{display:flex;justify-content:space-between;align-items:center}.modal-head h2{margin:0;color:var(--gold2)}.x{width:38px;height:38px;border-radius:50%;border:0;background:#222;color:#fff;font-size:20px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#fff;color:#111;padding:11px 16px;border-radius:999px;opacity:0;transition:.2s;z-index:99}.toast.show{opacity:1}
-@media(min-width:640px){.menu{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:760px){
+ .header-inner{align-items:flex-start}.brand{font-size:27px}.greeting{font-size:10px}
+ .menu{grid-template-columns:repeat(2,1fr)}
+ .span2,.span3,.span5{grid-column:span 1}
+ .tile{min-height:150px;padding:14px 10px}.tile .ico{font-size:39px}.tile b{font-size:17px}
+ .lower-grid{grid-template-columns:1fr 1fr}
+ .today-fixed{grid-column:1/-1;order:-1}
+ .request-panel{grid-template-columns:1fr}.heart{display:none}
+}
 </style>
+
 </head>
 <body>
-<header><div class="brand">Tinker Bell</div><div class="jp">ティンカーベル</div><div class="greeting">本日もよろしくお願いします！</div></header>
+<header><div class="header-inner">
+      <div class="brand-wrap"><div class="brand-mark">✦</div><div><div class="brand">Tinker Bell</div><div class="jp">ティンカーベル</div></div></div>
+      <div class="greeting">必要な情報を、すぐに確認・操作できます</div>
+    </div></header>
 <main>
 <section id="home">
- <div class="card">
-  <div class="section-head"><h2>今日の予定</h2><button class="btn ghost" data-view="today">一覧を見る</button></div>
-  <div class="hero">
-   <button class="metric red" data-filter="companion"><small>同伴予定</small><strong id="compCount">0</strong>件</button>
-   <button class="metric blue" data-filter="visit"><small>来店予定</small><strong id="visitCount">0</strong>件</button>
-  </div>
+ <div class="ornate intro">
+  <div class="intro-emblem">✦</div>
+  <div><div class="intro-title">スタッフメニュー</div><div class="meta">固定メニューです。各ボタンを押すと最新情報の画面が開きます。</div></div>
  </div>
- <button class="card notice" data-view="notices"><span class="ico">📣</span><span><b>ティンカーベルからのお願い</b><br><small>重要なお知らせがあります</small></span></button>
+
  <div class="menu">
-  <button class="tile"><span class="ico">🗓️</span><b>シフト登録</b><small>自分のシフトを登録します</small></button>
-  <button class="tile"><span class="ico">🔎</span><b>シフト確認</b><small>登録済みシフトを確認します</small></button>
-  <button class="tile" id="openScheduleBtn"><span class="ico">✍️</span><b>同伴・来店予定を登録</b><small>予定を登録します</small></button>
-  <button class="tile" data-view="today"><span class="ico">🥂</span><b>今日の同伴・来店予定</b><small>本日の予定を確認します</small></button>
-  <button class="tile"><span class="ico">👥</span><b>お客様情報</b><small>お客様情報を確認します</small></button>
-  <button class="tile"><span class="ico">🍾</span><b>ボトル確認</b><small>キープ状況を確認します</small></button>
-  <button class="tile" data-view="notices"><span class="ico">🔔</span><b>お知らせ</b><small>店舗からのお知らせ</small></button>
-  <button class="tile" id="adminBtn"><span class="ico">🔒</span><b>管理者専用</b><small>店内状況・売上状況・各種管理</small></button>
+  <button class="tile tile-purple span2" data-view="shift-register"><span class="ico">🗓️</span><b>シフト登録</b><small>自分のシフトを登録・編集します</small></button>
+  <button class="tile tile-purple2 span2" data-view="shift-check"><span class="ico">📅</span><b>シフト確認</b><small>登録済みシフトを確認します</small></button>
+  <button class="tile tile-teal span2" id="openScheduleBtn"><span class="ico">🥂</span><b>同伴・来店予定を登録</b><small>同伴・来店予定を入力します</small></button>
+  <button class="tile tile-brown span2" data-view="customers"><span class="ico">👤</span><b>お客様情報</b><small>登録・検索・編集ができます</small></button>
+  <button class="tile tile-navy span2" data-view="bottles"><span class="ico">🍾</span><b>ボトル確認</b><small>キープ状況を確認・編集します</small></button>
+ </div>
+
+ <div class="lower-grid">
+  <button class="tile tile-red compact" data-view="notices"><span class="ico">📣</span><b>お知らせ</b><small>最新のお知らせを確認します</small></button>
+
+  <button class="ornate today-fixed" data-view="today">
+   <h3>今日の同伴・来店予定</h3>
+   <p>押すと本日の件数と予定一覧を表示します</p>
+   <span class="btn gold">詳細を見る　›</span>
+  </button>
+
+  <button class="admin-small" id="adminBtn">
+   <span class="lock">🔒</span><b>管理者専用</b>
+   <small>店内状況・売上状況・各種管理</small>
+   <span class="btn ghost">ログイン</span>
+  </button>
+ </div>
+
+ <div class="ornate request-panel">
+  <div><h3>ティンカーベルからのお願い</h3><p>✓ 無断欠勤・遅刻は絶対にしないでください</p><p>✓ お客様情報やお店の情報は口外厳禁です</p><p>✓ みんなで楽しく働ける環境を作りましょう</p></div>
+  <div class="heart">♥</div>
+  <div class="signature">今日も一日よろしくお願いします！<strong>Tinker Bell</strong></div>
  </div>
 </section>
 
 <section id="today" class="hidden">
  <button class="btn ghost" data-view="home">← ホーム</button>
  <div class="section-head" style="margin-top:12px"><h2>今日の同伴・来店予定</h2><button class="btn gold" id="addFromToday">＋追加</button></div>
+ <div class="hero" style="margin:12px 0">
+  <div class="metric red"><small>本日の同伴</small><strong id="detailCompCount">0</strong>件</div>
+  <div class="metric blue"><small>本日の来店予定</small><strong id="detailVisitCount">0</strong>件</div>
+ </div>
  <div class="tabs"><button class="active" data-tab="all">すべて</button><button data-tab="companion">同伴</button><button data-tab="visit">来店予定</button></div>
  <div id="todayList" class="list"></div>
 </section>
 
+
+<section id="shift-register" class="hidden">
+ <button class="btn ghost" data-view="home">← ホーム</button>
+ <div class="card" style="margin-top:12px"><h2>シフト登録</h2>
+  <div class="form-grid"><label><span>名前</span><select id="shiftStaff"></select></label><label><span>日付</span><input id="shiftDate" type="date"></label><label><span>出勤可否</span><select id="shiftStatus"><option value="available">出勤可能</option><option value="unavailable">出勤不可</option></select></label><label><span>出勤予定</span><input id="shiftStart" type="time" value="21:00"></label><label><span>退勤予定</span><input id="shiftEnd" type="time" value="01:00"></label><label class="full"><span>備考</span><textarea id="shiftMemo"></textarea></label></div>
+  <button class="btn gold" id="saveShiftBtn" style="width:100%">シフトを登録</button>
+ </div>
+</section>
+<section id="shift-check" class="hidden">
+ <button class="btn ghost" data-view="home">← ホーム</button>
+ <div class="card" style="margin-top:12px"><h2>シフト確認</h2><label><span>表示する名前</span><select id="shiftFilterStaff"></select></label><label><span>月</span><input id="shiftMonth" type="month"></label></div>
+ <div id="shiftList" class="list"></div>
+</section>
+<section id="customers" class="hidden">
+ <button class="btn ghost" data-view="home">← ホーム</button>
+ <div class="section-head" style="margin-top:12px"><h2>お客様情報</h2><button class="btn gold" id="addCustomerBtn">＋登録</button></div>
+ <input id="customerSearch" placeholder="名前・担当・電話番号で検索" style="margin-bottom:10px">
+ <div id="customerList" class="list"></div>
+</section>
+<section id="bottles" class="hidden">
+ <button class="btn ghost" data-view="home">← ホーム</button>
+ <div class="section-head" style="margin-top:12px"><h2>ボトル確認</h2><button class="btn gold" id="addBottleBtn">＋登録</button></div>
+ <input id="bottleSearch" placeholder="お客様名・ボトル名・担当で検索" style="margin-bottom:10px">
+ <div id="bottleList" class="list"></div>
+</section>
 <section id="notices" class="hidden">
  <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="card" style="margin-top:12px"><h2>ティンカーベルからのお願い</h2><p>・無断欠勤、遅刻は絶対にしないでください。</p><p>・お客様情報やお店の情報は口外厳禁です。</p><p>・みんなで楽しく働ける環境を作りましょう。</p></div>
+ <div class="section-head" style="margin-top:12px"><h2>お知らせ</h2><button class="btn gold" id="addNoticeBtn">＋追加</button></div>
+ <div id="noticeList" class="list"></div>
 </section>
 </main>
 
@@ -89,6 +240,10 @@ dialog{border:0;padding:0;background:#0b0b0b;color:#fff;border-radius:18px;width
 </div>
 </dialog>
 
+
+<dialog id="customerDialog"><div class="modal"><div class="modal-head"><h2 id="customerTitle">お客様登録</h2><button class="x" data-close="customerDialog">×</button></div><label><span>お客様名</span><input id="custName"></label><label><span>担当</span><select id="custCast"></select></label><label><span>電話番号</span><input id="custPhone"></label><label><span>誕生日</span><input id="custBirthday" type="date"></label><label><span>メモ</span><textarea id="custMemo"></textarea></label><div class="actions"><button class="btn red hidden" id="deleteCustomerBtn">削除</button><button class="btn gold" id="saveCustomerBtn">保存</button></div></div></dialog>
+<dialog id="bottleDialog"><div class="modal"><div class="modal-head"><h2 id="bottleTitle">ボトル登録</h2><button class="x" data-close="bottleDialog">×</button></div><label><span>お客様名</span><input id="bottleCustomer"></label><label><span>担当</span><select id="bottleCast"></select></label><label><span>ボトル名</span><input id="bottleName"></label><label><span>本数</span><input id="bottleQty" type="number" min="1" value="1"></label><label><span>残量</span><select id="bottleLevel"><option>満量</option><option>3/4</option><option>半分</option><option>1/4</option><option>残りわずか</option></select></label><label><span>キープ期限</span><input id="bottleExpiry" type="date"></label><label><span>メモ</span><textarea id="bottleMemo"></textarea></label><div class="actions"><button class="btn red hidden" id="deleteBottleBtn">削除</button><button class="btn gold" id="saveBottleBtn">保存</button></div></div></dialog>
+<dialog id="noticeDialog"><div class="modal"><div class="modal-head"><h2 id="noticeTitle">お知らせ追加</h2><button class="x" data-close="noticeDialog">×</button></div><label><span>タイトル</span><input id="noticeName"></label><label><span>本文</span><textarea id="noticeBody"></textarea></label><div class="actions"><button class="btn red hidden" id="deleteNoticeBtn">削除</button><button class="btn gold" id="saveNoticeBtn">保存</button></div></div></dialog>
 <dialog id="adminDialog">
 <div class="modal">
  <div class="modal-head"><h2>管理者ログイン</h2><button class="x" data-close="adminDialog">×</button></div>
@@ -102,20 +257,26 @@ dialog{border:0;padding:0;background:#0b0b0b;color:#fff;border-radius:18px;width
 
 <script>
 'use strict';
-const KEY='tinkerbell_line_staff_v1';
+const KEY='tinkerbell_staff_complete_v2';
 const CASTS=['あい','れな','みく','ゆい','るな','りか'];
 const SEATS=['カウンター','1','2','3','4','5'];
 const todayISO=()=>new Date().toLocaleDateString('sv-SE');
 const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-let db=load(),currentTab='all',editingId=null,detailId=null,selectedCompanions=[],selectedSeat='カウンター';
+let db=load(),currentTab='all',editingId=null,detailId=null,selectedCompanions=[],selectedSeat='カウンター',editCustomerId=null,editBottleId=null,editNoticeId=null;
 
-function load(){try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&Array.isArray(v.schedules))return v}catch(e){}return{schedules:[]}}
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY));if(v)return Object.assign({schedules:[],shifts:[],customers:[],bottles:[],notices:[]},v)}catch(e){}return{schedules:[],shifts:[],customers:[],bottles:[],notices:[{id:uid(),title:'ティンカーベルからのお願い',body:'無断欠勤・遅刻は絶対にしないでください。お客様情報やお店の情報は口外厳禁です。みんなで楽しく働ける環境を作りましょう。',createdAt:new Date().toISOString()}]}}
 function save(){localStorage.setItem(KEY,JSON.stringify(db))}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),1600)}
-function showView(id){document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');if(id==='today')renderToday();window.scrollTo({top:0,behavior:'smooth'})}
+function showView(id){document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');if(id==='today'){updateCounts();renderToday();}if(id==='shift-check')renderShifts();if(id==='customers')renderCustomers();if(id==='bottles')renderBottles();if(id==='notices')renderNotices();window.scrollTo({top:0,behavior:'smooth'})}
 function todaySchedules(){return db.schedules.filter(x=>x.date===todayISO()).sort((a,b)=>a.time.localeCompare(b.time))}
-function updateCounts(){const a=todaySchedules();document.getElementById('compCount').textContent=a.filter(x=>x.type==='companion').length;document.getElementById('visitCount').textContent=a.filter(x=>x.type==='visit').length}
+function updateCounts(){
+ const a=todaySchedules();
+ const comp=document.getElementById('detailCompCount');
+ const visit=document.getElementById('detailVisitCount');
+ if(comp)comp.textContent=a.filter(x=>x.type==='companion').length;
+ if(visit)visit.textContent=a.filter(x=>x.type==='visit').length;
+}
 function renderToday(){
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===currentTab));
  const arr=todaySchedules().filter(x=>currentTab==='all'||x.type===currentTab);
@@ -151,26 +312,55 @@ function saveSchedule(){
  if(!date||!time||!customer)return toast('日付・時間・お客様名を入力してください');
  const obj={id:editingId||uid(),date,type,time,customer,mainCast,companions:selectedCompanions.filter(c=>c!==mainCast),people,seat:selectedSeat,memo};
  db.schedules=editingId?db.schedules.map(x=>x.id===editingId?obj:x):[...db.schedules,obj];
- save();document.getElementById('scheduleDialog').close();updateCounts();renderToday();toast(editingId?'予定を更新しました':'予定を登録しました');
+ save();document.getElementById('scheduleDialog').close();
+document.getElementById('saveShiftBtn').onclick=()=>{const status=shiftStatus.value,obj={id:uid(),staff:shiftStaff.value,date:shiftDate.value,status,start:status==='available'?shiftStart.value:'',end:status==='available'?shiftEnd.value:'',memo:shiftMemo.value.trim()};if(!obj.date)return toast('日付を選んでください');db.shifts.push(obj);save();toast('シフトを登録しました')};
+shiftFilterStaff.onchange=renderShifts;shiftMonth.onchange=renderShifts;
+addCustomerBtn.onclick=()=>openCustomer();customerSearch.oninput=renderCustomers;saveCustomerBtn.onclick=()=>{const o={id:editCustomerId||uid(),name:custName.value.trim(),cast:custCast.value,phone:custPhone.value.trim(),birthday:custBirthday.value,memo:custMemo.value.trim()};if(!o.name)return toast('お客様名を入力してください');db.customers=editCustomerId?db.customers.map(x=>x.id===editCustomerId?o:x):[...db.customers,o];save();customerDialog.close();renderCustomers();toast('保存しました')};deleteCustomerBtn.onclick=()=>{if(editCustomerId&&confirm('削除しますか？')){db.customers=db.customers.filter(x=>x.id!==editCustomerId);save();customerDialog.close();renderCustomers()}};
+addBottleBtn.onclick=()=>openBottle();bottleSearch.oninput=renderBottles;saveBottleBtn.onclick=()=>{const o={id:editBottleId||uid(),customer:bottleCustomer.value.trim(),cast:bottleCast.value,name:bottleName.value.trim(),qty:Math.max(1,Number(bottleQty.value)||1),level:bottleLevel.value,expiry:bottleExpiry.value,memo:bottleMemo.value.trim()};if(!o.customer||!o.name)return toast('お客様名とボトル名を入力してください');db.bottles=editBottleId?db.bottles.map(x=>x.id===editBottleId?o:x):[...db.bottles,o];save();bottleDialog.close();renderBottles();toast('保存しました')};deleteBottleBtn.onclick=()=>{if(editBottleId&&confirm('削除しますか？')){db.bottles=db.bottles.filter(x=>x.id!==editBottleId);save();bottleDialog.close();renderBottles()}};
+addNoticeBtn.onclick=()=>openNotice();saveNoticeBtn.onclick=()=>{const o={id:editNoticeId||uid(),title:noticeName.value.trim(),body:noticeBody.value.trim(),createdAt:new Date().toISOString()};if(!o.title||!o.body)return toast('タイトルと本文を入力してください');db.notices=editNoticeId?db.notices.map(x=>x.id===editNoticeId?o:x):[...db.notices,o];save();noticeDialog.close();renderNotices();toast('保存しました')};deleteNoticeBtn.onclick=()=>{if(editNoticeId&&confirm('削除しますか？')){db.notices=db.notices.filter(x=>x.id!==editNoticeId);save();noticeDialog.close();renderNotices()}};
+populateExtraSelects();shiftDate.value=todayISO();shiftMonth.value=todayISO().slice(0,7);
+updateCounts();renderToday();toast(editingId?'予定を更新しました':'予定を登録しました');
 }
 function openDetail(id){detailId=id;const x=db.schedules.find(s=>s.id===id);if(!x)return;document.getElementById('detailBody').innerHTML=`<div class="card"><p><b>日付：</b>${esc(x.date)}</p><p><b>時間：</b>${esc(x.time)}</p><p><b>種別：</b>${x.type==='companion'?'同伴':'来店予定'}</p><p><b>お客様：</b>${esc(x.customer)}</p><p><b>担当：</b>${esc(x.mainCast)}</p><p><b>同行：</b>${x.companions.length?x.companions.map(esc).join('・'):'なし'}</p><p><b>人数：</b>${x.people}名</p><p><b>席：</b>${esc(x.seat==='カウンター'?'カウンター':'BOX'+x.seat)}</p><p><b>備考：</b>${esc(x.memo||'なし')}</p></div>`;document.getElementById('detailDialog').showModal()}
+
+function populateExtraSelects(){const o=CASTS.map(c=>`<option>${esc(c)}</option>`).join('');['shiftStaff','custCast','bottleCast'].forEach(id=>document.getElementById(id).innerHTML=o);document.getElementById('shiftFilterStaff').innerHTML='<option value="all">全員</option>'+o}
+function renderShifts(){const st=document.getElementById('shiftFilterStaff').value||'all',m=document.getElementById('shiftMonth').value;const a=db.shifts.filter(x=>(st==='all'||x.staff===st)&&(!m||x.date.startsWith(m))).sort((a,b)=>a.date.localeCompare(b.date));document.getElementById('shiftList').innerHTML=a.length?a.map(x=>`<div class="row"><div class="row-top"><div><div class="name">${esc(x.staff)}</div><div class="time">${esc(x.date)}</div></div><span class="tag visit">${x.status==='available'?'出勤可能':'出勤不可'}</span></div><div class="meta">${x.status==='available'?esc(x.start)+'〜'+esc(x.end):'時間なし'}${x.memo?'／'+esc(x.memo):''}</div></div>`).join(''):'<div class="empty">シフトはありません</div>'}
+function openCustomer(id=null){editCustomerId=id;const x=id?db.customers.find(v=>v.id===id):null;document.getElementById('customerTitle').textContent=x?'お客様情報を編集':'お客様登録';custName.value=x?.name||'';custCast.value=x?.cast||CASTS[0];custPhone.value=x?.phone||'';custBirthday.value=x?.birthday||'';custMemo.value=x?.memo||'';deleteCustomerBtn.classList.toggle('hidden',!x);customerDialog.showModal()}
+function renderCustomers(){const q=customerSearch.value.trim().toLowerCase(),a=db.customers.filter(x=>[x.name,x.cast,x.phone,x.memo].join(' ').toLowerCase().includes(q));customerList.innerHTML=a.length?a.map(x=>`<button class="row" data-edit-customer="${x.id}"><div class="name">${esc(x.name)}</div><div class="meta">担当：${esc(x.cast)}／電話：${esc(x.phone||'未登録')}／誕生日：${esc(x.birthday||'未登録')}</div>${x.memo?`<div class="meta">${esc(x.memo)}</div>`:''}</button>`).join(''):'<div class="empty">お客様情報はありません</div>'}
+function openBottle(id=null){editBottleId=id;const x=id?db.bottles.find(v=>v.id===id):null;bottleTitle.textContent=x?'ボトル情報を編集':'ボトル登録';bottleCustomer.value=x?.customer||'';bottleCast.value=x?.cast||CASTS[0];bottleName.value=x?.name||'';bottleQty.value=x?.qty||1;bottleLevel.value=x?.level||'満量';bottleExpiry.value=x?.expiry||'';bottleMemo.value=x?.memo||'';deleteBottleBtn.classList.toggle('hidden',!x);bottleDialog.showModal()}
+function renderBottles(){const q=bottleSearch.value.trim().toLowerCase(),a=db.bottles.filter(x=>[x.customer,x.cast,x.name,x.memo].join(' ').toLowerCase().includes(q));bottleList.innerHTML=a.length?a.map(x=>`<button class="row" data-edit-bottle="${x.id}"><div class="name">${esc(x.customer)}／${esc(x.name)} × ${x.qty}</div><div class="meta">担当：${esc(x.cast)}／残量：${esc(x.level)}／期限：${esc(x.expiry||'未設定')}</div>${x.memo?`<div class="meta">${esc(x.memo)}</div>`:''}</button>`).join(''):'<div class="empty">ボトル情報はありません</div>'}
+function openNotice(id=null){editNoticeId=id;const x=id?db.notices.find(v=>v.id===id):null;noticeTitle.textContent=x?'お知らせ編集':'お知らせ追加';noticeName.value=x?.title||'';noticeBody.value=x?.body||'';deleteNoticeBtn.classList.toggle('hidden',!x);noticeDialog.showModal()}
+function renderNotices(){const a=db.notices.slice().sort((a,b)=>b.createdAt.localeCompare(a.createdAt));noticeList.innerHTML=a.length?a.map(x=>`<button class="row" data-edit-notice="${x.id}"><div class="name">${esc(x.title)}</div><div class="meta">${esc(x.body)}</div></button>`).join(''):'<div class="empty">お知らせはありません</div>'}
 document.addEventListener('click',e=>{
  const v=e.target.closest('[data-view]');if(v)return showView(v.dataset.view);
- const f=e.target.closest('[data-filter]');if(f){currentTab=f.dataset.filter;showView('today');return}
  const t=e.target.closest('[data-tab]');if(t){currentTab=t.dataset.tab;renderToday();return}
  const c=e.target.closest('[data-companion]');if(c){const n=c.dataset.companion;selectedCompanions=selectedCompanions.includes(n)?selectedCompanions.filter(x=>x!==n):[...selectedCompanions,n];renderChoices();return}
  const s=e.target.closest('[data-seat-choice]');if(s){selectedSeat=s.dataset.seatChoice;renderChoices();return}
- const d=e.target.closest('[data-detail]');if(d)return openDetail(d.dataset.detail);
+ const d=e.target.closest('[data-detail]');if(d)return openDetail(d.dataset.detail); const ec=e.target.closest('[data-edit-customer]');if(ec)return openCustomer(ec.dataset.editCustomer); const eb=e.target.closest('[data-edit-bottle]');if(eb)return openBottle(eb.dataset.editBottle); const en=e.target.closest('[data-edit-notice]');if(en)return openNotice(en.dataset.editNotice);
  const x=e.target.closest('[data-close]');if(x)return document.getElementById(x.dataset.close).close();
 });
 document.getElementById('openScheduleBtn').onclick=()=>openSchedule();
 document.getElementById('addFromToday').onclick=()=>openSchedule();
 document.getElementById('schType').onchange=syncTimeRule;
 document.getElementById('saveScheduleBtn').onclick=saveSchedule;
-document.getElementById('deleteScheduleBtn').onclick=()=>{if(!editingId||!confirm('この予定を削除しますか？'))return;db.schedules=db.schedules.filter(x=>x.id!==editingId);save();document.getElementById('scheduleDialog').close();updateCounts();renderToday();toast('削除しました')};
+document.getElementById('deleteScheduleBtn').onclick=()=>{if(!editingId||!confirm('この予定を削除しますか？'))return;db.schedules=db.schedules.filter(x=>x.id!==editingId);save();document.getElementById('scheduleDialog').close();
+document.getElementById('saveShiftBtn').onclick=()=>{const status=shiftStatus.value,obj={id:uid(),staff:shiftStaff.value,date:shiftDate.value,status,start:status==='available'?shiftStart.value:'',end:status==='available'?shiftEnd.value:'',memo:shiftMemo.value.trim()};if(!obj.date)return toast('日付を選んでください');db.shifts.push(obj);save();toast('シフトを登録しました')};
+shiftFilterStaff.onchange=renderShifts;shiftMonth.onchange=renderShifts;
+addCustomerBtn.onclick=()=>openCustomer();customerSearch.oninput=renderCustomers;saveCustomerBtn.onclick=()=>{const o={id:editCustomerId||uid(),name:custName.value.trim(),cast:custCast.value,phone:custPhone.value.trim(),birthday:custBirthday.value,memo:custMemo.value.trim()};if(!o.name)return toast('お客様名を入力してください');db.customers=editCustomerId?db.customers.map(x=>x.id===editCustomerId?o:x):[...db.customers,o];save();customerDialog.close();renderCustomers();toast('保存しました')};deleteCustomerBtn.onclick=()=>{if(editCustomerId&&confirm('削除しますか？')){db.customers=db.customers.filter(x=>x.id!==editCustomerId);save();customerDialog.close();renderCustomers()}};
+addBottleBtn.onclick=()=>openBottle();bottleSearch.oninput=renderBottles;saveBottleBtn.onclick=()=>{const o={id:editBottleId||uid(),customer:bottleCustomer.value.trim(),cast:bottleCast.value,name:bottleName.value.trim(),qty:Math.max(1,Number(bottleQty.value)||1),level:bottleLevel.value,expiry:bottleExpiry.value,memo:bottleMemo.value.trim()};if(!o.customer||!o.name)return toast('お客様名とボトル名を入力してください');db.bottles=editBottleId?db.bottles.map(x=>x.id===editBottleId?o:x):[...db.bottles,o];save();bottleDialog.close();renderBottles();toast('保存しました')};deleteBottleBtn.onclick=()=>{if(editBottleId&&confirm('削除しますか？')){db.bottles=db.bottles.filter(x=>x.id!==editBottleId);save();bottleDialog.close();renderBottles()}};
+addNoticeBtn.onclick=()=>openNotice();saveNoticeBtn.onclick=()=>{const o={id:editNoticeId||uid(),title:noticeName.value.trim(),body:noticeBody.value.trim(),createdAt:new Date().toISOString()};if(!o.title||!o.body)return toast('タイトルと本文を入力してください');db.notices=editNoticeId?db.notices.map(x=>x.id===editNoticeId?o:x):[...db.notices,o];save();noticeDialog.close();renderNotices();toast('保存しました')};deleteNoticeBtn.onclick=()=>{if(editNoticeId&&confirm('削除しますか？')){db.notices=db.notices.filter(x=>x.id!==editNoticeId);save();noticeDialog.close();renderNotices()}};
+populateExtraSelects();shiftDate.value=todayISO();shiftMonth.value=todayISO().slice(0,7);
+updateCounts();renderToday();toast('削除しました')};
 document.getElementById('editScheduleBtn').onclick=()=>{document.getElementById('detailDialog').close();openSchedule(detailId)};
 document.getElementById('adminBtn').onclick=()=>{document.getElementById('adminPass').value='';document.getElementById('adminPanel').classList.add('hidden');document.getElementById('adminDialog').showModal()};
 document.getElementById('adminLoginBtn').onclick=()=>{if(document.getElementById('adminPass').value==='1234'){document.getElementById('adminPanel').classList.remove('hidden');toast('ログインしました')}else toast('パスコードが違います')};
+
+document.getElementById('saveShiftBtn').onclick=()=>{const status=shiftStatus.value,obj={id:uid(),staff:shiftStaff.value,date:shiftDate.value,status,start:status==='available'?shiftStart.value:'',end:status==='available'?shiftEnd.value:'',memo:shiftMemo.value.trim()};if(!obj.date)return toast('日付を選んでください');db.shifts.push(obj);save();toast('シフトを登録しました')};
+shiftFilterStaff.onchange=renderShifts;shiftMonth.onchange=renderShifts;
+addCustomerBtn.onclick=()=>openCustomer();customerSearch.oninput=renderCustomers;saveCustomerBtn.onclick=()=>{const o={id:editCustomerId||uid(),name:custName.value.trim(),cast:custCast.value,phone:custPhone.value.trim(),birthday:custBirthday.value,memo:custMemo.value.trim()};if(!o.name)return toast('お客様名を入力してください');db.customers=editCustomerId?db.customers.map(x=>x.id===editCustomerId?o:x):[...db.customers,o];save();customerDialog.close();renderCustomers();toast('保存しました')};deleteCustomerBtn.onclick=()=>{if(editCustomerId&&confirm('削除しますか？')){db.customers=db.customers.filter(x=>x.id!==editCustomerId);save();customerDialog.close();renderCustomers()}};
+addBottleBtn.onclick=()=>openBottle();bottleSearch.oninput=renderBottles;saveBottleBtn.onclick=()=>{const o={id:editBottleId||uid(),customer:bottleCustomer.value.trim(),cast:bottleCast.value,name:bottleName.value.trim(),qty:Math.max(1,Number(bottleQty.value)||1),level:bottleLevel.value,expiry:bottleExpiry.value,memo:bottleMemo.value.trim()};if(!o.customer||!o.name)return toast('お客様名とボトル名を入力してください');db.bottles=editBottleId?db.bottles.map(x=>x.id===editBottleId?o:x):[...db.bottles,o];save();bottleDialog.close();renderBottles();toast('保存しました')};deleteBottleBtn.onclick=()=>{if(editBottleId&&confirm('削除しますか？')){db.bottles=db.bottles.filter(x=>x.id!==editBottleId);save();bottleDialog.close();renderBottles()}};
+addNoticeBtn.onclick=()=>openNotice();saveNoticeBtn.onclick=()=>{const o={id:editNoticeId||uid(),title:noticeName.value.trim(),body:noticeBody.value.trim(),createdAt:new Date().toISOString()};if(!o.title||!o.body)return toast('タイトルと本文を入力してください');db.notices=editNoticeId?db.notices.map(x=>x.id===editNoticeId?o:x):[...db.notices,o];save();noticeDialog.close();renderNotices();toast('保存しました')};deleteNoticeBtn.onclick=()=>{if(editNoticeId&&confirm('削除しますか？')){db.notices=db.notices.filter(x=>x.id!==editNoticeId);save();noticeDialog.close();renderNotices()}};
+populateExtraSelects();shiftDate.value=todayISO();shiftMonth.value=todayISO().slice(0,7);
 updateCounts();renderToday();
 </script>
 </body>
