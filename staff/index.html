@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#faf7ef">
-<title>Tinker Bell Staff v29</title>
+<title>Tinker Bell Staff v30</title>
 <style>
 :root{
   --bg:#faf7ef;--card:#fff;--gold:#c79a43;--gold2:#efd68f;--ink:#2f2921;
@@ -128,6 +128,17 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 <section id="shift" class="hidden">
   <button class="btn ghost" data-nav="home">← ホーム</button>
   <div class="sectionHead"><h2>シフト</h2></div>
+
+  <div class="card" style="background:#fffaf0">
+    <div class="rowTitle">シフト募集期間</div>
+    <div class="form2" style="margin-top:10px">
+      <label><span>募集開始日</span><input id="shiftPeriodStart" type="date"></label>
+      <label><span>募集終了日</span><input id="shiftPeriodEnd" type="date"></label>
+    </div>
+    <button type="button" class="btn gold full" id="saveShiftPeriodBtn">この期間に設定</button>
+    <div class="meta" style="margin-top:8px">日曜日は定休日のため、自動で入力対象から外れます</div>
+  </div>
+
   <div class="tabs" style="grid-template-columns:1fr 1fr">
     <button class="tab active" data-shift-tab="register">自分のシフト入力</button>
     <button class="tab" data-shift-tab="check">全員のシフト確認</button>
@@ -136,27 +147,16 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
   <div id="shiftRegisterPane">
     <div class="card">
       <label><span>名前</span><select id="shiftStaff"></select></label>
-      <div class="card" style="background:#fffaf0">
-        <div class="rowTitle">シフト募集期間</div>
-        <div id="shiftPeriodText" class="meta"></div><div class="meta">各日をタップすると「〇 → △ → × → 未入力」の順に切り替わります</div>
-        <div class="meta">日曜日は定休日のため入力対象外です</div>
-      </div>
-      
-      <input id="shiftStartDate" type="hidden"><input id="shiftEndDate" type="hidden"><div id="shiftInputTable"></div>
+      <div id="shiftPeriodText" class="meta"></div>
+      <div class="meta">各日をタップすると「〇 → △ → × → 未入力」の順に切り替わります</div>
+      <input id="shiftStartDate" type="hidden">
+      <input id="shiftEndDate" type="hidden">
+      <div id="shiftInputTable" style="margin-top:10px"></div>
       <button id="saveShiftBtn" class="btn gold full" style="margin-top:12px">選択期間を登録</button>
     </div>
   </div>
 
   <div id="shiftCheckPane" class="hidden">
-    <div class="card">
-      <div class="form2">
-        <label><span>募集開始日</span><input id="checkStartDate" type="date"></label>
-        <label><span>募集終了日</span><input id="checkEndDate" type="date"></label>
-      </div>
-      <button type="button" class="btn gold full" id="saveShiftPeriodBtn">この期間に設定</button>
-      <div class="meta" style="margin-top:8px">日曜日は自動的に除外されます</div>
-      
-    </div>
     <div id="shiftCheck"></div>
   </div>
 </section>
@@ -277,10 +277,10 @@ function setShiftPeriod(start,end){
 }
 function applyShiftPeriod(){
   const p=getShiftPeriod();
+  $('shiftPeriodStart').value=p.start;
+  $('shiftPeriodEnd').value=p.end;
   $('shiftStartDate').value=p.start;
   $('shiftEndDate').value=p.end;
-  $('checkStartDate').value=p.start;
-  $('checkEndDate').value=p.end;
   $('shiftPeriodText').textContent=`${p.start} から ${p.end} まで`;
 }
 
@@ -302,7 +302,7 @@ function renderShiftRegister(){
   $('shiftInputTable').innerHTML=`<div class="posShiftWrap"><div class="posShiftTable" style="--day-count:${ds.length}">${header}<div class="posShiftCell name" title="${st}">${st}</div>${cells}</div></div>`;
 }
 function renderShiftCheck(){
-  const ds=rangeDates($('checkStartDate').value,$('checkEndDate').value);
+  const ds=rangeDates($('shiftStartDate').value,$('shiftEndDate').value);
   if(!ds.length){
     $('shiftCheck').innerHTML='<div class="card">開始日と終了日を確認してください</div>';
     return;
@@ -437,8 +437,8 @@ document.addEventListener('click',e=>{
   }
   if(t.dataset.rangeDays){
     const target=t.dataset.rangeTarget;
-    const startInput=target==='check'?$('checkStartDate'):$('shiftStartDate');
-    const endInput=target==='check'?$('checkEndDate'):$('shiftEndDate');
+    const startInput=target==='check'?$('shiftStartDate'):$('shiftStartDate');
+    const endInput=target==='check'?$('shiftEndDate'):$('shiftEndDate');
     const start=new Date((startInput.value||today())+'T00:00:00');
     const end=new Date(start);
     end.setDate(end.getDate()+Number(t.dataset.rangeDays)-1);
@@ -448,8 +448,8 @@ document.addEventListener('click',e=>{
   }
   if(t.hasAttribute('data-range-month')){
     const target=t.dataset.rangeTarget;
-    const startInput=target==='check'?$('checkStartDate'):$('shiftStartDate');
-    const endInput=target==='check'?$('checkEndDate'):$('shiftEndDate');
+    const startInput=target==='check'?$('shiftStartDate'):$('shiftStartDate');
+    const endInput=target==='check'?$('shiftEndDate'):$('shiftEndDate');
     const now=new Date(),first=new Date(now.getFullYear(),now.getMonth(),1),last=new Date(now.getFullYear(),now.getMonth()+1,0);
     startInput.value=fmt(first);endInput.value=fmt(last);
     target==='check'?renderShiftCheck():renderShiftRegister();
@@ -479,10 +479,10 @@ document.addEventListener('click',e=>{
 $('saveShiftBtn').onclick=saveShift;
 $('shiftStaff').onchange=renderShiftRegister;
 
-$('checkStartDate').onchange=renderShiftCheck;$('checkEndDate').onchange=renderShiftCheck;
 $('saveShiftPeriodBtn').onclick=()=>{
-  const start=$('checkStartDate').value,end=$('checkEndDate').value;
-  if(!start||!end||start>end)return toast('期間を確認してください');
+  const start=$('shiftPeriodStart').value;
+  const end=$('shiftPeriodEnd').value;
+  if(!start||!end||start>end)return toast('開始日と終了日を確認してください');
   setShiftPeriod(start,end);
   applyShiftPeriod();
   renderShiftRegister();
