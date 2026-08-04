@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#faf7ef">
-<title>Tinker Bell Staff v27</title>
+<title>Tinker Bell Staff v28</title>
 <style>
 :root{
   --bg:#faf7ef;--card:#fff;--gold:#c79a43;--gold2:#efd68f;--ink:#2f2921;
@@ -121,16 +121,13 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
   <div id="shiftRegisterPane">
     <div class="card">
       <label><span>名前</span><select id="shiftStaff"></select></label>
-      <div class="form2">
-        <label><span>開始日</span><input id="shiftStartDate" type="date"></label>
-        <label><span>終了日</span><input id="shiftEndDate" type="date"></label>
+      <div class="card" style="background:#fffaf0">
+        <div class="rowTitle">シフト募集期間</div>
+        <div id="shiftPeriodText" class="meta"></div>
+        <div class="meta">日曜日は定休日のため入力対象外です</div>
       </div>
-      <div class="quickRange">
-        <button type="button" class="btn ghost" data-range-days="7" data-range-target="register">7日間</button>
-        <button type="button" class="btn ghost" data-range-days="14" data-range-target="register">14日間</button>
-        <button type="button" class="btn ghost" data-range-month data-range-target="register">今月</button>
-      </div>
-      <div id="shiftInputTable"></div>
+      
+      <input id="shiftStartDate" type="hidden"><input id="shiftEndDate" type="hidden"><div id="shiftInputTable"></div>
       <button id="saveShiftBtn" class="btn gold full" style="margin-top:12px">選択期間を登録</button>
     </div>
   </div>
@@ -138,14 +135,12 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
   <div id="shiftCheckPane" class="hidden">
     <div class="card">
       <div class="form2">
-        <label><span>開始日</span><input id="checkStartDate" type="date"></label>
-        <label><span>終了日</span><input id="checkEndDate" type="date"></label>
+        <label><span>募集開始日</span><input id="checkStartDate" type="date"></label>
+        <label><span>募集終了日</span><input id="checkEndDate" type="date"></label>
       </div>
-      <div class="quickRange">
-        <button type="button" class="btn ghost" data-range-days="7" data-range-target="check">7日間</button>
-        <button type="button" class="btn ghost" data-range-days="14" data-range-target="check">14日間</button>
-        <button type="button" class="btn ghost" data-range-month data-range-target="check">今月</button>
-      </div>
+      <button type="button" class="btn gold full" id="saveShiftPeriodBtn">この期間に設定</button>
+      <div class="meta" style="margin-top:8px">日曜日は自動的に除外されます</div>
+      
     </div>
     <div id="shiftCheck"></div>
   </div>
@@ -215,7 +210,7 @@ function rangeDates(start,end){
   if(a>b)return [];
   const out=[];
   for(let d=new Date(a);d<=b;d.setDate(d.getDate()+1)){
-    out.push(new Date(d));
+    if(d.getDay()!==0)out.push(new Date(d));
     if(out.length>=31)break;
   }
   return out;
@@ -252,6 +247,26 @@ function renderHome(){
   const month=new Date().getMonth()+1;
   const list=db.customers.filter(c=>Number(c.birthMonth)===month).sort((a,b)=>Number(a.birthDay)-Number(b.birthDay));
   $('homeBirthdays').innerHTML=list.length?list.map(c=>`<button class="row full" data-customer="${c.id}"><div class="rowTitle">${c.birthMonth}/${c.birthDay} ${c.name}</div><div class="meta">担当:${c.cast||'担当不明'}</div></button>`).join(''):'<div class="meta">今月の誕生日登録はありません</div>';
+}
+
+
+function getShiftPeriod(){
+  const saved=JSON.parse(localStorage.getItem('tinkerbell_shift_period')||'null');
+  if(saved&&saved.start&&saved.end)return saved;
+  const start=new Date(),end=new Date();
+  end.setDate(end.getDate()+13);
+  return {start:fmt(start),end:fmt(end)};
+}
+function setShiftPeriod(start,end){
+  localStorage.setItem('tinkerbell_shift_period',JSON.stringify({start,end}));
+}
+function applyShiftPeriod(){
+  const p=getShiftPeriod();
+  $('shiftStartDate').value=p.start;
+  $('shiftEndDate').value=p.end;
+  $('checkStartDate').value=p.start;
+  $('checkEndDate').value=p.end;
+  $('shiftPeriodText').textContent=`${p.start} から ${p.end} まで`;
 }
 
 function renderShiftRegister(){
@@ -382,7 +397,7 @@ function renderBottles(){
 function showBottle(id){
   const b=db.bottles.find(x=>x.id===id);if(!b)return;
   $('detailTitle').textContent='ボトル詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">No.${b.number} ${b.customer}</div><div class="meta">ボトル:${b.name}</div><div class="meta">担当:${b.cast}</div><div class="meta">本数:${b.qty}</div><div class="meta">状態:${b.status==='empty'?'空ボトル':'保管中'}</div><div class="actions"><button class="btn ghost" data-edit-bottle="${b.id}">編集</button><button class="btn" data-toggle-bottle="${b.id}">${b.status==='empty'?'保管中へ':'空ボトル'}</button><button class="btn red" data-delete-bottle="${b.id}">削除</button></div></div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">No.${b.number} ${b.customer}</div><div class="meta">ボトル:${b.name}</div><div class="meta">担当:${b.cast}</div><div class="meta">本数:${b.qty}</div><div class="meta">状態:${b.status==='empty'?'空ボトル':'保管中'}</div><div class="actions"><button class="btn ghost" data-edit-bottle="${b.id}">編集</button><button class="btn" data-toggle-bottle="${b.id}">${b.status==='empty'?'保管中へ':'空ボトル'}</button><button class="btn red" data-delete-bottle="${b.id}">削除</button></div><button class="btn gold full" data-add-related-bottle="${b.id}" style="margin-top:9px">＋同じお客様にボトル追加</button></div>`;
   $('detailDialog').showModal();
 }
 
@@ -439,24 +454,35 @@ document.addEventListener('click',e=>{
   }
   if(t.dataset.bottle)return showBottle(t.dataset.bottle);
   if(t.dataset.editBottle){const b=db.bottles.find(v=>v.id===t.dataset.editBottle);$('detailDialog').close();return openBottleForm(b)}
+  if(t.dataset.addRelatedBottle){
+    const b=db.bottles.find(v=>v.id===t.dataset.addRelatedBottle);
+    $('detailDialog').close();
+    return openBottleForm(null,b?.customerId||'');
+  }
   if(t.dataset.toggleBottle){const b=db.bottles.find(v=>v.id===t.dataset.toggleBottle);b.status=b.status==='empty'?'stored':'empty';b.emptyDate=b.status==='empty'?today():'';save();$('detailDialog').close();renderBottles();return}
   if(t.dataset.deleteBottle){if(confirm('削除しますか？')){db.bottles=db.bottles.filter(v=>v.id!==t.dataset.deleteBottle);save();$('detailDialog').close();renderBottles();renderCustomers()}return}
   if(t.dataset.deleteStaff){db.staff=db.staff.filter(s=>s.id!==t.dataset.deleteStaff);save();populateStaff();renderStaff();return}
 });
 $('saveShiftBtn').onclick=saveShift;
 $('shiftStaff').onchange=renderShiftRegister;
-$('shiftStartDate').onchange=renderShiftRegister;$('shiftEndDate').onchange=renderShiftRegister;
+
 $('checkStartDate').onchange=renderShiftCheck;$('checkEndDate').onchange=renderShiftCheck;
+$('saveShiftPeriodBtn').onclick=()=>{
+  const start=$('checkStartDate').value,end=$('checkEndDate').value;
+  if(!start||!end||start>end)return toast('期間を確認してください');
+  setShiftPeriod(start,end);
+  applyShiftPeriod();
+  renderShiftRegister();
+  renderShiftCheck();
+  toast('シフト募集期間を設定しました');
+};
 $('scheduleViewDate').onchange=renderSchedules;
 $('bottleSearch').oninput=renderBottles;
 window.addEventListener('hashchange',route);
 
 function start(){
   populateStaff();
-  const start=new Date(),end=new Date();
-  end.setDate(end.getDate()+6);
-  $('shiftStartDate').value=fmt(start);$('shiftEndDate').value=fmt(end);
-  $('checkStartDate').value=fmt(start);$('checkEndDate').value=fmt(end);
+  applyShiftPeriod();
   $('scheduleViewDate').value=today();
   route();
 }
