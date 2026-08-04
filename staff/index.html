@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#faf7ef">
-<title>Tinker Bell Staff v28</title>
+<title>Tinker Bell Staff v29</title>
 <style>
 :root{
   --bg:#faf7ef;--card:#fff;--gold:#c79a43;--gold2:#efd68f;--ink:#2f2921;
@@ -89,6 +89,21 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
  .posMark{min-height:38px;font-size:17px}
 }
 
+
+.cycleMark{
+  width:100%;
+  min-height:50px;
+  border-radius:12px;
+  border:1px solid #d7c29a;
+  background:#faf8f2;
+  color:#aaa;
+  font-size:25px;
+  font-weight:900;
+}
+.cycleMark.o{background:var(--green);color:#fff;border-color:var(--green)}
+.cycleMark.tri{background:#e1b31e;color:#fff;border-color:#e1b31e}
+.cycleMark.x{background:var(--red);color:#fff;border-color:var(--red)}
+
 </style>
 </head>
 <body>
@@ -123,7 +138,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
       <label><span>名前</span><select id="shiftStaff"></select></label>
       <div class="card" style="background:#fffaf0">
         <div class="rowTitle">シフト募集期間</div>
-        <div id="shiftPeriodText" class="meta"></div>
+        <div id="shiftPeriodText" class="meta"></div><div class="meta">各日をタップすると「〇 → △ → × → 未入力」の順に切り替わります</div>
         <div class="meta">日曜日は定休日のため入力対象外です</div>
       </div>
       
@@ -281,11 +296,7 @@ function renderShiftRegister(){
   const cells=ds.map(d=>{
     const date=fmt(d),mark=db.shifts.find(x=>x.staff===st&&x.date===date)?.mark||'';
     return `<div class="posShiftCell" data-date="${date}">
-      <div class="posChoice">
-        <button type="button" class="posMark o ${mark==='o'?'selected':''}" data-mark="o">〇</button>
-        <button type="button" class="posMark tri ${mark==='tri'?'selected':''}" data-mark="tri">△</button>
-        <button type="button" class="posMark x ${mark==='x'?'selected':''}" data-mark="x">×</button>
-      </div>
+      <button type="button" class="cycleMark ${mark||''}" data-cycle-mark="${mark||''}">${mark==='o'?'〇':mark==='tri'?'△':mark==='x'?'×':'－'}</button>
     </div>`;
   }).join('');
   $('shiftInputTable').innerHTML=`<div class="posShiftWrap"><div class="posShiftTable" style="--day-count:${ds.length}">${header}<div class="posShiftCell name" title="${st}">${st}</div>${cells}</div></div>`;
@@ -310,11 +321,11 @@ function renderShiftCheck(){
 function saveShift(){
   const st=$('shiftStaff').value;
   document.querySelectorAll('#shiftInputTable [data-date]').forEach(cell=>{
-    const btn=cell.querySelector('.posMark.selected');if(!btn)return;
+    const btn=cell.querySelector('[data-cycle-mark]');if(!btn||!btn.dataset.cycleMark)return;
     const date=cell.dataset.date;
     const old=db.shifts.find(x=>x.staff===st&&x.date===date);
-    if(old)old.mark=btn.dataset.mark;
-    else db.shifts.push({id:uid(),staff:st,date,mark:btn.dataset.mark});
+    if(old)old.mark=btn.dataset.cycleMark;
+    else db.shifts.push({id:uid(),staff:st,date,mark:btn.dataset.cycleMark});
   });
   save();renderShiftCheck();renderHome();toast('シフトを登録しました');
 }
@@ -416,10 +427,12 @@ document.addEventListener('click',e=>{
   if(t.dataset.action==='new-staff')return openStaffForm();
   if(t.dataset.shiftTab){document.querySelectorAll('[data-shift-tab]').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('shiftRegisterPane').classList.toggle('hidden',t.dataset.shiftTab!=='register');$('shiftCheckPane').classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderShiftCheck();return}
   if(t.dataset.scheduleTab){document.querySelectorAll('[data-schedule-tab]').forEach(x=>x.classList.remove('active'));t.classList.add('active');state.scheduleMode=t.dataset.scheduleTab;$('scheduleDateBox').classList.toggle('hidden',state.scheduleMode!=='date');renderSchedules();return}
-  if(t.dataset.mark){
-    const group=t.closest('.posChoice')||t.parentElement;
-    group.querySelectorAll('[data-mark]').forEach(x=>x.classList.remove('selected'));
-    t.classList.add('selected');
+  if(t.hasAttribute('data-cycle-mark')){
+    const current=t.dataset.cycleMark||'';
+    const next=current===''?'o':current==='o'?'tri':current==='tri'?'x':'';
+    t.dataset.cycleMark=next;
+    t.className='cycleMark '+next;
+    t.textContent=next==='o'?'〇':next==='tri'?'△':next==='x'?'×':'－';
     return;
   }
   if(t.dataset.rangeDays){
