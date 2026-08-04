@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#faf7ef">
-<title>Tinker Bell Staff v25</title>
+<title>Tinker Bell Staff v27</title>
 <style>
 :root{
   --bg:#faf7ef;--card:#fff;--gold:#c79a43;--gold2:#efd68f;--ink:#2f2921;
@@ -78,6 +78,17 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 .posMark.tri.selected{background:#e1b31e;color:#fff}
 .posMark.x.selected{background:var(--red);color:#fff}
 
+
+.quickRange{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:4px 0 12px}
+.posShiftTable{grid-template-columns:76px repeat(var(--day-count),minmax(88px,1fr))}
+.posShiftCell.name{padding:10px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.posShiftCell.corner{padding-left:4px;padding-right:4px}
+@media(max-width:520px){
+ .posShiftTable{grid-template-columns:68px repeat(var(--day-count),minmax(84px,1fr))}
+ .posShiftCell{padding:8px 5px}
+ .posMark{min-height:38px;font-size:17px}
+}
+
 </style>
 </head>
 <body>
@@ -109,27 +120,31 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
   <div id="shiftRegisterPane">
     <div class="card">
+      <label><span>名前</span><select id="shiftStaff"></select></label>
       <div class="form2">
-        <label><span>名前</span><select id="shiftStaff"></select></label>
-        <label><span>週の開始日</span><input id="shiftWeekStart" type="date"></label>
+        <label><span>開始日</span><input id="shiftStartDate" type="date"></label>
+        <label><span>終了日</span><input id="shiftEndDate" type="date"></label>
       </div>
-      <div class="weekNav">
-        <button type="button" class="btn ghost" data-week-move="-7" data-week-target="register">← 前週</button>
-        <button type="button" class="btn ghost" data-week-today data-week-target="register">今週</button>
-        <button type="button" class="btn ghost" data-week-move="7" data-week-target="register">次週 →</button>
+      <div class="quickRange">
+        <button type="button" class="btn ghost" data-range-days="7" data-range-target="register">7日間</button>
+        <button type="button" class="btn ghost" data-range-days="14" data-range-target="register">14日間</button>
+        <button type="button" class="btn ghost" data-range-month data-range-target="register">今月</button>
       </div>
       <div id="shiftInputTable"></div>
-      <button id="saveShiftBtn" class="btn gold full" style="margin-top:12px">1週間分を登録</button>
+      <button id="saveShiftBtn" class="btn gold full" style="margin-top:12px">選択期間を登録</button>
     </div>
   </div>
 
   <div id="shiftCheckPane" class="hidden">
     <div class="card">
-      <label><span>週の開始日</span><input id="checkWeekStart" type="date"></label>
-      <div class="weekNav">
-        <button type="button" class="btn ghost" data-week-move="-7" data-week-target="check">← 前週</button>
-        <button type="button" class="btn ghost" data-week-today data-week-target="check">今週</button>
-        <button type="button" class="btn ghost" data-week-move="7" data-week-target="check">次週 →</button>
+      <div class="form2">
+        <label><span>開始日</span><input id="checkStartDate" type="date"></label>
+        <label><span>終了日</span><input id="checkEndDate" type="date"></label>
+      </div>
+      <div class="quickRange">
+        <button type="button" class="btn ghost" data-range-days="7" data-range-target="check">7日間</button>
+        <button type="button" class="btn ghost" data-range-days="14" data-range-target="check">14日間</button>
+        <button type="button" class="btn ghost" data-range-month data-range-target="check">今月</button>
       </div>
     </div>
     <div id="shiftCheck"></div>
@@ -152,7 +167,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <section id="bottles" class="hidden">
   <button class="btn ghost" data-nav="home">← ホーム</button>
-  <div class="sectionHead"><h2>ボトル確認</h2><button class="btn gold" data-action="new-bottle">＋登録</button></div>
+  <div class="sectionHead"><h2>ボトル確認</h2><button class="btn gold" data-action="new-bottle">＋ボトル追加</button></div>
   <div class="card"><label><span>No.・お客様・ボトル名で検索</span><input id="bottleSearch"></label></div>
   <div id="bottleList" class="list"></div>
 </section>
@@ -193,6 +208,18 @@ function names(){return db.staff.map(s=>s.name)}
 function monday(dateStr){const d=dateStr?new Date(dateStr+'T00:00:00'):new Date(),n=(d.getDay()+6)%7;d.setDate(d.getDate()-n);return d}
 function fmt(d){return d.toLocaleDateString('sv-SE')}
 function weekDates(s){const m=monday(s);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return d})}
+
+function rangeDates(start,end){
+  if(!start||!end)return [];
+  const a=new Date(start+'T00:00:00'),b=new Date(end+'T00:00:00');
+  if(a>b)return [];
+  const out=[];
+  for(let d=new Date(a);d<=b;d.setDate(d.getDate()+1)){
+    out.push(new Date(d));
+    if(out.length>=31)break;
+  }
+  return out;
+}
 function birthdayText(c){return c.birthMonth&&c.birthDay?`${c.birthMonth}月${c.birthDay}日`:'未登録'}
 
 function populateStaff(){
@@ -229,7 +256,11 @@ function renderHome(){
 
 function renderShiftRegister(){
   const st=$('shiftStaff').value||names()[0]||'';
-  const ds=weekDates($('shiftWeekStart').value);
+  const ds=rangeDates($('shiftStartDate').value,$('shiftEndDate').value);
+  if(!ds.length){
+    $('shiftInputTable').innerHTML='<div class="card">開始日と終了日を確認してください</div>';
+    return;
+  }
   const header=`<div class="posShiftCell head corner">名前</div>`+
     ds.map(d=>`<div class="posShiftCell head">${d.getMonth()+1}/${d.getDate()}<br>${'日月火水木金土'[d.getDay()]}</div>`).join('');
   const cells=ds.map(d=>{
@@ -242,10 +273,14 @@ function renderShiftRegister(){
       </div>
     </div>`;
   }).join('');
-  $('shiftInputTable').innerHTML=`<div class="posShiftWrap"><div class="posShiftTable">${header}<div class="posShiftCell name">${st}</div>${cells}</div></div>`;
+  $('shiftInputTable').innerHTML=`<div class="posShiftWrap"><div class="posShiftTable" style="--day-count:${ds.length}">${header}<div class="posShiftCell name" title="${st}">${st}</div>${cells}</div></div>`;
 }
 function renderShiftCheck(){
-  const ds=weekDates($('checkWeekStart').value);
+  const ds=rangeDates($('checkStartDate').value,$('checkEndDate').value);
+  if(!ds.length){
+    $('shiftCheck').innerHTML='<div class="card">開始日と終了日を確認してください</div>';
+    return;
+  }
   const head=`<div class="posShiftCell head corner">名前</div>`+
     ds.map(d=>`<div class="posShiftCell head">${d.getMonth()+1}/${d.getDate()}<br>${'日月火水木金土'[d.getDay()]}</div>`).join('');
   const rows=names().map(st=>{
@@ -253,9 +288,9 @@ function renderShiftCheck(){
       const m=db.shifts.find(x=>x.staff===st&&x.date===fmt(d))?.mark||'';
       return `<div class="posShiftCell"><span class="status ${m||'none'}">${m==='o'?'〇':m==='tri'?'△':m==='x'?'×':'－'}</span></div>`;
     }).join('');
-    return `<div class="posShiftCell name">${st}</div>${cells}`;
+    return `<div class="posShiftCell name" title="${st}">${st}</div>${cells}`;
   }).join('');
-  $('shiftCheck').innerHTML=`<div class="posShiftWrap" style="max-height:66vh"><div class="posShiftTable">${head}${rows}</div></div>`;
+  $('shiftCheck').innerHTML=`<div class="posShiftWrap" style="max-height:66vh"><div class="posShiftTable" style="--day-count:${ds.length}">${head}${rows}</div></div>`;
 }
 function saveShift(){
   const st=$('shiftStaff').value;
@@ -328,14 +363,14 @@ function renderCustomers(){
 function showCustomer(id){
   const c=db.customers.find(x=>x.id===id);if(!c)return;const bs=db.bottles.filter(b=>b.customerId===id);
   $('detailTitle').textContent='お客様詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${c.name}</div><div class="meta">誕生日:${birthdayText(c)}</div><div class="meta">担当:${c.cast||'担当不明'}</div><div class="meta">備考:${c.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-customer="${c.id}">編集</button><button class="btn red" data-delete-customer="${c.id}">削除</button></div></div><div class="card"><div class="rowTitle">🍾 キープボトル</div>${bs.length?bs.map(b=>`<button class="row full" data-bottle="${b.id}">No.${b.number} ${b.name}</button>`).join(''):'<div class="meta">なし</div>'}</div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${c.name}</div><div class="meta">誕生日:${birthdayText(c)}</div><div class="meta">担当:${c.cast||'担当不明'}</div><div class="meta">備考:${c.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-customer="${c.id}">編集</button><button class="btn red" data-delete-customer="${c.id}">削除</button></div></div><div class="card"><div class="sectionHead"><div class="rowTitle">🍾 キープボトル</div><button class="btn gold" data-add-bottle-for="${c.id}">＋追加</button></div>${bs.length?bs.map(b=>`<button class="row full" data-bottle="${b.id}">No.${b.number} ${b.name}</button>`).join(''):'<div class="meta">なし</div>'}</div>`;
   $('detailDialog').showModal();
 }
 
-function openBottleForm(existing=null){
+function openBottleForm(existing=null,preselectedCustomerId=""){
   if(!db.customers.length)return toast('先にお客様登録が必要です');
   $('formTitle').textContent=existing?'ボトル編集':'ボトル登録';
-  $('formBody').innerHTML=`<label><span>管理番号</span><input id="bNo" value="${existing?.number||''}"></label><label><span>お客様</span><select id="bCustomer">${db.customers.map(c=>`<option value="${c.id}" ${c.id===existing?.customerId?'selected':''}>${c.name}</option>`).join('')}</select></label><label><span>ボトル名</span><input id="bName" value="${existing?.name||''}"></label><label><span>担当</span><select id="bCast"><option>担当不明</option>${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>本数</span><input id="bQty" type="number" min="1" value="${existing?.qty||1}"></label><button class="btn gold full" id="saveBottle">保存</button>`;
+  $('formBody').innerHTML=`<label><span>管理番号</span><input id="bNo" value="${existing?.number||''}"></label><label><span>お客様</span><select id="bCustomer">${db.customers.map(c=>`<option value="${c.id}" ${c.id===(existing?.customerId||preselectedCustomerId)?'selected':''}>${c.name}</option>`).join('')}</select></label><label><span>ボトル名</span><input id="bName" value="${existing?.name||''}"></label><label><span>担当</span><select id="bCast"><option>担当不明</option>${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>本数</span><input id="bQty" type="number" min="1" value="${existing?.qty||1}"></label><button class="btn gold full" id="saveBottle">保存</button>`;
   $('formDialog').showModal();
   $('saveBottle').onclick=()=>{const no=$('bNo').value.trim(),cid=$('bCustomer').value,name=$('bName').value.trim();if(!no||!cid||!name)return toast('必須項目を入力');if(db.bottles.some(b=>String(b.number)===no&&b.id!==existing?.id))return toast('同じNo.があります');const customer=db.customers.find(c=>c.id===cid)?.name||'';const obj={id:existing?.id||uid(),number:no,customerId:cid,customer,name,cast:$('bCast').value,qty:+$('bQty').value||1,status:existing?.status||'stored',emptyDate:existing?.emptyDate||''};if(existing)Object.assign(existing,obj);else db.bottles.push(obj);save();$('formDialog').close();renderBottles();renderCustomers();toast('ボトルを保存しました')};
 }
@@ -372,18 +407,24 @@ document.addEventListener('click',e=>{
     t.classList.add('selected');
     return;
   }
-  if(t.dataset.weekMove){
-    const target=t.dataset.weekTarget==='check'?$('checkWeekStart'):$('shiftWeekStart');
-    const d=new Date(target.value+'T00:00:00');
-    d.setDate(d.getDate()+Number(t.dataset.weekMove));
-    target.value=fmt(d);
-    t.dataset.weekTarget==='check'?renderShiftCheck():renderShiftRegister();
+  if(t.dataset.rangeDays){
+    const target=t.dataset.rangeTarget;
+    const startInput=target==='check'?$('checkStartDate'):$('shiftStartDate');
+    const endInput=target==='check'?$('checkEndDate'):$('shiftEndDate');
+    const start=new Date((startInput.value||today())+'T00:00:00');
+    const end=new Date(start);
+    end.setDate(end.getDate()+Number(t.dataset.rangeDays)-1);
+    startInput.value=fmt(start);endInput.value=fmt(end);
+    target==='check'?renderShiftCheck():renderShiftRegister();
     return;
   }
-  if(t.hasAttribute('data-week-today')){
-    const target=t.dataset.weekTarget==='check'?$('checkWeekStart'):$('shiftWeekStart');
-    target.value=fmt(monday(today()));
-    t.dataset.weekTarget==='check'?renderShiftCheck():renderShiftRegister();
+  if(t.hasAttribute('data-range-month')){
+    const target=t.dataset.rangeTarget;
+    const startInput=target==='check'?$('checkStartDate'):$('shiftStartDate');
+    const endInput=target==='check'?$('checkEndDate'):$('shiftEndDate');
+    const now=new Date(),first=new Date(now.getFullYear(),now.getMonth(),1),last=new Date(now.getFullYear(),now.getMonth()+1,0);
+    startInput.value=fmt(first);endInput.value=fmt(last);
+    target==='check'?renderShiftCheck():renderShiftRegister();
     return;
   }
   if(t.dataset.schedule)return showSchedule(t.dataset.schedule);
@@ -392,6 +433,10 @@ document.addEventListener('click',e=>{
   if(t.dataset.customer)return showCustomer(t.dataset.customer);
   if(t.dataset.editCustomer){const c=db.customers.find(v=>v.id===t.dataset.editCustomer);$('detailDialog').close();return openCustomerForm(c)}
   if(t.dataset.deleteCustomer){if(confirm('お客様と紐付くボトルも削除しますか？')){const id=t.dataset.deleteCustomer;db.customers=db.customers.filter(c=>c.id!==id);db.bottles=db.bottles.filter(b=>b.customerId!==id);save();$('detailDialog').close();renderCustomers();renderBottles();renderHome()}return}
+  if(t.dataset.addBottleFor){
+    $('detailDialog').close();
+    return openBottleForm(null,t.dataset.addBottleFor);
+  }
   if(t.dataset.bottle)return showBottle(t.dataset.bottle);
   if(t.dataset.editBottle){const b=db.bottles.find(v=>v.id===t.dataset.editBottle);$('detailDialog').close();return openBottleForm(b)}
   if(t.dataset.toggleBottle){const b=db.bottles.find(v=>v.id===t.dataset.toggleBottle);b.status=b.status==='empty'?'stored':'empty';b.emptyDate=b.status==='empty'?today():'';save();$('detailDialog').close();renderBottles();return}
@@ -400,16 +445,19 @@ document.addEventListener('click',e=>{
 });
 $('saveShiftBtn').onclick=saveShift;
 $('shiftStaff').onchange=renderShiftRegister;
-$('shiftWeekStart').onchange=renderShiftRegister;
-$('checkWeekStart').onchange=renderShiftCheck;
+$('shiftStartDate').onchange=renderShiftRegister;$('shiftEndDate').onchange=renderShiftRegister;
+$('checkStartDate').onchange=renderShiftCheck;$('checkEndDate').onchange=renderShiftCheck;
 $('scheduleViewDate').onchange=renderSchedules;
 $('bottleSearch').oninput=renderBottles;
 window.addEventListener('hashchange',route);
 
 function start(){
   populateStaff();
-  const mon=fmt(monday(today()));
-  $('shiftWeekStart').value=mon;$('checkWeekStart').value=mon;$('scheduleViewDate').value=today();
+  const start=new Date(),end=new Date();
+  end.setDate(end.getDate()+6);
+  $('shiftStartDate').value=fmt(start);$('shiftEndDate').value=fmt(end);
+  $('checkStartDate').value=fmt(start);$('checkEndDate').value=fmt(end);
+  $('scheduleViewDate').value=today();
   route();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
