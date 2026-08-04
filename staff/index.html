@@ -1,572 +1,418 @@
 <!doctype html>
-<!-- Tinker Bell Staff v22: explicit element binding -->
 <html lang="ja">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#faf7ef">
-<title>Tinker Bell Staff v22</title>
+<title>Tinker Bell Staff v25</title>
 <style>
-:root{--ivory:#faf7ef;--white:#fff;--gold:#c89b45;--gold2:#eed493;--ink:#332c23;--muted:#766e62;--line:#e3d7bd;--green:#2c9a60;--yellow:#d5a600;--red:#d04c5b;--shadow:0 10px 28px rgba(100,76,30,.11)}
-*{box-sizing:border-box}body{margin:0;color:var(--ink);background:radial-gradient(circle at 10% 0,rgba(237,212,154,.25),transparent 28%),linear-gradient(155deg,#fff,#f8f3e9 58%,#edf7f3);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
-button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
-header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.93);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-.header{max-width:850px;margin:auto;padding:13px 15px;display:flex;justify-content:space-between;align-items:center}
-.brand{font:italic 31px Georgia,serif;color:#a87925}.sub{font-size:10px;letter-spacing:.16em;color:#99753a}.small{font-size:11px;color:var(--muted)}
-main{max-width:850px;margin:auto;padding:14px 14px 92px}.card{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:19px;padding:15px;margin-bottom:13px;box-shadow:var(--shadow)}
-.hero{display:flex;gap:13px;align-items:center;background:linear-gradient(135deg,#fff,#fbf1dc)}.heroIcon{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#f2d687,#b98327);color:#fff;font-size:26px}.hero b{font-size:20px;color:#76551e}
-.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.tile{min-height:128px;border:1px solid #dfc991;border-radius:18px;padding:15px;text-align:center;background:linear-gradient(145deg,#fff,#fbf5e8);color:var(--ink);box-shadow:0 8px 20px rgba(105,79,28,.09)}.tile .ico{font-size:35px;display:block;margin-bottom:8px}.tile b{display:block;color:#79581e;font-size:17px}.tile small{display:block;color:var(--muted);font-size:11px;line-height:1.45;margin-top:5px}
-.btn{border:0;border-radius:11px;padding:10px 13px;font-weight:850;background:#eee7da;color:var(--ink)}.btn.gold{background:linear-gradient(#efd486,#c08c31);color:#fff}.btn.ghost{background:#fff;border:1px solid #d6ba7a;color:#805d1e}.btn.red{background:#b84350;color:#fff}.full{width:100%}
-.sectionHead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:11px 0}.sectionHead h2{margin:0;color:#76541d;font-size:22px}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px}.tab{border:1px solid #d9c69d;border-radius:13px;padding:12px;background:#fff;color:#725725;font-weight:900}.tab.active{background:linear-gradient(#efd486,#c08c31);color:#fff}
-label{display:block;margin-bottom:10px}label span{display:block;font-size:12px;font-weight:850;color:#806128;margin-bottom:5px}input,select,textarea{width:100%;padding:11px;border-radius:11px;border:1px solid #d8c7a4;background:#fff;color:var(--ink)}textarea{min-height:78px}.form2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.span2{grid-column:1/-1}
-.dayList{display:grid;gap:9px}.dayRow{background:#fff;border:1px solid #ded0b4;border-radius:15px;padding:11px;display:grid;grid-template-columns:92px 1fr;gap:9px;align-items:center;box-shadow:0 6px 14px rgba(89,65,20,.07)}.dateBox{text-align:center}.dateBox b{display:block;color:#76541d;font-size:16px}.dateBox small{color:var(--muted)}
-.markGroup{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.markBtn{min-height:46px;border-radius:12px;border:1px solid #d7c29a;background:#faf8f2;color:#777;font-size:22px;font-weight:900}.markBtn.o.selected{background:var(--green);color:#fff}.markBtn.tri.selected{background:#e3b51d;color:#fff}.markBtn.x.selected{background:var(--red);color:#fff}
-.dayCheck{background:#fff;border:1px solid #dfd1b4;border-radius:16px;padding:12px;margin-bottom:10px;box-shadow:var(--shadow)}.dayCheck h3{margin:0 0 9px;color:#76541d}.staffStatus{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 4px;border-top:1px solid #f0e7d7}.staffStatus:first-of-type{border-top:0}.status{font-size:22px;font-weight:900;min-width:38px;text-align:center}.status.o{color:var(--green)}.status.tri{color:var(--yellow)}.status.x{color:var(--red)}.status.none{color:#c5bfb5}
-.list{display:grid;gap:9px}.row{background:#fff;border:1px solid #dfd3ba;border-radius:14px;padding:12px;box-shadow:0 6px 15px rgba(89,65,20,.07)}.rowTitle{font-size:17px;font-weight:900;color:#76541d}.meta{font-size:12px;color:var(--muted);line-height:1.6;margin-top:4px}
-.choices{display:flex;flex-wrap:wrap;gap:7px}.choice{border:1px solid #d6c29b;background:#fff;color:#665c50;border-radius:999px;padding:8px 11px}.choice.selected{background:linear-gradient(#efd486,#c08c31);color:#fff}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#fff;border:1px solid #dfd1b4;border-radius:13px;padding:11px}.stat small{display:block;color:var(--muted)}.stat strong{display:block;color:#76541d;font-size:21px}.staffLine{display:flex;justify-content:space-between;align-items:center;gap:8px}.role{font-size:10px;padding:4px 7px;border-radius:999px;background:#eee4cf;color:#775a25}
-dialog{border:0;padding:0;background:#f9f6ef;color:var(--ink);border-radius:19px;width:min(700px,95vw);max-height:92vh;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.3)}dialog::backdrop{background:rgba(35,28,17,.55)}.modal{padding:16px}.modalHead{display:flex;justify-content:space-between;align-items:center}.modalHead h2{margin:0;color:#76541d}.close{border:0;border-radius:50%;width:38px;height:38px;background:#eee6d7;color:#5c4d38}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#42351f;color:#fff;padding:10px 15px;border-radius:999px;opacity:0;transition:.2s;z-index:99}.toast.show{opacity:1}
-@media(min-width:720px){.menu{grid-template-columns:repeat(3,1fr)}}@media(max-width:520px){.dayRow{grid-template-columns:78px 1fr}.form2{grid-template-columns:1fr}.span2{grid-column:auto}}
-
-.summaryGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px}
-.summaryCard{border:1px solid #dfc991;border-radius:18px;background:#fff;padding:14px;text-align:left;color:var(--ink);box-shadow:var(--shadow)}
-.summaryCard small{display:block;color:var(--muted);font-weight:800}
-.summaryCard strong{font-size:34px;color:#76541d;margin-right:4px}
-.tile{min-height:145px;padding:18px}
-.tile .ico{font-size:42px}
-.tile b{font-size:19px}
-.tile small{font-size:12px}
-.dayRow{grid-template-columns:105px 1fr;padding:14px}
-.dateBox b{font-size:19px}
-.dateBox small{font-size:13px}
-.markBtn{min-height:54px;font-size:25px}
-.staffStatus{padding:13px 6px}
-.staffStatus b{font-size:16px}
-.status{font-size:28px}
-@media(max-width:520px){
- .summaryGrid{grid-template-columns:1fr 1fr}
- .menu{grid-template-columns:1fr 1fr}
- .tile{min-height:138px;padding:14px 10px}
- .tile b{font-size:16px}
- .tile small{font-size:10px}
- .dayRow{grid-template-columns:88px 1fr}
+:root{
+  --bg:#faf7ef;--card:#fff;--gold:#c79a43;--gold2:#efd68f;--ink:#2f2921;
+  --muted:#756d61;--line:#e3d6bc;--green:#2f9d62;--yellow:#d2a400;--red:#cf4b5a;
+  --shadow:0 10px 28px rgba(95,72,28,.10);
 }
-
-
-.shiftTableWrap{overflow:auto;max-height:68vh;border:1px solid #d9c8a5;border-radius:15px;background:#fff;box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
-.shiftTable{min-width:820px;display:grid;grid-template-columns:130px repeat(7,minmax(96px,1fr))}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(155deg,#fff,#f8f3e9 58%,#eef7f3);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.header{max-width:920px;margin:auto;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+.brand{font:italic 30px Georgia,serif;color:#a67723}.sub{font-size:10px;letter-spacing:.16em;color:#9b7737}
+main{max-width:920px;margin:auto;padding:14px 14px 90px}
+.card{background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tile{min-height:132px;border:1px solid #dec78d;border-radius:18px;background:linear-gradient(145deg,#fff,#fbf4e5);padding:15px;text-align:center;color:var(--ink);box-shadow:var(--shadow)}
+.tile .ico{display:block;font-size:36px;margin-bottom:7px}.tile b{display:block;color:#76541d;font-size:17px}.tile small{display:block;color:var(--muted);font-size:11px;line-height:1.4;margin-top:5px}
+.btn{border:0;border-radius:11px;padding:10px 13px;font-weight:800;background:#eee7da;color:var(--ink)}
+.btn.gold{background:linear-gradient(#efd486,#c08c31);color:#fff}
+.btn.ghost{background:#fff;border:1px solid #d5ba7a;color:#805d1e}
+.btn.red{background:#b84350;color:#fff}
+.full{width:100%}
+.sectionHead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:10px 0}
+.sectionHead h2{margin:0;color:#76541d;font-size:22px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+.tab{border:1px solid #d7c29a;border-radius:12px;padding:10px;background:#fff;color:#755820;font-weight:800}
+.tab.active{background:linear-gradient(#efd486,#c08c31);color:#fff}
+label{display:block;margin-bottom:10px}
+label span{display:block;font-size:12px;font-weight:800;color:#806128;margin-bottom:5px}
+input,select,textarea{width:100%;padding:11px;border-radius:11px;border:1px solid #d8c7a4;background:#fff;color:var(--ink)}
+textarea{min-height:80px;resize:vertical}
+.form2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dayList{display:grid;gap:9px}
+.dayRow{display:grid;grid-template-columns:92px 1fr;gap:9px;align-items:center;background:#fff;border:1px solid #ded0b4;border-radius:14px;padding:11px}
+.dateBox{text-align:center}.dateBox b{display:block;color:#76541d}.dateBox small{color:var(--muted)}
+.markGroup{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.markBtn{min-height:48px;border-radius:12px;border:1px solid #d7c29a;background:#faf8f2;font-size:22px;font-weight:900}
+.markBtn.o.selected{background:var(--green);color:#fff}.markBtn.tri.selected{background:#e1b31e;color:#fff}.markBtn.x.selected{background:var(--red);color:#fff}
+.shiftWrap{overflow:auto;max-height:66vh;border:1px solid #d9c8a5;border-radius:15px;background:#fff}
+.shiftTable{min-width:820px;display:grid;grid-template-columns:130px repeat(7,minmax(95px,1fr))}
 .shiftCell{padding:11px;text-align:center;border-right:1px solid #eee4d1;border-bottom:1px solid #eee4d1;background:#fff}
 .shiftCell.head{position:sticky;top:0;z-index:3;background:#f4ead4;color:#76541d;font-weight:900}
-.shiftCell.name{position:sticky;left:0;z-index:2;text-align:left;font-weight:900;background:#fffaf0;box-shadow:3px 0 8px rgba(100,76,30,.08)}
-.shiftCell.corner{position:sticky;top:0;left:0;z-index:4;background:#ead9b8}
+.shiftCell.name{position:sticky;left:0;z-index:2;text-align:left;font-weight:900;background:#fffaf0}
+.shiftCell.corner{left:0;z-index:4}
+.status{font-size:24px;font-weight:900}.status.o{color:var(--green)}.status.tri{color:var(--yellow)}.status.x{color:var(--red)}.status.none{color:#c6c0b6}
+.list{display:grid;gap:9px}
+.row{background:#fff;border:1px solid #dfd3ba;border-radius:14px;padding:12px;box-shadow:0 6px 15px rgba(89,65,20,.06);text-align:left;color:var(--ink)}
+.rowTitle{font-size:17px;font-weight:900;color:#76541d}.meta{font-size:12px;color:var(--muted);line-height:1.6;margin-top:4px}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.summary .card{margin:0}.summary strong{font-size:30px;color:#76541d}
+dialog{border:0;padding:0;background:#f9f6ef;color:var(--ink);border-radius:18px;width:min(700px,95vw);max-height:92vh;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(35,28,17,.55)}
+.modal{padding:15px}.modalHead{display:flex;justify-content:space-between;align-items:center}.modalHead h2{margin:0;color:#76541d}.close{border:0;border-radius:50%;width:38px;height:38px;background:#eee6d7}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#42351f;color:#fff;padding:10px 15px;border-radius:999px;opacity:0;transition:.2s;z-index:99}.toast.show{opacity:1}
+@media(min-width:720px){.menu{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.form2{grid-template-columns:1fr}.dayRow{grid-template-columns:80px 1fr}.tile{min-height:125px;padding:12px 8px}.tile b{font-size:16px}}
+
+.weekNav{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:10px 0}
+.posShiftWrap{overflow:auto;border:1px solid #d9c8a5;border-radius:15px;background:#fff;-webkit-overflow-scrolling:touch}
+.posShiftTable{min-width:820px;display:grid;grid-template-columns:130px repeat(7,minmax(96px,1fr))}
+.posShiftCell{padding:10px;text-align:center;border-right:1px solid #eee4d1;border-bottom:1px solid #eee4d1;background:#fff}
+.posShiftCell.head{position:sticky;top:0;z-index:3;background:#f4ead4;color:#76541d;font-weight:900}
+.posShiftCell.name{position:sticky;left:0;z-index:2;text-align:left;font-weight:900;background:#fffaf0}
+.posShiftCell.corner{left:0;z-index:4;background:#ead9b8}
+.posChoice{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.posMark{min-height:40px;border-radius:9px;border:1px solid #d7c29a;background:#faf8f2;font-size:18px;font-weight:900}
+.posMark.o.selected{background:var(--green);color:#fff}
+.posMark.tri.selected{background:#e1b31e;color:#fff}
+.posMark.x.selected{background:var(--red);color:#fff}
 
 </style>
 </head>
 <body>
-<header><div class="header"><div><div class="brand">Tinker Bell</div><div class="sub">ティンカーベル</div></div><div class="small">スタッフ専用</div></div></header>
+<header><div class="header"><div><div class="brand">Tinker Bell</div><div class="sub">ティンカーベル</div></div><small>スタッフ専用</small></div></header>
 <main>
 <section id="home">
- <div class="card hero">
-      <div class="heroIcon">✦</div>
-      <div style="flex:1">
-        <b>スタッフメニュー</b>
-        <div id="todayDate" class="meta"></div>
-      </div>
-    </div>
-    <div class="summaryGrid">
-      <button class="summaryCard" data-view="shift"><small>今日の出勤予定</small><strong id="todayShiftCount">0</strong><span>人</span></button>
-      <button class="summaryCard" data-view="schedules"><small>今日の予定</small><strong id="todayScheduleCount">0</strong><span>件</span></button>
-    </div>
- <div class="card">
-      <div class="sectionHead"><h2 style="font-size:18px">🎂 今月の誕生日</h2></div>
-      <div id="birthdayListHome" class="list"></div>
-    </div>
-    <div class="menu">
-  <button class="tile" data-view="shift"><span class="ico">🗓️</span><b>シフト登録・確認</b><small>1画面で登録と確認を切替</small></button>
-  <button class="tile" data-view="schedules"><span class="ico">📋</span><b>今日の予定</b><small>同伴・来店予定を確認</small></button>
-  <button class="tile" id="openScheduleHome"><span class="ico">🥂</span><b>予定登録・変更</b><small>同伴・来店予定を登録</small></button>
-  <button class="tile" data-view="customers"><span class="ico">👤</span><b>お客様情報</b><small>登録・検索・編集</small></button>
-  <button class="tile" data-view="bottles"><span class="ico">🍾</span><b>ボトル確認</b><small>キープ状況を管理</small></button>
-  <button class="tile" id="adminBtn"><span class="ico">🔒</span><b>その他・管理</b><small>スタッフ登録・各種管理</small></button>
- </div>
+  <div class="summary">
+    <div class="card"><small>今日の出勤予定</small><strong id="homeShiftCount">0</strong>人</div>
+    <div class="card"><small>今日の予定</small><strong id="homeScheduleCount">0</strong>件</div>
+  </div>
+  <div class="card"><div class="sectionHead"><h2 style="font-size:18px">🎂 今月の誕生日</h2></div><div id="homeBirthdays" class="list"></div></div>
+  <div class="menu">
+    <button class="tile" data-nav="shift"><span class="ico">🗓️</span><b>シフト登録・確認</b><small>1週間登録／全員確認</small></button>
+    <button class="tile" data-nav="schedules"><span class="ico">📋</span><b>今日の予定</b><small>同伴・来店予定</small></button>
+    <button class="tile" data-action="new-schedule"><span class="ico">🥂</span><b>予定登録・変更</b><small>未来の予定も登録</small></button>
+    <button class="tile" data-nav="customers"><span class="ico">👤</span><b>お客様情報</b><small>誕生日・備考・ボトル</small></button>
+    <button class="tile" data-nav="bottles"><span class="ico">🍾</span><b>ボトル確認</b><small>No.検索・編集・削除</small></button>
+    <button class="tile" data-action="admin"><span class="ico">🔒</span><b>その他・管理</b><small>スタッフ登録</small></button>
+  </div>
 </section>
 
 <section id="shift" class="hidden">
- <button class="btn ghost" data-view="home">← ホーム</button>
- <div class="sectionHead"><h2>シフト</h2></div>
- <div class="tabs"><button class="tab active" data-shift-tab="register">シフト登録</button><button class="tab" data-shift-tab="check">シフト確認</button></div>
-
- <div id="shiftRegisterPane">
-  <div class="card">
-   <div class="form2"><label><span>自分の名前</span><select id="shiftStaff"></select></label><label><span>週の開始日</span><input id="shiftWeekStart" type="date"></label></div>
-   <div class="meta" style="margin-bottom:10px">〇＝出勤可　△＝相談　×＝出勤不可</div>
-   <div id="shiftDays" class="dayList"></div>
-   <button id="saveShiftBtn" class="btn gold full" style="margin-top:12px">1週間分を登録</button>
+  <button class="btn ghost" data-nav="home">← ホーム</button>
+  <div class="sectionHead"><h2>シフト</h2></div>
+  <div class="tabs" style="grid-template-columns:1fr 1fr">
+    <button class="tab active" data-shift-tab="register">自分のシフト入力</button>
+    <button class="tab" data-shift-tab="check">全員のシフト確認</button>
   </div>
- </div>
 
- <div id="shiftCheckPane" class="hidden">
-  <div class="card"><label><span>週の開始日</span><input id="checkWeekStart" type="date"></label></div>
-  <div id="shiftCheckList"></div>
- </div>
+  <div id="shiftRegisterPane">
+    <div class="card">
+      <div class="form2">
+        <label><span>名前</span><select id="shiftStaff"></select></label>
+        <label><span>週の開始日</span><input id="shiftWeekStart" type="date"></label>
+      </div>
+      <div class="weekNav">
+        <button type="button" class="btn ghost" data-week-move="-7" data-week-target="register">← 前週</button>
+        <button type="button" class="btn ghost" data-week-today data-week-target="register">今週</button>
+        <button type="button" class="btn ghost" data-week-move="7" data-week-target="register">次週 →</button>
+      </div>
+      <div id="shiftInputTable"></div>
+      <button id="saveShiftBtn" class="btn gold full" style="margin-top:12px">1週間分を登録</button>
+    </div>
+  </div>
+
+  <div id="shiftCheckPane" class="hidden">
+    <div class="card">
+      <label><span>週の開始日</span><input id="checkWeekStart" type="date"></label>
+      <div class="weekNav">
+        <button type="button" class="btn ghost" data-week-move="-7" data-week-target="check">← 前週</button>
+        <button type="button" class="btn ghost" data-week-today data-week-target="check">今週</button>
+        <button type="button" class="btn ghost" data-week-move="7" data-week-target="check">次週 →</button>
+      </div>
+    </div>
+    <div id="shiftCheck"></div>
+  </div>
 </section>
 
 <section id="schedules" class="hidden">
-  <button class="btn ghost" data-view="home">← ホーム</button>
-  <div class="sectionHead"><h2>同伴・来店予定</h2><button class="btn gold" id="addScheduleBtn">＋予定登録</button></div>
-  <div class="card">
-    <div class="tabs" style="margin-bottom:10px">
-      <button class="tab active" data-schedule-tab="today">今日</button>
-      <button class="tab" data-schedule-tab="upcoming">今後の予定</button>
-      <button class="tab" data-schedule-tab="date">日付指定</button>
-    </div>
-    <label id="scheduleDateWrap" class="hidden"><span>表示する日付</span><input id="scheduleViewDate" type="date"></label>
-  </div>
+  <button class="btn ghost" data-nav="home">← ホーム</button>
+  <div class="sectionHead"><h2>同伴・来店予定</h2><button class="btn gold" data-action="new-schedule">＋登録</button></div>
+  <div class="tabs"><button class="tab active" data-schedule-tab="today">今日</button><button class="tab" data-schedule-tab="upcoming">今後</button><button class="tab" data-schedule-tab="date">日付指定</button></div>
+  <div id="scheduleDateBox" class="card hidden"><label><span>表示日</span><input id="scheduleViewDate" type="date"></label></div>
   <div id="scheduleList" class="list"></div>
 </section>
-<section id="customers" class="hidden"><button class="btn ghost" data-view="home">← ホーム</button><div class="sectionHead"><h2>お客様情報</h2><button class="btn gold" id="addCustomerBtn">＋登録</button></div><div id="customerList" class="list"></div></section>
+
+<section id="customers" class="hidden">
+  <button class="btn ghost" data-nav="home">← ホーム</button>
+  <div class="sectionHead"><h2>お客様情報</h2><button class="btn gold" data-action="new-customer">＋登録</button></div>
+  <div id="customerList" class="list"></div>
+</section>
+
 <section id="bottles" class="hidden">
-  <button class="btn ghost" data-view="home">← ホーム</button>
-  <div class="sectionHead">
-    <h2>ボトル確認</h2>
-    <button class="btn gold" id="addBottleBtn">＋ボトル登録</button>
-  </div>
-  <div class="card">
-    <label><span>管理番号・お客様名・ボトル名で検索</span>
-      <input id="bottleSearch" placeholder="例：12、田中様、吉四六">
-    </label>
-  </div>
+  <button class="btn ghost" data-nav="home">← ホーム</button>
+  <div class="sectionHead"><h2>ボトル確認</h2><button class="btn gold" data-action="new-bottle">＋登録</button></div>
+  <div class="card"><label><span>No.・お客様・ボトル名で検索</span><input id="bottleSearch"></label></div>
   <div id="bottleList" class="list"></div>
 </section>
 </main>
 
-<dialog id="scheduleDialog"><div class="modal"><div class="modalHead"><h2>同伴・来店予定を登録</h2><button class="close" data-close="scheduleDialog">×</button></div>
-<div class="form2"><label><span>日付</span><input id="schDate" type="date"></label><label><span>種別</span><select id="schType"><option value="companion">同伴</option><option value="visit">来店予定</option></select></label><label><span>時間</span><input id="schTime" type="time"></label><label><span>お客様名</span><input id="schCustomer"></label><label><span>担当</span><select id="schMainCast"></select></label><label><span>人数</span><input id="schPeople" type="number" min="1" value="1"></label><div class="span2"><span class="small">同行キャスト</span><div id="companionChoices" class="choices"></div></div><div class="span2"><span class="small">席</span><div id="seatChoices" class="choices"></div></div><label class="span2"><span>備考</span><textarea id="schMemo"></textarea></label></div>
-<button class="btn gold full" id="saveScheduleBtn">登録</button></div></dialog>
-
-
-<dialog id="scheduleDetailDialog"><div class="modal">
-  <div class="modalHead"><h2>予定の詳細</h2><button class="close" data-close="scheduleDetailDialog">×</button></div>
-  <div id="scheduleDetailBody"></div>
-</div></dialog>
-
-
-<dialog id="customerDetailDialog"><div class="modal">
-      <div class="modalHead"><h2>お客様詳細</h2><button class="close" data-close="customerDetailDialog">×</button></div>
-      <div id="customerDetailBody"></div>
-    </div></dialog>
-    
-<dialog id="customerDeleteDialog"><div class="modal">
-  <div class="modalHead"><h2>お客様削除</h2><button class="close" data-close="customerDeleteDialog">×</button></div>
-  <div id="customerDeleteBody"></div>
-</div></dialog>
-
-<dialog id="bottleDetailDialog"><div class="modal">
-  <div class="modalHead"><h2>ボトル詳細</h2><button class="close" data-close="bottleDetailDialog">×</button></div>
-  <div id="bottleDetailBody"></div>
-</div></dialog>
-
-<dialog id="simpleDialog"><div class="modal"><div class="modalHead"><h2 id="simpleTitle"></h2><button class="close" data-close="simpleDialog">×</button></div><div id="simpleBody"></div></div></dialog>
-<dialog id="adminDialog"><div class="modal"><div class="modalHead"><h2>その他・管理</h2><button class="close" data-close="adminDialog">×</button></div><div id="loginArea"><label><span>管理者パスコード</span><input id="adminPass" type="password"></label><button class="btn gold full" id="adminLoginBtn">ログイン</button></div><div id="adminPanel" class="hidden"><div class="stats"><div class="stat"><small>スタッフ</small><strong id="staffCount">0</strong></div><div class="stat"><small>顧客</small><strong id="customerCount">0</strong></div><div class="stat"><small>ボトル</small><strong id="bottleCount">0</strong></div></div><div class="sectionHead"><h2 style="font-size:19px">スタッフ管理</h2><button class="btn gold" id="addStaffBtn">＋追加</button></div><div id="staffList" class="list"></div></div></div></dialog>
-<dialog id="staffDialog"><div class="modal"><div class="modalHead"><h2 id="staffTitle">スタッフ追加</h2><button class="close" data-close="staffDialog">×</button></div><label><span>表示名・源氏名</span><input id="staffName"></label><label><span>区分</span><select id="staffRole"><option value="cast">キャスト</option><option value="floor">黒服・ホール</option><option value="manager">管理者</option></select></label><div style="display:flex;gap:8px"><button class="btn red hidden" id="deleteStaffBtn">削除</button><button class="btn gold full" id="saveStaffBtn">保存</button></div></div></dialog>
+<dialog id="formDialog"><div class="modal"><div class="modalHead"><h2 id="formTitle"></h2><button class="close" data-close="formDialog">×</button></div><div id="formBody"></div></div></dialog>
+<dialog id="detailDialog"><div class="modal"><div class="modalHead"><h2 id="detailTitle"></h2><button class="close" data-close="detailDialog">×</button></div><div id="detailBody"></div></div></dialog>
+<dialog id="adminDialog"><div class="modal"><div class="modalHead"><h2>スタッフ管理</h2><button class="close" data-close="adminDialog">×</button></div><div id="adminLogin"><label><span>パスコード</span><input id="adminPass" type="password"></label><button class="btn gold full" data-action="admin-login">ログイン</button></div><div id="adminPanel" class="hidden"><button class="btn gold full" data-action="new-staff">＋スタッフ追加</button><div id="staffList" class="list" style="margin-top:10px"></div></div></div></dialog>
 <div id="toast" class="toast"></div>
 
 <script>
 'use strict';
-
 const $=id=>document.getElementById(id);
-const home=$('home'),shift=$('shift'),schedules=$('schedules'),customers=$('customers'),bottles=$('bottles');
-const shiftStaff=$('shiftStaff'),shiftWeekStart=$('shiftWeekStart'),checkWeekStart=$('checkWeekStart');
-const shiftDays=$('shiftDays'),shiftCheckList=$('shiftCheckList'),shiftRegisterPane=$('shiftRegisterPane'),shiftCheckPane=$('shiftCheckPane');
-const scheduleList=$('scheduleList'),scheduleViewDate=$('scheduleViewDate'),scheduleDateWrap=$('scheduleDateWrap');
-const openScheduleHome=$('openScheduleHome'),addScheduleBtn=$('addScheduleBtn'),scheduleDialog=$('scheduleDialog');
-const schDate=$('schDate'),schType=$('schType'),schTime=$('schTime'),schCustomer=$('schCustomer'),schMainCast=$('schMainCast'),schPeople=$('schPeople'),schMemo=$('schMemo');
-const companionChoices=$('companionChoices'),seatChoices=$('seatChoices'),saveScheduleBtn=$('saveScheduleBtn');
-const scheduleDetailDialog=$('scheduleDetailDialog'),scheduleDetailBody=$('scheduleDetailBody');
-const customerList=$('customerList'),addCustomerBtn=$('addCustomerBtn'),customerDetailDialog=$('customerDetailDialog'),customerDetailBody=$('customerDetailBody');
-const customerDeleteDialog=$('customerDeleteDialog'),customerDeleteBody=$('customerDeleteBody');
-const bottleList=$('bottleList'),bottleSearch=$('bottleSearch'),addBottleBtn=$('addBottleBtn'),bottleDetailDialog=$('bottleDetailDialog'),bottleDetailBody=$('bottleDetailBody');
-const simpleDialog=$('simpleDialog'),simpleTitle=$('simpleTitle'),simpleBody=$('simpleBody');
-const adminDialog=$('adminDialog'),adminBtn=$('adminBtn'),adminPass=$('adminPass'),adminLoginBtn=$('adminLoginBtn'),loginArea=$('loginArea'),adminPanel=$('adminPanel');
-const staffCount=$('staffCount'),customerCount=$('customerCount'),bottleCount=$('bottleCount'),staffList=$('staffList'),addStaffBtn=$('addStaffBtn');
-const staffDialog=$('staffDialog'),staffTitle=$('staffTitle'),staffName=$('staffName'),staffRole=$('staffRole'),deleteStaffBtn=$('deleteStaffBtn'),saveStaffBtn=$('saveStaffBtn');
-const saveShiftBtn=$('saveShiftBtn'),todayDate=$('todayDate'),todayShiftCount=$('todayShiftCount'),todayScheduleCount=$('todayScheduleCount'),birthdayListHome=$('birthdayListHome');
-const toastEl=$('toast');
-
-const KEY='tinkerbell_v9',DEFAULT=[{id:'1',name:'あい',role:'cast'},{id:'2',name:'れな',role:'cast'},{id:'3',name:'みく',role:'cast'}],SEATS=['カウンター','1','2','3','4','5'];
-const today=()=>new Date().toLocaleDateString('sv-SE'),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2);
-let db=load(),companions=[],seat='カウンター',editingStaff=null,scheduleMode='today';
+const KEY='tinkerbell_v24';
+const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
+const state={scheduleMode:'today',editing:null};
+const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2);
+const today=()=>new Date().toLocaleDateString('sv-SE');
 function load(){
- try{
-  const x=JSON.parse(localStorage.getItem(KEY));
-  if(x){
-   x.customers=(x.customers||[]).map(c=>{
-    if(c.birthday&&!c.birthMonth&&!c.birthDay){
-     c.birthMonth=Number(c.birthday.slice(5,7))||'';
-     c.birthDay=Number(c.birthday.slice(8,10))||'';
-     delete c.birthday;
+  try{
+    const d=JSON.parse(localStorage.getItem(KEY));
+    if(d&&typeof d==='object'){
+      return {
+        staff:Array.isArray(d.staff)&&d.staff.length?d.staff:[...DEFAULT_STAFF],
+        shifts:Array.isArray(d.shifts)?d.shifts:[],
+        schedules:Array.isArray(d.schedules)?d.schedules:[],
+        customers:Array.isArray(d.customers)?d.customers:[],
+        bottles:Array.isArray(d.bottles)?d.bottles:[]
+      };
     }
-    return c;
-   });
-   return x;
-  }
- }catch(e){}
- return{staff:[...DEFAULT],shifts:[],schedules:[],customers:[],bottles:[]};
+  }catch(e){console.error(e)}
+  return {staff:[...DEFAULT_STAFF],shifts:[],schedules:[],customers:[],bottles:[]};
 }
+let db=load();
 const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
-function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>toastEl.classList.remove('show'),1500)}
-const names=()=>db.staff.map(x=>x.name),fmt=d=>d.toLocaleDateString('sv-SE');
-function monday(s){const d=s?new Date(s+'T00:00:00'):new Date(),o=(d.getDay()+6)%7;d.setDate(d.getDate()-o);return d}
-function dates(s){const a=monday(s);return Array.from({length:7},(_,i)=>{const d=new Date(a);d.setDate(a.getDate()+i);return d})}
-function populate(){const o=names().map(n=>`<option>${n}</option>`).join('');shiftStaff.innerHTML=o;schMainCast.innerHTML=o}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),1500)}
+function names(){return db.staff.map(s=>s.name)}
+function monday(dateStr){const d=dateStr?new Date(dateStr+'T00:00:00'):new Date(),n=(d.getDay()+6)%7;d.setDate(d.getDate()-n);return d}
+function fmt(d){return d.toLocaleDateString('sv-SE')}
+function weekDates(s){const m=monday(s);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return d})}
+function birthdayText(c){return c.birthMonth&&c.birthDay?`${c.birthMonth}月${c.birthDay}日`:'未登録'}
 
-function renderHomeSummary(){
- const d=new Date();
- todayDate.textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）`;
- todayShiftCount.textContent=db.shifts.filter(x=>x.date===today()&&x.mark==='o').length;
- todayScheduleCount.textContent=db.schedules.filter(x=>x.date===today()).length;
+function populateStaff(){
+  $('shiftStaff').innerHTML=names().map(n=>`<option>${n}</option>`).join('');
+}
+function show(section,updateHash=true){
+  document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));
+  $(section).classList.remove('hidden');
+  if(section==='home')renderHome();
+  if(section==='shift'){renderShiftRegister();renderShiftCheck()}
+  if(section==='schedules')renderSchedules();
+  if(section==='customers')renderCustomers();
+  if(section==='bottles')renderBottles();
+  if(updateHash){
+    const map={home:'',shift:'shift',schedules:'today',customers:'customers',bottles:'bottles'};
+    history.replaceState(null,'',map[section]?'#'+map[section]:location.pathname+location.search);
+  }
+  scrollTo(0,0);
+}
+function route(){
+  const r=(location.hash||'').slice(1);
+  if(r==='schedule'){show('schedules',false);openScheduleForm();return}
+  if(r==='admin'){show('home',false);$('adminDialog').showModal();return}
+  show({shift:'shift',today:'schedules',customers:'customers',bottles:'bottles'}[r]||'home',false);
 }
 
-function showView(id,hash=true){document.querySelectorAll('main>section').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');if(id==='home'){renderHomeSummary();renderBirthdayHome();}if(id==='shift'){renderRegister();renderCheck()}if(id==='schedules')renderSchedules();if(id==='customers')renderCustomers();if(id==='bottles')renderBottles();if(hash){const h={home:'',shift:'shift',schedules:'today',customers:'customers',bottles:'bottles'}[id];history.replaceState(null,'',h?'#'+h:location.pathname+location.search)}}
-function renderRegister(){const st=shiftStaff.value||names()[0];shiftDays.innerHTML=dates(shiftWeekStart.value).map(d=>{const date=fmt(d),m=db.shifts.find(x=>x.staff===st&&x.date===date)?.mark||'';return `<div class="dayRow" data-date="${date}"><div class="dateBox"><b>${d.getMonth()+1}/${d.getDate()}</b><small>${'日月火水木金土'[d.getDay()]}</small></div><div class="markGroup"><button class="markBtn o ${m==='o'?'selected':''}" data-mark="o">〇</button><button class="markBtn tri ${m==='tri'?'selected':''}" data-mark="tri">△</button><button class="markBtn x ${m==='x'?'selected':''}" data-mark="x">×</button></div></div>`}).join('')}
-function renderCheck(){
- const ds=dates(checkWeekStart.value);
- const header=`<div class="shiftCell head corner">名前</div>`+
- ds.map(d=>`<div class="shiftCell head">${d.getMonth()+1}/${d.getDate()}<br>${'日月火水木金土'[d.getDay()]}</div>`).join('');
- const rows=names().map(st=>{
+function renderHome(){
+  $('homeShiftCount').textContent=db.shifts.filter(x=>x.date===today()&&x.mark==='o').length;
+  $('homeScheduleCount').textContent=db.schedules.filter(x=>x.date===today()).length;
+  const month=new Date().getMonth()+1;
+  const list=db.customers.filter(c=>Number(c.birthMonth)===month).sort((a,b)=>Number(a.birthDay)-Number(b.birthDay));
+  $('homeBirthdays').innerHTML=list.length?list.map(c=>`<button class="row full" data-customer="${c.id}"><div class="rowTitle">${c.birthMonth}/${c.birthDay} ${c.name}</div><div class="meta">担当:${c.cast||'担当不明'}</div></button>`).join(''):'<div class="meta">今月の誕生日登録はありません</div>';
+}
+
+function renderShiftRegister(){
+  const st=$('shiftStaff').value||names()[0]||'';
+  const ds=weekDates($('shiftWeekStart').value);
+  const header=`<div class="posShiftCell head corner">名前</div>`+
+    ds.map(d=>`<div class="posShiftCell head">${d.getMonth()+1}/${d.getDate()}<br>${'日月火水木金土'[d.getDay()]}</div>`).join('');
   const cells=ds.map(d=>{
-   const m=db.shifts.find(x=>x.staff===st&&x.date===fmt(d))?.mark||'';
-   return `<div class="shiftCell"><span class="status ${m||'none'}">${m==='o'?'〇':m==='tri'?'△':m==='x'?'×':'－'}</span></div>`;
+    const date=fmt(d),mark=db.shifts.find(x=>x.staff===st&&x.date===date)?.mark||'';
+    return `<div class="posShiftCell" data-date="${date}">
+      <div class="posChoice">
+        <button type="button" class="posMark o ${mark==='o'?'selected':''}" data-mark="o">〇</button>
+        <button type="button" class="posMark tri ${mark==='tri'?'selected':''}" data-mark="tri">△</button>
+        <button type="button" class="posMark x ${mark==='x'?'selected':''}" data-mark="x">×</button>
+      </div>
+    </div>`;
   }).join('');
-  return `<div class="shiftCell name">${st}</div>${cells}`;
- }).join('');
- shiftCheckList.innerHTML=`<div class="shiftTableWrap"><div class="shiftTable">${header}${rows}</div></div>`;
+  $('shiftInputTable').innerHTML=`<div class="posShiftWrap"><div class="posShiftTable">${header}<div class="posShiftCell name">${st}</div>${cells}</div></div>`;
 }
-function renderChoices(){companionChoices.innerHTML=names().map(n=>`<button class="choice ${companions.includes(n)?'selected':''}" data-comp="${n}">${n}</button>`).join('');seatChoices.innerHTML=SEATS.map(s=>`<button class="choice ${seat===s?'selected':''}" data-seat="${s}">${s==='カウンター'?'カウンター':'BOX'+s}</button>`).join('')}
-function openSchedule(){schDate.value=today();schType.value='companion';schTime.value='21:00';schTime.readOnly=true;schCustomer.value='';schMainCast.value=names()[0]||'';companions=[];seat='カウンター';renderChoices();scheduleDialog.showModal()}
+function renderShiftCheck(){
+  const ds=weekDates($('checkWeekStart').value);
+  const head=`<div class="posShiftCell head corner">名前</div>`+
+    ds.map(d=>`<div class="posShiftCell head">${d.getMonth()+1}/${d.getDate()}<br>${'日月火水木金土'[d.getDay()]}</div>`).join('');
+  const rows=names().map(st=>{
+    const cells=ds.map(d=>{
+      const m=db.shifts.find(x=>x.staff===st&&x.date===fmt(d))?.mark||'';
+      return `<div class="posShiftCell"><span class="status ${m||'none'}">${m==='o'?'〇':m==='tri'?'△':m==='x'?'×':'－'}</span></div>`;
+    }).join('');
+    return `<div class="posShiftCell name">${st}</div>${cells}`;
+  }).join('');
+  $('shiftCheck').innerHTML=`<div class="posShiftWrap" style="max-height:66vh"><div class="posShiftTable">${head}${rows}</div></div>`;
+}
+function saveShift(){
+  const st=$('shiftStaff').value;
+  document.querySelectorAll('#shiftInputTable [data-date]').forEach(cell=>{
+    const btn=cell.querySelector('.posMark.selected');if(!btn)return;
+    const date=cell.dataset.date;
+    const old=db.shifts.find(x=>x.staff===st&&x.date===date);
+    if(old)old.mark=btn.dataset.mark;
+    else db.shifts.push({id:uid(),staff:st,date,mark:btn.dataset.mark});
+  });
+  save();renderShiftCheck();renderHome();toast('シフトを登録しました');
+}
+
+function openScheduleForm(existing=null){
+  $('formTitle').textContent=existing?'予定編集':'予定登録';
+  $('formBody').innerHTML=`<label><span>日付</span><input id="fDate" type="date" value="${existing?.date||today()}"></label><label><span>種別</span><select id="fType"><option value="companion" ${existing?.type==='companion'?'selected':''}>同伴</option><option value="visit" ${existing?.type==='visit'?'selected':''}>来店予定</option></select></label><label><span>時間</span><input id="fTime" type="time" value="${existing?.time||'21:00'}"></label><label><span>お客様名</span><input id="fCustomer" value="${existing?.customer||''}"></label><label><span>担当</span><select id="fCast">${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>人数</span><input id="fPeople" type="number" min="1" value="${existing?.people||1}"></label><label><span>備考</span><textarea id="fMemo">${existing?.memo||''}</textarea></label><button class="btn gold full" id="saveForm">保存</button>`;
+  $('formDialog').showModal();
+  $('saveForm').onclick=()=>{
+    const obj={id:existing?.id||uid(),date:$('fDate').value,type:$('fType').value,time:$('fTime').value,customer:$('fCustomer').value.trim(),cast:$('fCast').value,people:+$('fPeople').value||1,memo:$('fMemo').value.trim()};
+    if(!obj.customer)return toast('お客様名を入力');
+    if(existing)Object.assign(existing,obj);else db.schedules.push(obj);
+    save();$('formDialog').close();renderSchedules();renderHome();toast('予定を保存しました');
+  };
+}
 function renderSchedules(){
- let a=[...db.schedules];
- if(scheduleMode==='today'){
-  a=a.filter(x=>x.date===today());
- }else if(scheduleMode==='upcoming'){
-  a=a.filter(x=>x.date>=today());
- }else if(scheduleMode==='date'){
-  const d=scheduleViewDate.value||today();
-  a=a.filter(x=>x.date===d);
- }
- a.sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));
- scheduleList.innerHTML=a.length?a.map(x=>`<button class="row full" data-schedule-detail="${x.id}">
-  <div class="rowTitle">${x.date}　${x.time}　${x.customer}</div>
-  <div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.mainCast}／同行:${x.companions.join('・')||'なし'}／席:${x.seat==='カウンター'?'カウンター':'BOX'+x.seat}</div>
-  <div class="meta">タップして備考・詳細を確認</div>
- </button>`).join(''):'<div class="card">該当する予定はありません</div>';
+  let list=[...db.schedules];
+  if(state.scheduleMode==='today')list=list.filter(x=>x.date===today());
+  if(state.scheduleMode==='upcoming')list=list.filter(x=>x.date>=today());
+  if(state.scheduleMode==='date')list=list.filter(x=>x.date===$('scheduleViewDate').value);
+  list.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.cast}</div><div class="meta">タップで備考確認</div></button>`).join(''):'<div class="card">予定はありません</div>';
 }
-function openScheduleDetail(id){
- const x=db.schedules.find(v=>v.id===id);if(!x)return;
- scheduleDetailBody.innerHTML=`<div class="card">
-  <div class="rowTitle">${x.date}　${x.time}　${x.customer}</div>
-  <div class="meta"><b>種別：</b>${x.type==='companion'?'同伴':'来店予定'}</div>
-  <div class="meta"><b>担当：</b>${x.mainCast}</div>
-  <div class="meta"><b>同行：</b>${x.companions.join('・')||'なし'}</div>
-  <div class="meta"><b>席：</b>${x.seat==='カウンター'?'カウンター':'BOX'+x.seat}</div>
-  <div class="meta"><b>人数：</b>${x.people||1}名</div>
-  <div class="meta"><b>備考：</b>${x.memo&&x.memo.trim()?x.memo:'なし'}</div>
- </div>`;
- scheduleDetailDialog.showModal();
+function showSchedule(id){
+  const x=db.schedules.find(v=>v.id===id);if(!x)return;
+  $('detailTitle').textContent='予定詳細';
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'来店予定'}</div><div class="meta">担当:${x.cast}</div><div class="meta">人数:${x.people}名</div><div class="meta">備考:${x.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
+  $('detailDialog').showModal();
 }
-function birthdayLabel(x){
- return x.birthMonth&&x.birthDay?`${x.birthMonth}月${x.birthDay}日`:'未登録';
-}
-function birthdayStatus(x){
- if(!x.birthMonth||!x.birthDay)return '';
- const now=new Date();
- const year=now.getFullYear();
- let target=new Date(year,Number(x.birthMonth)-1,Number(x.birthDay));
- if(target<new Date(year,now.getMonth(),now.getDate()))target=new Date(year+1,Number(x.birthMonth)-1,Number(x.birthDay));
- const todayOnly=new Date(year,now.getMonth(),now.getDate());
- const diff=Math.round((target-todayOnly)/86400000);
- if(diff===0)return '🎉 本日お誕生日';
- if(diff>0&&diff<=7)return `🎂 あと${diff}日`;
- return '';
+
+function openCustomerForm(existing=null){
+  const linked=existing?db.bottles.filter(b=>b.customerId===existing.id):[];
+  $('formTitle').textContent=existing?'お客様編集':'お客様登録';
+  $('formBody').innerHTML=`<label><span>お客様名</span><input id="cName" value="${existing?.name||''}"></label><div class="form2"><label><span>誕生月</span><select id="cMonth"><option value="">未登録</option>${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthMonth)===i+1?'selected':''}>${i+1}月</option>`).join('')}</select></label><label><span>誕生日</span><select id="cDay"><option value="">未登録</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthDay)===i+1?'selected':''}>${i+1}日</option>`).join('')}</select></label></div><label><span>担当</span><select id="cCast"><option>担当不明</option>${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>備考</span><textarea id="cMemo">${existing?.memo||''}</textarea></label><div class="card"><div class="rowTitle">🍾 キープボトル登録</div><div id="customerBottleRows" class="list" style="margin-top:9px"></div><button type="button" class="btn ghost full" id="addCustomerBottle">＋ボトル追加</button></div><button class="btn gold full" id="saveCustomer">保存</button>`;
+  $('formDialog').showModal();
+  const rows=linked.map(b=>({...b}));
+  if(!rows.length)rows.push({id:'',number:'',name:'',cast:existing?.cast||'担当不明',qty:1});
+  const renderRows=()=>{
+    $('customerBottleRows').innerHTML=rows.map((b,i)=>`<div class="row"><div class="form2"><label><span>ボトルNo.</span><input data-bn="${i}" value="${b.number||''}"></label><label><span>ボトル名</span><input data-bname="${i}" value="${b.name||''}"></label><label><span>担当</span><select data-bcast="${i}"><option>担当不明</option>${names().map(n=>`<option ${n===b.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>本数</span><input data-bqty="${i}" type="number" min="1" value="${b.qty||1}"></label></div><button type="button" class="btn red" data-remove-row="${i}">削除</button></div>`).join('');
+  };
+  renderRows();
+  $('addCustomerBottle').onclick=()=>{rows.push({id:'',number:'',name:'',cast:$('cCast').value,qty:1});renderRows()};
+  $('customerBottleRows').onclick=e=>{const b=e.target.closest('[data-remove-row]');if(!b)return;rows.splice(+b.dataset.removeRow,1);if(!rows.length)rows.push({id:'',number:'',name:'',cast:$('cCast').value,qty:1});renderRows()};
+  $('saveCustomer').onclick=()=>{
+    const name=$('cName').value.trim();if(!name)return toast('お客様名を入力');
+    const month=$('cMonth').value,day=$('cDay').value;if((month&&!day)||(!month&&day))return toast('誕生日は月日両方');
+    rows.forEach((r,i)=>{r.number=document.querySelector(`[data-bn="${i}"]`).value.trim();r.name=document.querySelector(`[data-bname="${i}"]`).value.trim();r.cast=document.querySelector(`[data-bcast="${i}"]`).value;r.qty=+document.querySelector(`[data-bqty="${i}"]`).value||1});
+    const entered=rows.filter(r=>r.number||r.name);if(entered.some(r=>!r.number||!r.name))return toast('No.とボトル名を両方入力');
+    if(entered.some(r=>db.bottles.some(b=>String(b.number)===String(r.number)&&b.id!==r.id)))return toast('登録済みNo.があります');
+    const id=existing?.id||uid();
+    if(existing)Object.assign(existing,{name,birthMonth:+month||'',birthDay:+day||'',cast:$('cCast').value,memo:$('cMemo').value.trim()});
+    else db.customers.push({id,name,birthMonth:+month||'',birthDay:+day||'',cast:$('cCast').value,memo:$('cMemo').value.trim()});
+    db.bottles=db.bottles.filter(b=>b.customerId!==id||entered.some(r=>r.id===b.id));
+    entered.forEach(r=>{if(r.id){const b=db.bottles.find(x=>x.id===r.id);Object.assign(b,{number:r.number,name:r.name,cast:r.cast,qty:r.qty,customerId:id,customer:name})}else db.bottles.push({id:uid(),number:r.number,name:r.name,cast:r.cast,qty:r.qty,customerId:id,customer:name,status:'stored',emptyDate:''})});
+    save();$('formDialog').close();renderCustomers();renderBottles();renderHome();toast('お客様を保存しました');
+  };
 }
 function renderCustomers(){
- customerList.innerHTML=db.customers.length?db.customers.map(x=>{
-  const bottleCount=db.bottles.filter(b=>b.customerId===x.id||(!b.customerId&&b.customer===x.name)).length;
-  const status=birthdayStatus(x);
-  return `<button class="row full" data-customer-detail="${x.id}">
-   <div class="rowTitle">${x.name}</div>
-   <div class="meta">誕生日:${birthdayLabel(x)}／担当:${x.cast||'担当不明'}</div>
-   ${status?`<div class="meta"><b>${status}</b></div>`:''}
-   <div class="meta">キープボトル:${bottleCount}本</div>
-  </button>`;
- }).join(''):'<div class="card">お客様情報はありません</div>';
+  $('customerList').innerHTML=db.customers.length?db.customers.map(c=>`<button class="row full" data-customer="${c.id}"><div class="rowTitle">${c.name}</div><div class="meta">誕生日:${birthdayText(c)}／担当:${c.cast||'担当不明'}</div><div class="meta">ボトル:${db.bottles.filter(b=>b.customerId===c.id).length}本</div></button>`).join(''):'<div class="card">登録なし</div>';
 }
-function openCustomerDetail(id){
- const x=db.customers.find(v=>v.id===id);if(!x)return;
- const bottles=db.bottles.filter(b=>b.customerId===x.id||(!b.customerId&&b.customer===x.name));
- const status=birthdayStatus(x);
- customerDetailBody.innerHTML=`<div class="card">
-  <div class="rowTitle">${x.name}</div>
-  <div class="meta"><b>誕生日：</b>${birthdayLabel(x)}</div>
-  ${status?`<div class="meta"><b>${status}</b></div>`:''}
-  <div class="meta"><b>担当：</b>${x.cast||'担当不明'}</div>
-  <div class="meta"><b>備考：</b>${x.memo&&x.memo.trim()?x.memo:'なし'}</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
-   <button class="btn ghost" data-edit-customer="${x.id}">編集</button>
-   <button class="btn red" data-delete-customer="${x.id}">お客様削除</button>
-  </div>
- </div>
- <div class="card">
-  <div class="rowTitle">🍾 キープボトル</div>
-  <div class="list" style="margin-top:9px">
-   ${bottles.length?bottles.map(b=>`<button class="row full" data-bottle-detail="${b.id}">
-    <div class="rowTitle">No.${b.number}　${b.name}</div>
-    <div class="meta">${b.status==='empty'?'空ボトル':'保管中'}／担当:${b.cast||'担当不明'}</div>
-   </button>`).join(''):'<div class="meta">登録されているボトルはありません</div>'}
-  </div>
- </div>`;
- customerDetailDialog.showModal();
+function showCustomer(id){
+  const c=db.customers.find(x=>x.id===id);if(!c)return;const bs=db.bottles.filter(b=>b.customerId===id);
+  $('detailTitle').textContent='お客様詳細';
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${c.name}</div><div class="meta">誕生日:${birthdayText(c)}</div><div class="meta">担当:${c.cast||'担当不明'}</div><div class="meta">備考:${c.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-customer="${c.id}">編集</button><button class="btn red" data-delete-customer="${c.id}">削除</button></div></div><div class="card"><div class="rowTitle">🍾 キープボトル</div>${bs.length?bs.map(b=>`<button class="row full" data-bottle="${b.id}">No.${b.number} ${b.name}</button>`).join(''):'<div class="meta">なし</div>'}</div>`;
+  $('detailDialog').showModal();
 }
 
-function openCustomerEdit(id=null){
- const x=id?db.customers.find(v=>v.id===id):null;
- const oldBirthday=x?.birthday||'';
- const oldMonth=x?.birthMonth||Number(oldBirthday.slice(5,7))||'';
- const oldDay=x?.birthDay||Number(oldBirthday.slice(8,10))||'';
- const linkedBottles=x?db.bottles.filter(b=>b.customerId===x.id||(!b.customerId&&b.customer===x.name)):[];
- simpleTitle.textContent=x?'お客様編集':'お客様登録';
- simpleBody.innerHTML=
-  '<label><span>お客様名</span><input id="tmp1" value="'+(x?.name||'')+'"></label>'+
-  '<div class="form2"><label><span>誕生月</span><select id="tmpBirthMonth"><option value="">未登録</option>'+
-  Array.from({length:12},(_,i)=>`<option value="${i+1}" ${Number(oldMonth)===i+1?'selected':''}>${i+1}月</option>`).join('')+
-  '</select></label><label><span>誕生日</span><select id="tmpBirthDay"><option value="">未登録</option>'+
-  Array.from({length:31},(_,i)=>`<option value="${i+1}" ${Number(oldDay)===i+1?'selected':''}>${i+1}日</option>`).join('')+
-  '</select></label></div>'+
-  '<label><span>担当</span><select id="tmp2"><option>担当不明</option>'+
-  names().map(n=>`<option ${n===x?.cast?'selected':''}>${n}</option>`).join('')+
-  '</select></label>'+
-  '<label><span>備考</span><textarea id="tmpMemo">'+(x?.memo||'')+'</textarea></label>'+
-  '<div class="card" style="margin-top:12px"><div class="rowTitle">🍾 キープボトル登録</div>'+
-  '<div class="meta">ボトルがない場合は空欄のままで保存できます</div>'+
-  '<div id="customerBottleRows" class="list" style="margin-top:10px"></div>'+
-  '<button type="button" class="btn ghost full" id="addCustomerBottleRow">＋ボトルを追加</button></div>'+
-  '<button class="btn gold full" id="tmpSave">保存</button>';
- if(customerDetailDialog.open)customerDetailDialog.close();
- simpleDialog.showModal();
+function openBottleForm(existing=null){
+  if(!db.customers.length)return toast('先にお客様登録が必要です');
+  $('formTitle').textContent=existing?'ボトル編集':'ボトル登録';
+  $('formBody').innerHTML=`<label><span>管理番号</span><input id="bNo" value="${existing?.number||''}"></label><label><span>お客様</span><select id="bCustomer">${db.customers.map(c=>`<option value="${c.id}" ${c.id===existing?.customerId?'selected':''}>${c.name}</option>`).join('')}</select></label><label><span>ボトル名</span><input id="bName" value="${existing?.name||''}"></label><label><span>担当</span><select id="bCast"><option>担当不明</option>${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>本数</span><input id="bQty" type="number" min="1" value="${existing?.qty||1}"></label><button class="btn gold full" id="saveBottle">保存</button>`;
+  $('formDialog').showModal();
+  $('saveBottle').onclick=()=>{const no=$('bNo').value.trim(),cid=$('bCustomer').value,name=$('bName').value.trim();if(!no||!cid||!name)return toast('必須項目を入力');if(db.bottles.some(b=>String(b.number)===no&&b.id!==existing?.id))return toast('同じNo.があります');const customer=db.customers.find(c=>c.id===cid)?.name||'';const obj={id:existing?.id||uid(),number:no,customerId:cid,customer,name,cast:$('bCast').value,qty:+$('bQty').value||1,status:existing?.status||'stored',emptyDate:existing?.emptyDate||''};if(existing)Object.assign(existing,obj);else db.bottles.push(obj);save();$('formDialog').close();renderBottles();renderCustomers();toast('ボトルを保存しました')};
+}
+function renderBottles(){
+  const q=$('bottleSearch').value.trim().toLowerCase();
+  const list=db.bottles.filter(b=>[b.number,b.customer,b.name,b.cast].join(' ').toLowerCase().includes(q));
+  $('bottleList').innerHTML=list.length?list.map(b=>`<button class="row full" data-bottle="${b.id}"><div class="rowTitle">No.${b.number} ${b.customer}</div><div class="meta">${b.name}／担当:${b.cast}／${b.status==='empty'?'空ボトル':'保管中'}</div></button>`).join(''):'<div class="card">該当なし</div>';
+}
+function showBottle(id){
+  const b=db.bottles.find(x=>x.id===id);if(!b)return;
+  $('detailTitle').textContent='ボトル詳細';
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">No.${b.number} ${b.customer}</div><div class="meta">ボトル:${b.name}</div><div class="meta">担当:${b.cast}</div><div class="meta">本数:${b.qty}</div><div class="meta">状態:${b.status==='empty'?'空ボトル':'保管中'}</div><div class="actions"><button class="btn ghost" data-edit-bottle="${b.id}">編集</button><button class="btn" data-toggle-bottle="${b.id}">${b.status==='empty'?'保管中へ':'空ボトル'}</button><button class="btn red" data-delete-bottle="${b.id}">削除</button></div></div>`;
+  $('detailDialog').showModal();
+}
 
- const customerBottleRows=$('customerBottleRows');
- const addCustomerBottleRow=$('addCustomerBottleRow');
- const tmp1=$('tmp1'),tmpBirthMonth=$('tmpBirthMonth'),tmpBirthDay=$('tmpBirthDay'),tmp2=$('tmp2'),tmpMemo=$('tmpMemo'),tmpSave=$('tmpSave');
- const bottleRows=linkedBottles.map(b=>({id:b.id,number:String(b.number||''),name:b.name||'',cast:b.cast||'担当不明',qty:b.qty||1,status:b.status||'stored',emptyDate:b.emptyDate||''}));
- if(!bottleRows.length)bottleRows.push({id:'',number:'',name:'',cast:x?.cast||'担当不明',qty:1,status:'stored',emptyDate:''});
+function renderStaff(){ $('staffList').innerHTML=db.staff.map(s=>`<div class="row"><div class="rowTitle">${s.name}</div><button class="btn red" data-delete-staff="${s.id}">削除</button></div>`).join('') }
+function openStaffForm(){ $('formTitle').textContent='スタッフ追加';$('formBody').innerHTML='<label><span>名前</span><input id="sName"></label><button class="btn gold full" id="saveStaff">保存</button>';$('formDialog').showModal();$('saveStaff').onclick=()=>{const n=$('sName').value.trim();if(!n)return toast('名前を入力');db.staff.push({id:uid(),name:n,role:'cast'});save();populateStaff();renderStaff();$('formDialog').close();toast('追加しました')} }
 
- function renderCustomerBottleRows(){
-  customerBottleRows.innerHTML=bottleRows.map((b,i)=>`<div class="row">
-   <div class="form2">
-    <label><span>ボトルNo.</span><input data-cb-number="${i}" inputmode="numeric" value="${b.number}" placeholder="例：12"></label>
-    <label><span>ボトル名</span><input data-cb-name="${i}" value="${b.name}" placeholder="例：吉四六"></label>
-    <label><span>ボトル担当</span><select data-cb-cast="${i}"><option>担当不明</option>${names().map(n=>`<option ${n===b.cast?'selected':''}>${n}</option>`).join('')}</select></label>
-    <label><span>本数</span><input data-cb-qty="${i}" type="number" min="1" value="${b.qty||1}"></label>
-   </div>
-   ${bottleRows.length>1||b.number||b.name?`<button type="button" class="btn red" data-remove-customer-bottle="${i}">このボトルを削除</button>`:''}
-  </div>`).join('');
- }
- renderCustomerBottleRows();
-
- addCustomerBottleRow.onclick=()=>{
-  bottleRows.push({id:'',number:'',name:'',cast:tmp2.value||'担当不明',qty:1,status:'stored',emptyDate:''});
-  renderCustomerBottleRows();
- };
-
- customerBottleRows.onclick=e=>{
-  const btn=e.target.closest('[data-remove-customer-bottle]');
-  if(!btn)return;
-  const i=Number(btn.dataset.removeCustomerBottle);
-  bottleRows.splice(i,1);
-  if(!bottleRows.length)bottleRows.push({id:'',number:'',name:'',cast:tmp2.value||'担当不明',qty:1,status:'stored',emptyDate:''});
-  renderCustomerBottleRows();
- };
-
- tmpSave.onclick=()=>{
-  const name=tmp1.value.trim();if(!name)return toast('お客様名を入力');
-  const birthMonth=tmpBirthMonth.value?Number(tmpBirthMonth.value):'';
-  const birthDay=tmpBirthDay.value?Number(tmpBirthDay.value):'';
-  if((birthMonth&&!birthDay)||(!birthMonth&&birthDay))return toast('誕生日は月と日を両方選択');
-
-  document.querySelectorAll('[data-cb-number]').forEach(el=>{
-   const i=Number(el.dataset.cbNumber);
-   bottleRows[i].number=el.value.trim();
-   bottleRows[i].name=document.querySelector(`[data-cb-name="${i}"]`).value.trim();
-   bottleRows[i].cast=document.querySelector(`[data-cb-cast="${i}"]`).value;
-   bottleRows[i].qty=+document.querySelector(`[data-cb-qty="${i}"]`).value||1;
-  });
-
-  const entered=bottleRows.filter(b=>b.number||b.name);
-  if(entered.some(b=>!b.number||!b.name))return toast('ボトルNo.とボトル名を両方入力');
-  const numbers=entered.map(b=>String(b.number));
-  if(new Set(numbers).size!==numbers.length)return toast('同じボトルNo.が重複しています');
-  if(entered.some(b=>db.bottles.some(v=>String(v.number)===String(b.number)&&v.id!==b.id)))return toast('登録済みのボトルNo.があります');
-
-  let customerId=x?.id||uid();
-  if(x){
-   const old=x.name;x.name=name;x.birthMonth=birthMonth;x.birthDay=birthDay;delete x.birthday;x.cast=tmp2.value;x.memo=tmpMemo.value.trim();
-   db.bottles.forEach(b=>{if(b.customerId===x.id||(!b.customerId&&b.customer===old)){b.customerId=x.id;b.customer=name}});
-  }else{
-   db.customers.push({id:customerId,name,birthMonth,birthDay,cast:tmp2.value,memo:tmpMemo.value.trim()});
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.nav)return show(t.dataset.nav);
+  if(t.dataset.close)return $(t.dataset.close).close();
+  if(t.dataset.action==='new-schedule')return openScheduleForm();
+  if(t.dataset.action==='new-customer')return openCustomerForm();
+  if(t.dataset.action==='new-bottle')return openBottleForm();
+  if(t.dataset.action==='admin')return $('adminDialog').showModal();
+  if(t.dataset.action==='admin-login'){if($('adminPass').value==='1234'){$('adminLogin').classList.add('hidden');$('adminPanel').classList.remove('hidden');renderStaff()}else toast('パスコード違い');return}
+  if(t.dataset.action==='new-staff')return openStaffForm();
+  if(t.dataset.shiftTab){document.querySelectorAll('[data-shift-tab]').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('shiftRegisterPane').classList.toggle('hidden',t.dataset.shiftTab!=='register');$('shiftCheckPane').classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderShiftCheck();return}
+  if(t.dataset.scheduleTab){document.querySelectorAll('[data-schedule-tab]').forEach(x=>x.classList.remove('active'));t.classList.add('active');state.scheduleMode=t.dataset.scheduleTab;$('scheduleDateBox').classList.toggle('hidden',state.scheduleMode!=='date');renderSchedules();return}
+  if(t.dataset.mark){
+    const group=t.closest('.posChoice')||t.parentElement;
+    group.querySelectorAll('[data-mark]').forEach(x=>x.classList.remove('selected'));
+    t.classList.add('selected');
+    return;
   }
-
-  const originalIds=new Set(linkedBottles.map(b=>b.id));
-  const keptIds=new Set(entered.filter(b=>b.id).map(b=>b.id));
-  db.bottles=db.bottles.filter(b=>!originalIds.has(b.id)||keptIds.has(b.id));
-
-  entered.forEach(b=>{
-   if(b.id){
-    const existing=db.bottles.find(v=>v.id===b.id);
-    if(existing){existing.number=b.number;existing.name=b.name;existing.cast=b.cast;existing.qty=b.qty;existing.customerId=customerId;existing.customer=name}
-   }else{
-    db.bottles.push({id:uid(),number:b.number,customerId,customer:name,name:b.name,cast:b.cast,qty:b.qty,status:'stored',emptyDate:''});
-   }
-  });
-
-  save();simpleDialog.close();renderCustomers();renderBottles();renderBirthdayHome();toast('お客様情報を保存しました');
- };
-}
-
-function openCustomerDelete(id){
- const x=db.customers.find(v=>v.id===id);if(!x)return;
- const bottles=db.bottles.filter(b=>b.customerId===x.id||(!b.customerId&&b.customer===x.name));
- customerDeleteBody.innerHTML=`<div class="card">
-  <div class="rowTitle">${x.name} を削除します</div>
-  <div class="meta">登録されているキープボトル：${bottles.length}本</div>
-  ${bottles.length?`<label style="margin-top:12px"><span>ボトルの扱い</span>
-   <select id="customerDeleteMode">
-    <option value="keep">ボトルは残す（お客様未設定・担当不明）</option>
-    <option value="delete">ボトルも一緒に削除</option>
-   </select>
-  </label>`:'<input type="hidden" id="customerDeleteMode" value="keep">'}
-  <div class="meta" style="margin-top:10px">この操作は取り消せません。</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
-   <button class="btn ghost" data-close="customerDeleteDialog">キャンセル</button>
-   <button class="btn red" data-confirm-delete-customer="${x.id}">削除</button>
-  </div>
- </div>`;
- customerDetailDialog.close();
- customerDeleteDialog.showModal();
-}
-function deleteCustomer(id,mode){
- const x=db.customers.find(v=>v.id===id);if(!x)return;
- const linked=b=>b.customerId===x.id||(!b.customerId&&b.customer===x.name);
- if(mode==='delete'){
-  db.bottles=db.bottles.filter(b=>!linked(b));
- }else{
-  db.bottles.forEach(b=>{
-   if(linked(b)){
-    b.customerId='';
-    b.customer='未設定';
-    b.cast='担当不明';
-   }
-  });
- }
- db.customers=db.customers.filter(v=>v.id!==id);
- save();
- customerDeleteDialog.close();
- renderCustomers();
- renderBottles();
- renderBirthdayHome();
- renderHomeSummary();
- toast('お客様を削除しました');
-}
-
-function renderBirthdayHome(){
- const now=new Date();
- const month=now.getMonth()+1;
- const a=db.customers.filter(x=>Number(x.birthMonth)===month&&x.birthDay)
-  .sort((a,b)=>Number(a.birthDay)-Number(b.birthDay));
- birthdayListHome.innerHTML=a.length?a.map(x=>{
-  const status=birthdayStatus(x);
-  return `<button class="row full" data-customer-detail="${x.id}">
-   <div class="rowTitle">${x.birthMonth}/${x.birthDay}　${x.name}</div>
-   <div class="meta">担当:${x.cast||'担当不明'}</div>
-   ${status?`<div class="meta"><b>${status}</b></div>`:''}
-  </button>`;
- }).join(''):'<div class="meta">今月の誕生日登録はありません</div>';
-}
-
-function renderStaff(){staffCount.textContent=db.staff.length;customerCount.textContent=db.customers.length;bottleCount.textContent=db.bottles.reduce((a,b)=>a+(+b.qty||0),0);staffList.innerHTML=db.staff.map(x=>`<div class="row"><div class="staffLine"><div><div class="rowTitle">${x.name}</div><span class="role">${role(x.role)}</span></div><button class="btn ghost" data-edit-staff="${x.id}">編集</button></div></div>`).join('')}
-function openStaff(id=null){editingStaff=id;const x=id?db.staff.find(v=>v.id===id):null;staffTitle.textContent=x?'スタッフ編集':'スタッフ追加';staffName.value=x?.name||'';staffRole.value=x?.role||'cast';deleteStaffBtn.classList.toggle('hidden',!x);staffDialog.showModal()}
-function route(){const r=location.hash.slice(1);if(r==='schedule'){showView('schedules',false);setTimeout(openSchedule,0)}else if(r==='admin'){showView('home',false);setTimeout(()=>adminDialog.showModal(),0)}else showView({shift:'shift',today:'schedules',customers:'customers',bottles:'bottles'}[r]||'home',false)}
-document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if(v)return showView(v.dataset.view);const st=e.target.closest('[data-schedule-tab]');
- if(st){
-  document.querySelectorAll('[data-schedule-tab]').forEach(b=>b.classList.remove('active'));
-  st.classList.add('active');
-  scheduleMode=st.dataset.scheduleTab;
-  scheduleDateWrap.classList.toggle('hidden',scheduleMode!=='date');
-  if(scheduleMode==='date'&&!scheduleViewDate.value)scheduleViewDate.value=today();
-  renderSchedules();
-  return;
- }
- const t=e.target.closest('[data-shift-tab]');if(t){document.querySelectorAll('[data-shift-tab]').forEach(b=>b.classList.remove('active'));t.classList.add('active');shiftRegisterPane.classList.toggle('hidden',t.dataset.shiftTab!=='register');shiftCheckPane.classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderCheck();return}const m=e.target.closest('.markBtn');if(m){m.parentElement.querySelectorAll('.markBtn').forEach(b=>b.classList.remove('selected'));m.classList.add('selected');return}const c=e.target.closest('[data-comp]');if(c){companions=companions.includes(c.dataset.comp)?companions.filter(x=>x!==c.dataset.comp):[...companions,c.dataset.comp];renderChoices();return}const s=e.target.closest('[data-seat]');if(s){seat=s.dataset.seat;renderChoices();return}const sd=e.target.closest('[data-schedule-detail]');if(sd)return openScheduleDetail(sd.dataset.scheduleDetail);const cd=e.target.closest('[data-customer-detail]');if(cd)return openCustomerDetail(cd.dataset.customerDetail);
- const dc=e.target.closest('[data-delete-customer]');if(dc)return openCustomerDelete(dc.dataset.deleteCustomer);
- const cdc=e.target.closest('[data-confirm-delete-customer]');if(cdc){
-  const mode=document.getElementById('customerDeleteMode')?.value||'keep';
-  deleteCustomer(cdc.dataset.confirmDeleteCustomer,mode);
-  return;
- }
- const ce=e.target.closest('[data-edit-customer]');if(ce)return openCustomerEdit(ce.dataset.editCustomer);
- const bd=e.target.closest('[data-bottle-detail]');if(bd)return openBottleDetail(bd.dataset.bottleDetail);
- const be=e.target.closest('[data-edit-bottle]');if(be)return openBottleEdit(be.dataset.editBottle);
- const empty=e.target.closest('[data-empty-bottle]');if(empty){
-  const x=db.bottles.find(v=>v.id===empty.dataset.emptyBottle);if(!x)return;
-  x.status=x.status==='empty'?'stored':'empty';x.emptyDate=x.status==='empty'?today():'';
-  save();bottleDetailDialog.close();renderBottles();toast(x.status==='empty'?'空ボトルにしました':'保管中へ戻しました');return;
- }
- const del=e.target.closest('[data-delete-bottle]');if(del){
-  const x=db.bottles.find(v=>v.id===del.dataset.deleteBottle);if(!x)return;
-  if(confirm(`No.${x.number} を削除します。この操作は取り消せません。`)){
-   db.bottles=db.bottles.filter(v=>v.id!==x.id);save();bottleDetailDialog.close();renderBottles();toast('削除しました');
+  if(t.dataset.weekMove){
+    const target=t.dataset.weekTarget==='check'?$('checkWeekStart'):$('shiftWeekStart');
+    const d=new Date(target.value+'T00:00:00');
+    d.setDate(d.getDate()+Number(t.dataset.weekMove));
+    target.value=fmt(d);
+    t.dataset.weekTarget==='check'?renderShiftCheck():renderShiftRegister();
+    return;
   }
-  return;
- }
- const ed=e.target.closest('[data-edit-staff]');if(ed)return openStaff(ed.dataset.editStaff);const cl=e.target.closest('[data-close]');if(cl)document.getElementById(cl.dataset.close).close()});
-saveShiftBtn.onclick=()=>{[...document.querySelectorAll('[data-date]')].forEach(r=>{const b=r.querySelector('.markBtn.selected');if(!b)return;const x=db.shifts.find(v=>v.staff===shiftStaff.value&&v.date===r.dataset.date);if(x)x.mark=b.dataset.mark;else db.shifts.push({id:uid(),staff:shiftStaff.value,date:r.dataset.date,mark:b.dataset.mark})});save();renderCheck();renderHomeSummary();toast('1週間分を登録しました')};
-shiftStaff.onchange=renderRegister;shiftWeekStart.onchange=renderRegister;checkWeekStart.onchange=renderCheck;bottleSearch.oninput=renderBottles;scheduleViewDate.onchange=renderSchedules;
-openScheduleHome.onclick=openSchedule;addScheduleBtn.onclick=openSchedule;schType.onchange=()=>{if(schType.value==='companion'){schTime.value='21:00';schTime.readOnly=true}else schTime.readOnly=false};
-saveScheduleBtn.onclick=()=>{const o={id:uid(),date:schDate.value,type:schType.value,time:schType.value==='companion'?'21:00':schTime.value,customer:schCustomer.value.trim(),mainCast:schMainCast.value,people:+schPeople.value||1,companions:companions.filter(x=>x!==schMainCast.value),seat,memo:schMemo.value.trim()};if(!o.customer)return toast('お客様名を入力');db.schedules.push(o);save();scheduleDialog.close();renderSchedules();renderHomeSummary();toast('予定を登録しました')};
-addCustomerBtn.onclick=()=>openCustomerEdit();
-addBottleBtn.onclick=()=>{
- if(!db.customers.length)return toast('先にお客様を登録してください');
- simpleTitle.textContent='ボトル登録';
- simpleBody.innerHTML='<label><span>管理番号</span><input id="tmp0" inputmode="numeric" placeholder="例：12"></label><label><span>お客様</span><select id="tmpCustomer">'+db.customers.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')+'</select></label><label><span>ボトル名</span><input id="tmp2"></label><label><span>担当</span><select id="tmp3"><option>担当不明</option>'+names().map(x=>`<option>${x}</option>`).join('')+'</select></label><label><span>本数</span><input id="tmp4" type="number" min="1" value="1"></label><button class="btn gold full" id="tmpSave">保存</button>';
- simpleDialog.showModal();
- const tmp0=$('tmp0'),tmpCustomer=$('tmpCustomer'),tmp2=$('tmp2'),tmp3=$('tmp3'),tmp4=$('tmp4'),tmpSave=$('tmpSave');
- tmpSave.onclick=()=>{
-  const number=tmp0.value.trim(),customerId=tmpCustomer.value,customer=db.customers.find(c=>c.id===customerId)?.name||'',name=tmp2.value.trim();
-  if(!number||!customerId||!name)return toast('管理番号・お客様・ボトル名を入力');
-  if(db.bottles.some(x=>String(x.number)===number))return toast('同じ管理番号が登録されています');
-  db.bottles.push({id:uid(),number,customerId,customer,name,cast:tmp3.value,qty:+tmp4.value||1,status:'stored',emptyDate:''});
-  save();simpleDialog.close();renderBottles();renderCustomers();toast('ボトルを登録しました');
- };
-};
-adminBtn.onclick=()=>adminDialog.showModal();adminLoginBtn.onclick=()=>{if(adminPass.value==='1234'){loginArea.classList.add('hidden');adminPanel.classList.remove('hidden');renderStaff();toast('ログインしました')}else toast('パスコードが違います')};addStaffBtn.onclick=()=>openStaff();
-saveStaffBtn.onclick=()=>{const n=staffName.value.trim();if(!n)return toast('名前を入力');if(editingStaff){const x=db.staff.find(v=>v.id===editingStaff),old=x.name;x.name=n;x.role=staffRole.value;db.shifts.forEach(v=>{if(v.staff===old)v.staff=n});db.schedules.forEach(v=>{if(v.mainCast===old)v.mainCast=n;v.companions=v.companions.map(c=>c===old?n:c)});db.customers.forEach(v=>{if(v.cast===old)v.cast=n});db.bottles.forEach(v=>{if(v.cast===old)v.cast=n})}else db.staff.push({id:uid(),name:n,role:staffRole.value});save();populate();renderStaff();renderRegister();renderCheck();staffDialog.close();toast('スタッフを保存しました')};
-deleteStaffBtn.onclick=()=>{if(!editingStaff||!confirm('このスタッフを削除しますか？'))return;const x=db.staff.find(v=>v.id===editingStaff);db.staff=db.staff.filter(v=>v.id!==editingStaff);db.shifts=db.shifts.filter(v=>v.staff!==x.name);save();populate();renderStaff();renderRegister();renderCheck();staffDialog.close();toast('削除しました')};
+  if(t.hasAttribute('data-week-today')){
+    const target=t.dataset.weekTarget==='check'?$('checkWeekStart'):$('shiftWeekStart');
+    target.value=fmt(monday(today()));
+    t.dataset.weekTarget==='check'?renderShiftCheck():renderShiftRegister();
+    return;
+  }
+  if(t.dataset.schedule)return showSchedule(t.dataset.schedule);
+  if(t.dataset.editSchedule){const x=db.schedules.find(v=>v.id===t.dataset.editSchedule);$('detailDialog').close();return openScheduleForm(x)}
+  if(t.dataset.deleteSchedule){if(confirm('削除しますか？')){db.schedules=db.schedules.filter(v=>v.id!==t.dataset.deleteSchedule);save();$('detailDialog').close();renderSchedules();renderHome()}return}
+  if(t.dataset.customer)return showCustomer(t.dataset.customer);
+  if(t.dataset.editCustomer){const c=db.customers.find(v=>v.id===t.dataset.editCustomer);$('detailDialog').close();return openCustomerForm(c)}
+  if(t.dataset.deleteCustomer){if(confirm('お客様と紐付くボトルも削除しますか？')){const id=t.dataset.deleteCustomer;db.customers=db.customers.filter(c=>c.id!==id);db.bottles=db.bottles.filter(b=>b.customerId!==id);save();$('detailDialog').close();renderCustomers();renderBottles();renderHome()}return}
+  if(t.dataset.bottle)return showBottle(t.dataset.bottle);
+  if(t.dataset.editBottle){const b=db.bottles.find(v=>v.id===t.dataset.editBottle);$('detailDialog').close();return openBottleForm(b)}
+  if(t.dataset.toggleBottle){const b=db.bottles.find(v=>v.id===t.dataset.toggleBottle);b.status=b.status==='empty'?'stored':'empty';b.emptyDate=b.status==='empty'?today():'';save();$('detailDialog').close();renderBottles();return}
+  if(t.dataset.deleteBottle){if(confirm('削除しますか？')){db.bottles=db.bottles.filter(v=>v.id!==t.dataset.deleteBottle);save();$('detailDialog').close();renderBottles();renderCustomers()}return}
+  if(t.dataset.deleteStaff){db.staff=db.staff.filter(s=>s.id!==t.dataset.deleteStaff);save();populateStaff();renderStaff();return}
+});
+$('saveShiftBtn').onclick=saveShift;
+$('shiftStaff').onchange=renderShiftRegister;
+$('shiftWeekStart').onchange=renderShiftRegister;
+$('checkWeekStart').onchange=renderShiftCheck;
+$('scheduleViewDate').onchange=renderSchedules;
+$('bottleSearch').oninput=renderBottles;
 window.addEventListener('hashchange',route);
-try{
- populate();
- const mon=fmt(monday(today()));
- shiftWeekStart.value=mon;
- checkWeekStart.value=mon;
- scheduleViewDate.value=today();
- renderRegister();
- renderCheck();
- renderHomeSummary();
- renderBirthdayHome();
- route();
-}catch(err){
- console.error('起動エラー',err);
- toast('画面の読み込みでエラーが発生しました');
+
+function start(){
+  populateStaff();
+  const mon=fmt(monday(today()));
+  $('shiftWeekStart').value=mon;$('checkWeekStart').value=mon;$('scheduleViewDate').value=today();
+  route();
 }
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 </script>
-</body></html>
+</body>
+</html>
