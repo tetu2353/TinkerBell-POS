@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#faf7ef">
-<title>Tinker Bell Staff v30</title>
+<title>Tinker Bell Staff v31</title>
 <style>
 :root{
   --bg:#faf7ef;--card:#fff;--gold:#c79a43;--gold2:#efd68f;--ink:#2f2921;
@@ -104,6 +104,18 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 .cycleMark.tri{background:#e1b31e;color:#fff;border-color:#e1b31e}
 .cycleMark.x{background:var(--red);color:#fff;border-color:var(--red)}
 
+
+.adminMenuGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.adminMenuCard{
+  min-height:125px;border:1px solid #dec78d;border-radius:16px;
+  background:linear-gradient(145deg,#fff,#fbf4e5);padding:15px;text-align:center;
+  color:var(--ink);box-shadow:var(--shadow)
+}
+.adminMenuCard .ico{display:block;font-size:34px;margin-bottom:7px}
+.adminMenuCard b{display:block;color:#76541d;font-size:16px}
+.adminMenuCard small{display:block;color:var(--muted);font-size:11px;margin-top:5px;line-height:1.4}
+@media(max-width:520px){.adminMenuGrid{grid-template-columns:1fr 1fr}.adminMenuCard{min-height:115px;padding:12px 8px}}
+
 </style>
 </head>
 <body>
@@ -185,7 +197,31 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <dialog id="formDialog"><div class="modal"><div class="modalHead"><h2 id="formTitle"></h2><button class="close" data-close="formDialog">×</button></div><div id="formBody"></div></div></dialog>
 <dialog id="detailDialog"><div class="modal"><div class="modalHead"><h2 id="detailTitle"></h2><button class="close" data-close="detailDialog">×</button></div><div id="detailBody"></div></div></dialog>
-<dialog id="adminDialog"><div class="modal"><div class="modalHead"><h2>スタッフ管理</h2><button class="close" data-close="adminDialog">×</button></div><div id="adminLogin"><label><span>パスコード</span><input id="adminPass" type="password"></label><button class="btn gold full" data-action="admin-login">ログイン</button></div><div id="adminPanel" class="hidden"><button class="btn gold full" data-action="new-staff">＋スタッフ追加</button><div id="staffList" class="list" style="margin-top:10px"></div></div></div></dialog>
+<dialog id="adminDialog"><div class="modal">
+  <div class="modalHead"><h2>管理メニュー</h2><button class="close" data-close="adminDialog">×</button></div>
+  <div id="adminLogin">
+    <label><span>パスコード</span><input id="adminPass" type="password"></label>
+    <button class="btn gold full" data-action="admin-login">ログイン</button>
+  </div>
+  <div id="adminPanel" class="hidden">
+    <div class="adminMenuGrid">
+      <button class="adminMenuCard" data-action="staff-management">
+        <span class="ico">👥</span>
+        <b>従業員登録・管理</b>
+        <small>追加・削除・一覧確認</small>
+      </button>
+      <button class="adminMenuCard" data-action="open-pos">
+        <span class="ico">💻</span>
+        <b>POSシステム</b>
+        <small>会計・勤怠・売上管理を開く</small>
+      </button>
+    </div>
+    <div id="staffManagementArea" class="hidden" style="margin-top:14px">
+      <div class="sectionHead"><h2 style="font-size:19px">従業員登録・管理</h2><button class="btn gold" data-action="new-staff">＋従業員追加</button></div>
+      <div id="staffList" class="list"></div>
+    </div>
+  </div>
+</div></dialog>
 <div id="toast" class="toast"></div>
 
 <script>
@@ -423,7 +459,16 @@ document.addEventListener('click',e=>{
   if(t.dataset.action==='new-customer')return openCustomerForm();
   if(t.dataset.action==='new-bottle')return openBottleForm();
   if(t.dataset.action==='admin')return $('adminDialog').showModal();
-  if(t.dataset.action==='admin-login'){if($('adminPass').value==='1234'){$('adminLogin').classList.add('hidden');$('adminPanel').classList.remove('hidden');renderStaff()}else toast('パスコード違い');return}
+  if(t.dataset.action==='admin-login'){if($('adminPass').value==='1234'){$('adminLogin').classList.add('hidden');$('adminPanel').classList.remove('hidden');$('staffManagementArea').classList.add('hidden')}else toast('パスコード違い');return}
+  if(t.dataset.action==='staff-management'){
+    $('staffManagementArea').classList.remove('hidden');
+    renderStaff();
+    return;
+  }
+  if(t.dataset.action==='open-pos'){
+    window.open('https://tetu2353.github.io/TinkerBell-POS/','_blank','noopener');
+    return;
+  }
   if(t.dataset.action==='new-staff')return openStaffForm();
   if(t.dataset.shiftTab){document.querySelectorAll('[data-shift-tab]').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('shiftRegisterPane').classList.toggle('hidden',t.dataset.shiftTab!=='register');$('shiftCheckPane').classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderShiftCheck();return}
   if(t.dataset.scheduleTab){document.querySelectorAll('[data-schedule-tab]').forEach(x=>x.classList.remove('active'));t.classList.add('active');state.scheduleMode=t.dataset.scheduleTab;$('scheduleDateBox').classList.toggle('hidden',state.scheduleMode!=='date');renderSchedules();return}
