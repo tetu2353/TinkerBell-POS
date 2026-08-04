@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#faf7ef">
-<title>Tinker Bell Staff v33</title>
+<title>Tinker Bell Staff v35</title>
 <style>
 :root{
   --bg:#faf7ef;--card:#fff;--gold:#c79a43;--gold2:#efd68f;--ink:#2f2921;
@@ -125,6 +125,15 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 .posShiftCell.name.cast{background:#fff1f6}
 .posShiftCell.name.floor{background:#eef4fb}
 
+
+.filterTitle{font-size:12px;font-weight:850;color:#806128;margin-bottom:6px}
+.bottleFilterGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.bottleStatusGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.filterBtn{border:1px solid #d6c29b;background:#fff;color:#665c50;border-radius:11px;padding:9px 6px;font-size:12px;font-weight:800}
+.filterBtn.active{background:linear-gradient(#efd486,#c08c31);color:#fff}
+.bottleTypeBadge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eee4cf;color:#75551e;font-size:11px;font-weight:800;margin-top:5px}
+@media(max-width:520px){.bottleFilterGrid{grid-template-columns:repeat(2,1fr)}}
+
 </style>
 </head>
 <body>
@@ -199,7 +208,30 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 <section id="bottles" class="hidden">
   <button class="btn ghost" data-nav="home">← ホーム</button>
   <div class="sectionHead"><h2>ボトル確認</h2><button class="btn gold" data-action="new-bottle">＋ボトル追加</button></div>
-  <div class="card"><label><span>No.・お客様・ボトル名で検索</span><input id="bottleSearch"></label></div>
+
+  <div class="card">
+    <label><span>No.・お客様・ボトル名・担当で検索</span><input id="bottleSearch" placeholder="例：12、田中、吉四六、あい"></label>
+
+    <div class="filterTitle">種類</div>
+    <div class="bottleFilterGrid" id="bottleCategoryFilters">
+      <button class="filterBtn active" data-bottle-category="all">全部</button>
+      <button class="filterBtn" data-bottle-category="whisky">ウイスキー</button>
+      <button class="filterBtn" data-bottle-category="brandy">ブランデー</button>
+      <button class="filterBtn" data-bottle-category="shochu">焼酎</button>
+      <button class="filterBtn" data-bottle-category="wine">ワイン</button>
+      <button class="filterBtn" data-bottle-category="sake">日本酒</button>
+      <button class="filterBtn" data-bottle-category="other">その他</button>
+    </div>
+
+    <div class="filterTitle" style="margin-top:12px">状態</div>
+    <div class="bottleStatusGrid" id="bottleStatusFilters">
+      <button class="filterBtn active" data-bottle-status="all">全部</button>
+      <button class="filterBtn" data-bottle-status="stored">保管中</button>
+      <button class="filterBtn" data-bottle-status="empty">空ボトル</button>
+    </div>
+  </div>
+
+  <div id="bottleSummary" class="card"></div>
   <div id="bottleList" class="list"></div>
 </section>
 </main>
@@ -238,7 +270,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
-const state={scheduleMode:'today',editing:null};
+const state={scheduleMode:'today',editing:null,bottleCategory:'all',bottleStatus:'all'};
 const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2);
 const today=()=>new Date().toLocaleDateString('sv-SE');
 function load(){
@@ -254,9 +286,9 @@ function load(){
           role:s.role==='floor'?'floor':'cast'
         })),
         shifts:Array.isArray(d.shifts)?d.shifts:[],
-        schedules:Array.isArray(d.schedules)?d.schedules:[],
+        schedules:(Array.isArray(d.schedules)?d.schedules:[]).map(s=>({...s,companions:Array.isArray(s.companions)?s.companions:[]})),
         customers:Array.isArray(d.customers)?d.customers:[],
-        bottles:Array.isArray(d.bottles)?d.bottles:[]
+        bottles:(Array.isArray(d.bottles)?d.bottles:[]).map(b=>({...b,category:b.category||'other'}))
       };
     }
   }catch(e){console.error(e)}
@@ -387,27 +419,120 @@ function saveShift(){
 
 function openScheduleForm(existing=null){
   $('formTitle').textContent=existing?'予定編集':'予定登録';
-  $('formBody').innerHTML=`<label><span>日付</span><input id="fDate" type="date" value="${existing?.date||today()}"></label><label><span>種別</span><select id="fType"><option value="companion" ${existing?.type==='companion'?'selected':''}>同伴</option><option value="visit" ${existing?.type==='visit'?'selected':''}>来店予定</option></select></label><label><span>時間</span><input id="fTime" type="time" value="${existing?.time||'21:00'}"></label><label><span>お客様名</span><input id="fCustomer" value="${existing?.customer||''}"></label><label><span>担当</span><select id="fCast">${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>人数</span><input id="fPeople" type="number" min="1" value="${existing?.people||1}"></label><label><span>備考</span><textarea id="fMemo">${existing?.memo||''}</textarea></label><button class="btn gold full" id="saveForm">保存</button>`;
+  const companions=Array.isArray(existing?.companions)?[...existing.companions]:[];
+
+  $('formBody').innerHTML=`
+    <label><span>日付</span><input id="fDate" type="date" value="${existing?.date||today()}"></label>
+    <label><span>種別</span>
+      <select id="fType">
+        <option value="companion" ${existing?.type==='companion'?'selected':''}>同伴</option>
+        <option value="visit" ${existing?.type==='visit'?'selected':''}>来店予定</option>
+      </select>
+    </label>
+    <label><span>時間</span><input id="fTime" type="time" value="${existing?.time||'21:00'}"></label>
+    <label><span>お客様名</span><input id="fCustomer" value="${existing?.customer||''}"></label>
+    <label><span>担当キャスト</span>
+      <select id="fCast">${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select>
+    </label>
+
+    <div id="companionStaffBox" class="card">
+      <div class="rowTitle">付き添いキャスト</div>
+      <div class="meta">同伴に一緒に付くキャストを追加できます</div>
+      <div id="companionStaffRows" class="list" style="margin-top:9px"></div>
+      <button type="button" class="btn ghost full" id="addCompanionStaff">＋付き添いを追加</button>
+    </div>
+
+    <label><span>人数</span><input id="fPeople" type="number" min="1" value="${existing?.people||1}"></label>
+    <label><span>備考</span><textarea id="fMemo">${existing?.memo||''}</textarea></label>
+    <button class="btn gold full" id="saveForm">保存</button>`;
+
   $('formDialog').showModal();
+
+  function renderCompanionRows(){
+    $('companionStaffRows').innerHTML=companions.length
+      ? companions.map((name,i)=>`<div class="row">
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
+            <label style="margin:0"><span>付き添い ${i+1}</span>
+              <select data-companion-index="${i}">
+                <option value="">選択してください</option>
+                ${names().map(n=>`<option ${n===name?'selected':''}>${n}</option>`).join('')}
+              </select>
+            </label>
+            <button type="button" class="btn red" data-remove-companion="${i}">削除</button>
+          </div>
+        </div>`).join('')
+      : '<div class="meta">付き添いは登録されていません</div>';
+  }
+
+  renderCompanionRows();
+
+  $('addCompanionStaff').onclick=()=>{
+    companions.push('');
+    renderCompanionRows();
+  };
+
+  $('companionStaffRows').onclick=e=>{
+    const btn=e.target.closest('[data-remove-companion]');
+    if(!btn)return;
+    companions.splice(Number(btn.dataset.removeCompanion),1);
+    renderCompanionRows();
+  };
+
+  $('companionStaffRows').onchange=e=>{
+    const sel=e.target.closest('[data-companion-index]');
+    if(!sel)return;
+    companions[Number(sel.dataset.companionIndex)]=sel.value;
+  };
+
+  function syncType(){
+    $('companionStaffBox').classList.toggle('hidden',$('fType').value!=='companion');
+  }
+
+  $('fType').onchange=syncType;
+  syncType();
+
   $('saveForm').onclick=()=>{
-    const obj={id:existing?.id||uid(),date:$('fDate').value,type:$('fType').value,time:$('fTime').value,customer:$('fCustomer').value.trim(),cast:$('fCast').value,people:+$('fPeople').value||1,memo:$('fMemo').value.trim()};
+    const type=$('fType').value;
+    const cleanCompanions=[...new Set(companions.filter(Boolean))]
+      .filter(n=>n!==$('fCast').value);
+
+    const obj={
+      id:existing?.id||uid(),
+      date:$('fDate').value,
+      type,
+      time:$('fTime').value,
+      customer:$('fCustomer').value.trim(),
+      cast:$('fCast').value,
+      companions:type==='companion'?cleanCompanions:[],
+      people:+$('fPeople').value||1,
+      memo:$('fMemo').value.trim()
+    };
+
     if(!obj.customer)return toast('お客様名を入力');
-    if(existing)Object.assign(existing,obj);else db.schedules.push(obj);
-    save();$('formDialog').close();renderSchedules();renderHome();toast('予定を保存しました');
+
+    if(existing)Object.assign(existing,obj);
+    else db.schedules.push(obj);
+
+    save();
+    $('formDialog').close();
+    renderSchedules();
+    renderHome();
+    toast('予定を保存しました');
   };
 }
+
 function renderSchedules(){
   let list=[...db.schedules];
   if(state.scheduleMode==='today')list=list.filter(x=>x.date===today());
   if(state.scheduleMode==='upcoming')list=list.filter(x=>x.date>=today());
   if(state.scheduleMode==='date')list=list.filter(x=>x.date===$('scheduleViewDate').value);
   list.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.cast}</div><div class="meta">タップで備考確認</div></button>`).join(''):'<div class="card">予定はありません</div>';
+  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.cast}${x.type==='companion'&&x.companions?.length?`／付き添い:${x.companions.join('・')}`:''}</div><div class="meta">タップで備考確認</div></button>`).join(''):'<div class="card">予定はありません</div>';
 }
 function showSchedule(id){
   const x=db.schedules.find(v=>v.id===id);if(!x)return;
   $('detailTitle').textContent='予定詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'来店予定'}</div><div class="meta">担当:${x.cast}</div><div class="meta">人数:${x.people}名</div><div class="meta">備考:${x.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'来店予定'}</div><div class="meta">担当:${x.cast}</div>${x.type==='companion'?`<div class="meta">付き添い:${x.companions?.length?x.companions.join('・'):'なし'}</div>`:''}<div class="meta">人数:${x.people}名</div><div class="meta">備考:${x.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
   $('detailDialog').showModal();
 }
 
@@ -448,22 +573,114 @@ function showCustomer(id){
   $('detailDialog').showModal();
 }
 
+
+function bottleCategoryLabel(category){
+  return {
+    whisky:'ウイスキー',
+    brandy:'ブランデー',
+    shochu:'焼酎',
+    wine:'ワイン',
+    sake:'日本酒',
+    other:'その他'
+  }[category]||'その他';
+}
+
 function openBottleForm(existing=null,preselectedCustomerId=""){
   if(!db.customers.length)return toast('先にお客様登録が必要です');
   $('formTitle').textContent=existing?'ボトル編集':'ボトル登録';
-  $('formBody').innerHTML=`<label><span>管理番号</span><input id="bNo" value="${existing?.number||''}"></label><label><span>お客様</span><select id="bCustomer">${db.customers.map(c=>`<option value="${c.id}" ${c.id===(existing?.customerId||preselectedCustomerId)?'selected':''}>${c.name}</option>`).join('')}</select></label><label><span>ボトル名</span><input id="bName" value="${existing?.name||''}"></label><label><span>担当</span><select id="bCast"><option>担当不明</option>${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>本数</span><input id="bQty" type="number" min="1" value="${existing?.qty||1}"></label><button class="btn gold full" id="saveBottle">保存</button>`;
+  $('formBody').innerHTML=`
+    <label><span>管理番号</span><input id="bNo" value="${existing?.number||''}"></label>
+    <label><span>お客様</span><select id="bCustomer">${db.customers.map(c=>`<option value="${c.id}" ${c.id===(existing?.customerId||preselectedCustomerId)?'selected':''}>${c.name}</option>`).join('')}</select></label>
+    <label><span>種類</span>
+      <select id="bCategory">
+        <option value="whisky" ${existing?.category==='whisky'?'selected':''}>ウイスキー</option>
+        <option value="brandy" ${existing?.category==='brandy'?'selected':''}>ブランデー</option>
+        <option value="shochu" ${existing?.category==='shochu'||!existing?.category?'selected':''}>焼酎</option>
+        <option value="wine" ${existing?.category==='wine'?'selected':''}>ワイン</option>
+        <option value="sake" ${existing?.category==='sake'?'selected':''}>日本酒</option>
+        <option value="other" ${existing?.category==='other'?'selected':''}>その他</option>
+      </select>
+    </label>
+    <label><span>ボトル名</span><input id="bName" value="${existing?.name||''}"></label>
+    <label><span>担当</span><select id="bCast"><option>担当不明</option>${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label>
+    <label><span>本数</span><input id="bQty" type="number" min="1" value="${existing?.qty||1}"></label>
+    <button class="btn gold full" id="saveBottle">保存</button>`;
   $('formDialog').showModal();
-  $('saveBottle').onclick=()=>{const no=$('bNo').value.trim(),cid=$('bCustomer').value,name=$('bName').value.trim();if(!no||!cid||!name)return toast('必須項目を入力');if(db.bottles.some(b=>String(b.number)===no&&b.id!==existing?.id))return toast('同じNo.があります');const customer=db.customers.find(c=>c.id===cid)?.name||'';const obj={id:existing?.id||uid(),number:no,customerId:cid,customer,name,cast:$('bCast').value,qty:+$('bQty').value||1,status:existing?.status||'stored',emptyDate:existing?.emptyDate||''};if(existing)Object.assign(existing,obj);else db.bottles.push(obj);save();$('formDialog').close();renderBottles();renderCustomers();toast('ボトルを保存しました')};
+
+  $('saveBottle').onclick=()=>{
+    const no=$('bNo').value.trim();
+    const cid=$('bCustomer').value;
+    const name=$('bName').value.trim();
+    if(!no||!cid||!name)return toast('必須項目を入力');
+    if(db.bottles.some(b=>String(b.number)===no&&b.id!==existing?.id))return toast('同じNo.があります');
+
+    const customer=db.customers.find(c=>c.id===cid)?.name||'';
+    const obj={
+      id:existing?.id||uid(),
+      number:no,
+      customerId:cid,
+      customer,
+      category:$('bCategory').value,
+      name,
+      cast:$('bCast').value,
+      qty:+$('bQty').value||1,
+      status:existing?.status||'stored',
+      emptyDate:existing?.emptyDate||''
+    };
+
+    if(existing)Object.assign(existing,obj);else db.bottles.push(obj);
+    save();
+    $('formDialog').close();
+    renderBottles();
+    renderCustomers();
+    toast('ボトルを保存しました');
+  };
 }
 function renderBottles(){
   const q=$('bottleSearch').value.trim().toLowerCase();
-  const list=db.bottles.filter(b=>[b.number,b.customer,b.name,b.cast].join(' ').toLowerCase().includes(q));
-  $('bottleList').innerHTML=list.length?list.map(b=>`<button class="row full" data-bottle="${b.id}"><div class="rowTitle">No.${b.number} ${b.customer}</div><div class="meta">${b.name}／担当:${b.cast}／${b.status==='empty'?'空ボトル':'保管中'}</div></button>`).join(''):'<div class="card">該当なし</div>';
+  let list=db.bottles.filter(b=>[b.number,b.customer,b.name,b.cast].join(' ').toLowerCase().includes(q));
+
+  if(state.bottleCategory!=='all'){
+    list=list.filter(b=>(b.category||'other')===state.bottleCategory);
+  }
+  if(state.bottleStatus!=='all'){
+    list=list.filter(b=>b.status===state.bottleStatus);
+  }
+
+  const counts={
+    all:db.bottles.length,
+    whisky:db.bottles.filter(b=>b.category==='whisky').length,
+    brandy:db.bottles.filter(b=>b.category==='brandy').length,
+    shochu:db.bottles.filter(b=>b.category==='shochu').length,
+    wine:db.bottles.filter(b=>b.category==='wine').length,
+    sake:db.bottles.filter(b=>b.category==='sake').length,
+    other:db.bottles.filter(b=>!b.category||b.category==='other').length
+  };
+
+  document.querySelectorAll('[data-bottle-category]').forEach(btn=>{
+    const category=btn.dataset.bottleCategory;
+    const base=category==='all'?'全部':bottleCategoryLabel(category);
+    btn.textContent=`${base} (${counts[category]||0})`;
+    btn.classList.toggle('active',state.bottleCategory===category);
+  });
+
+  document.querySelectorAll('[data-bottle-status]').forEach(btn=>{
+    btn.classList.toggle('active',state.bottleStatus===btn.dataset.bottleStatus);
+  });
+
+  $('bottleSummary').innerHTML=`<div class="rowTitle">表示中：${list.length}本</div><div class="meta">キープボトルのみ。シャンパンは管理対象外です。</div>`;
+
+  $('bottleList').innerHTML=list.length?list.map(b=>`<button class="row full" data-bottle="${b.id}" style="${b.status==='empty'?'opacity:.62':''}">
+    <div class="rowTitle">No.${b.number} ${b.customer}</div>
+    <span class="bottleTypeBadge">${bottleCategoryLabel(b.category)}</span>
+    <div class="meta">${b.name}／担当:${b.cast||'担当不明'}／本数:${b.qty}</div>
+    <div class="meta">${b.status==='empty'?'【空ボトル】':'保管中'}</div>
+  </button>`).join(''):'<div class="card">該当するボトルはありません</div>';
 }
 function showBottle(id){
   const b=db.bottles.find(x=>x.id===id);if(!b)return;
   $('detailTitle').textContent='ボトル詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">No.${b.number} ${b.customer}</div><div class="meta">ボトル:${b.name}</div><div class="meta">担当:${b.cast}</div><div class="meta">本数:${b.qty}</div><div class="meta">状態:${b.status==='empty'?'空ボトル':'保管中'}</div><div class="actions"><button class="btn ghost" data-edit-bottle="${b.id}">編集</button><button class="btn" data-toggle-bottle="${b.id}">${b.status==='empty'?'保管中へ':'空ボトル'}</button><button class="btn red" data-delete-bottle="${b.id}">削除</button></div><button class="btn gold full" data-add-related-bottle="${b.id}" style="margin-top:9px">＋同じお客様にボトル追加</button></div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">No.${b.number} ${b.customer}</div><div class="meta">種類:${bottleCategoryLabel(b.category)}</div><div class="meta">ボトル:${b.name}</div><div class="meta">担当:${b.cast}</div><div class="meta">本数:${b.qty}</div><div class="meta">状態:${b.status==='empty'?'空ボトル':'保管中'}</div><div class="actions"><button class="btn ghost" data-edit-bottle="${b.id}">編集</button><button class="btn" data-toggle-bottle="${b.id}">${b.status==='empty'?'保管中へ':'空ボトル'}</button><button class="btn red" data-delete-bottle="${b.id}">削除</button></div><button class="btn gold full" data-add-related-bottle="${b.id}" style="margin-top:9px">＋同じお客様にボトル追加</button></div>`;
   $('detailDialog').showModal();
 }
 
@@ -597,6 +814,16 @@ document.addEventListener('click',e=>{
   if(t.dataset.addBottleFor){
     $('detailDialog').close();
     return openBottleForm(null,t.dataset.addBottleFor);
+  }
+  if(t.dataset.bottleCategory){
+    state.bottleCategory=t.dataset.bottleCategory;
+    renderBottles();
+    return;
+  }
+  if(t.dataset.bottleStatus){
+    state.bottleStatus=t.dataset.bottleStatus;
+    renderBottles();
+    return;
   }
   if(t.dataset.bottle)return showBottle(t.dataset.bottle);
   if(t.dataset.editBottle){const b=db.bottles.find(v=>v.id===t.dataset.editBottle);$('detailDialog').close();return openBottleForm(b)}
