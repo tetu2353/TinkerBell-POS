@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#faf7ef">
-<title>Tinker Bell Staff v31</title>
+<title>Tinker Bell Staff v33</title>
 <style>
 :root{
   --bg:#faf7ef;--card:#fff;--gold:#c79a43;--gold2:#efd68f;--ink:#2f2921;
@@ -115,6 +115,15 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 .adminMenuCard b{display:block;color:#76541d;font-size:16px}
 .adminMenuCard small{display:block;color:var(--muted);font-size:11px;margin-top:5px;line-height:1.4}
 @media(max-width:520px){.adminMenuGrid{grid-template-columns:1fr 1fr}.adminMenuCard{min-height:115px;padding:12px 8px}}
+
+
+.staffRoleBadge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800;margin-top:5px}
+.staffRoleBadge.cast{background:#f8dce8;color:#8a3f61}
+.staffRoleBadge.floor{background:#dfe8f5;color:#334f75}
+.staffCard.cast{border-left:6px solid #d88ab0}
+.staffCard.floor{border-left:6px solid #54739a}
+.posShiftCell.name.cast{background:#fff1f6}
+.posShiftCell.name.floor{background:#eef4fb}
 
 </style>
 </head>
@@ -237,7 +246,13 @@ function load(){
     const d=JSON.parse(localStorage.getItem(KEY));
     if(d&&typeof d==='object'){
       return {
-        staff:Array.isArray(d.staff)&&d.staff.length?d.staff:[...DEFAULT_STAFF],
+        staff:(Array.isArray(d.staff)&&d.staff.length?d.staff:[...DEFAULT_STAFF]).map(s=>({
+          ...s,
+          hourlyWage:Number(s.hourlyWage||0),
+          drinkBack:Number(s.drinkBack||0),
+          bottleBack:Number(s.bottleBack||0),
+          role:s.role==='floor'?'floor':'cast'
+        })),
         shifts:Array.isArray(d.shifts)?d.shifts:[],
         schedules:Array.isArray(d.schedules)?d.schedules:[],
         customers:Array.isArray(d.customers)?d.customers:[],
@@ -335,7 +350,9 @@ function renderShiftRegister(){
       <button type="button" class="cycleMark ${mark||''}" data-cycle-mark="${mark||''}">${mark==='o'?'〇':mark==='tri'?'△':mark==='x'?'×':'－'}</button>
     </div>`;
   }).join('');
-  $('shiftInputTable').innerHTML=`<div class="posShiftWrap"><div class="posShiftTable" style="--day-count:${ds.length}">${header}<div class="posShiftCell name" title="${st}">${st}</div>${cells}</div></div>`;
+  const staffData=db.staff.find(s=>s.name===st);
+  const roleClass=staffData?.role==='floor'?'floor':'cast';
+  $('shiftInputTable').innerHTML=`<div class="posShiftWrap"><div class="posShiftTable" style="--day-count:${ds.length}">${header}<div class="posShiftCell name ${roleClass}" title="${st}">${st}</div>${cells}</div></div>`;
 }
 function renderShiftCheck(){
   const ds=rangeDates($('shiftStartDate').value,$('shiftEndDate').value);
@@ -350,7 +367,9 @@ function renderShiftCheck(){
       const m=db.shifts.find(x=>x.staff===st&&x.date===fmt(d))?.mark||'';
       return `<div class="posShiftCell"><span class="status ${m||'none'}">${m==='o'?'〇':m==='tri'?'△':m==='x'?'×':'－'}</span></div>`;
     }).join('');
-    return `<div class="posShiftCell name" title="${st}">${st}</div>${cells}`;
+    const staffData=db.staff.find(s=>s.name===st);
+    const roleClass=staffData?.role==='floor'?'floor':'cast';
+    return `<div class="posShiftCell name ${roleClass}" title="${st}">${st}</div>${cells}`;
   }).join('');
   $('shiftCheck').innerHTML=`<div class="posShiftWrap" style="max-height:66vh"><div class="posShiftTable" style="--day-count:${ds.length}">${head}${rows}</div></div>`;
 }
@@ -448,8 +467,73 @@ function showBottle(id){
   $('detailDialog').showModal();
 }
 
-function renderStaff(){ $('staffList').innerHTML=db.staff.map(s=>`<div class="row"><div class="rowTitle">${s.name}</div><button class="btn red" data-delete-staff="${s.id}">削除</button></div>`).join('') }
-function openStaffForm(){ $('formTitle').textContent='スタッフ追加';$('formBody').innerHTML='<label><span>名前</span><input id="sName"></label><button class="btn gold full" id="saveStaff">保存</button>';$('formDialog').showModal();$('saveStaff').onclick=()=>{const n=$('sName').value.trim();if(!n)return toast('名前を入力');db.staff.push({id:uid(),name:n,role:'cast'});save();populateStaff();renderStaff();$('formDialog').close();toast('追加しました')} }
+function money(v){return `${Number(v||0).toLocaleString()}円`}
+
+function money(v){return `${Number(v||0).toLocaleString()}円`}
+function roleLabel(role){return role==='floor'?'黒服':'キャスト'}
+
+function renderStaff(){
+  $('staffList').innerHTML=db.staff.length?db.staff.map(s=>`<div class="row staffCard ${s.role==='floor'?'floor':'cast'}">
+    <div class="rowTitle">${s.name}</div>
+    <span class="staffRoleBadge ${s.role==='floor'?'floor':'cast'}">${roleLabel(s.role)}</span>
+    <div class="meta">時給：${money(s.hourlyWage)}</div>
+    <div class="meta">ドリンクバック：${money(s.drinkBack)}</div>
+    <div class="meta">ボトルバック：${money(s.bottleBack)}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px">
+      <button class="btn ghost" data-edit-staff="${s.id}">編集</button>
+      <button class="btn red" data-delete-staff="${s.id}">削除</button>
+    </div>
+  </div>`).join(''):'<div class="card">従業員が登録されていません</div>';
+}
+
+function openStaffForm(existing=null){
+  $('formTitle').textContent=existing?'従業員編集':'従業員追加';
+  $('formBody').innerHTML=`
+    <label><span>名前・源氏名</span><input id="sName" value="${existing?.name||''}"></label>
+    <label><span>区分</span>
+      <select id="sRole">
+        <option value="cast" ${existing?.role!=='floor'?'selected':''}>キャスト</option>
+        <option value="floor" ${existing?.role==='floor'?'selected':''}>黒服</option>
+      </select>
+    </label>
+    <label><span>時給</span><input id="sHourlyWage" type="number" min="0" step="10" inputmode="numeric" value="${existing?.hourlyWage||''}" placeholder="例：2000"></label>
+    <label><span>ドリンクバック</span><input id="sDrinkBack" type="number" min="0" step="10" inputmode="numeric" value="${existing?.drinkBack||''}" placeholder="例：300"></label>
+    <label><span>ボトルバック</span><input id="sBottleBack" type="number" min="0" step="10" inputmode="numeric" value="${existing?.bottleBack||''}" placeholder="例：1000"></label>
+    <button class="btn gold full" id="saveStaff">保存</button>`;
+  $('formDialog').showModal();
+
+  $('saveStaff').onclick=()=>{
+    const name=$('sName').value.trim();
+    if(!name)return toast('名前を入力してください');
+
+    const data={
+      name,
+      role:$('sRole').value,
+      hourlyWage:+$('sHourlyWage').value||0,
+      drinkBack:+$('sDrinkBack').value||0,
+      bottleBack:+$('sBottleBack').value||0
+    };
+
+    if(existing){
+      const oldName=existing.name;
+      Object.assign(existing,data);
+      db.shifts.forEach(x=>{if(x.staff===oldName)x.staff=name});
+      db.schedules.forEach(x=>{if(x.cast===oldName)x.cast=name});
+      db.customers.forEach(x=>{if(x.cast===oldName)x.cast=name});
+      db.bottles.forEach(x=>{if(x.cast===oldName)x.cast=name});
+    }else{
+      db.staff.push({id:uid(),...data});
+    }
+
+    save();
+    populateStaff();
+    renderStaff();
+    renderShiftRegister();
+    renderShiftCheck();
+    $('formDialog').close();
+    toast(existing?'従業員情報を更新しました':'従業員を追加しました');
+  };
+}
 
 document.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
@@ -470,6 +554,10 @@ document.addEventListener('click',e=>{
     return;
   }
   if(t.dataset.action==='new-staff')return openStaffForm();
+  if(t.dataset.editStaff){
+    const staff=db.staff.find(s=>s.id===t.dataset.editStaff);
+    return openStaffForm(staff);
+  }
   if(t.dataset.shiftTab){document.querySelectorAll('[data-shift-tab]').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('shiftRegisterPane').classList.toggle('hidden',t.dataset.shiftTab!=='register');$('shiftCheckPane').classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderShiftCheck();return}
   if(t.dataset.scheduleTab){document.querySelectorAll('[data-schedule-tab]').forEach(x=>x.classList.remove('active'));t.classList.add('active');state.scheduleMode=t.dataset.scheduleTab;$('scheduleDateBox').classList.toggle('hidden',state.scheduleMode!=='date');renderSchedules();return}
   if(t.hasAttribute('data-cycle-mark')){
@@ -519,7 +607,14 @@ document.addEventListener('click',e=>{
   }
   if(t.dataset.toggleBottle){const b=db.bottles.find(v=>v.id===t.dataset.toggleBottle);b.status=b.status==='empty'?'stored':'empty';b.emptyDate=b.status==='empty'?today():'';save();$('detailDialog').close();renderBottles();return}
   if(t.dataset.deleteBottle){if(confirm('削除しますか？')){db.bottles=db.bottles.filter(v=>v.id!==t.dataset.deleteBottle);save();$('detailDialog').close();renderBottles();renderCustomers()}return}
-  if(t.dataset.deleteStaff){db.staff=db.staff.filter(s=>s.id!==t.dataset.deleteStaff);save();populateStaff();renderStaff();return}
+  if(t.dataset.deleteStaff){
+    const staff=db.staff.find(s=>s.id===t.dataset.deleteStaff);
+    if(!staff)return;
+    if(!confirm(`${staff.name} を削除しますか？`))return;
+    db.staff=db.staff.filter(s=>s.id!==staff.id);
+    db.shifts=db.shifts.filter(x=>x.staff!==staff.name);
+    save();populateStaff();renderStaff();renderShiftRegister();renderShiftCheck();toast('従業員を削除しました');return;
+  }
 });
 $('saveShiftBtn').onclick=saveShift;
 $('shiftStaff').onchange=renderShiftRegister;
