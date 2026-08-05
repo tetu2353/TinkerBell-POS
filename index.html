@@ -131,7 +131,44 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 
 <section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>暗証番号<input id="staffPin" value="0000"></label></div><button id="saveStaff" class="primary">従業員登録</button></div><div id="staffList" class="list"></div></section>
 
-<section id="menu" class="screen manager"><h2>メニュー管理</h2><div class="card"><div class="row3"><label>商品名<input id="menuName"></label><label>価格<input id="menuPrice" type="number"></label><label>種別<select id="menuType"><option>ドリンク</option><option>ボトル</option><option>フード</option><option>セット</option><option>その他</option></select></label></div><div class="row"><label>キャストバック<input id="menuBack" type="number" value="0"></label><label>税率<select id="menuTax"><option value="10">10%</option><option value="0">0%</option></select></label></div><button id="saveMenu" class="primary">商品登録</button></div><div id="menuList" class="list"></div></section>
+<section id="menu" class="screen manager">
+<h2>商品管理</h2>
+<div class="card">
+  <input id="menuEditId" type="hidden">
+  <div class="row3">
+    <label>商品名<input id="menuName" placeholder="例：ドリンク"></label>
+    <label>価格<input id="menuPrice" type="number" min="0" inputmode="numeric" placeholder="例：3000"></label>
+    <label>分類
+      <select id="menuType">
+        <option>セット</option>
+        <option>ドリンク</option>
+        <option>ボトル</option>
+        <option>備品・割物</option>
+        <option>単品酒</option>
+        <option>フード</option>
+        <option>その他</option>
+      </select>
+    </label>
+  </div>
+  <div class="row3">
+    <label>キャストバック<input id="menuBack" type="number" min="0" inputmode="numeric" value="0"></label>
+    <label>税率
+      <select id="menuTax"><option value="10">10%</option><option value="0">0%</option></select>
+    </label>
+    <label>注文画面への表示
+      <select id="menuVisible"><option value="true">表示する</option><option value="false">非表示</option></select>
+    </label>
+  </div>
+  <div class="row">
+    <button id="saveMenu" class="primary">商品を追加</button>
+    <button id="cancelMenuEdit" class="secondary hidden">編集をキャンセル</button>
+  </div>
+</div>
+<div class="card">
+  <div class="meta">商品を「編集」で開き、金額やバックを変更できます。↑↓で注文画面の並び順を変更できます。</div>
+</div>
+<div id="menuList" class="list"></div>
+</section>
 
 <section id="reports" class="screen manager"><h2>売上・勤怠集計</h2><div id="metrics" class="summary"></div><div class="card"><h3>会計履歴</h3><div id="checkoutHistory"></div></div><div class="card"><h3>従業員別勤怠</h3><div id="attendanceReport"></div></div></section>
 
@@ -172,7 +209,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v8-expanded-order-menu';
+const APP_VERSION='v9-editable-products';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -222,6 +259,11 @@ db.menu=Array.isArray(db.menu)?db.menu:[];
 REQUIRED_MENU_ITEMS.forEach(item=>{
   if(!db.menu.some(x=>x.name===item.name))db.menu.push({...item});
 });
+db.menu=db.menu.map((item,index)=>({
+  ...item,
+  visible:item.visible!==false,
+  sortOrder:Number.isFinite(Number(item.sortOrder))?Number(item.sortOrder):index
+}));
 localStorage.setItem(KEY,JSON.stringify(db));
 function persist(){localStorage.setItem(KEY,JSON.stringify(db))}
 function toast(t){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),1500)}
@@ -408,8 +450,8 @@ window.checkoutSeat=sid=>{const s=db.seats.find(x=>x.id===sid);if(!confirm(`${s.
 let selectedOrderSeat='',selectedCategory='すべて',pendingMenu='',lastOrder=null,undoTimer=null;
 window.selectOrderSeat=sid=>{selectedOrderSeat=sid;pendingMenu='';renderTapOrders()}
 window.setCategory=c=>{selectedCategory=c;renderTapOrders()}
-function renderTapOrders(){const occupied=db.seats.filter(s=>s.customerName);if(!occupied.some(s=>s.id===selectedOrderSeat))selectedOrderSeat=occupied[0]?.id||'';$('tapSeatGrid').innerHTML=occupied.length?occupied.map(s=>`<button class="tap-btn ${s.id===selectedOrderSeat?'selected':''}" onclick="selectOrderSeat('${s.id}')"><b>${esc(s.name)}</b><small>${esc(s.customerName)}・${yen(seatTotal(s))}</small></button>`).join(''):'<div class="empty">先に席管理で入店登録してください</div>';const cats=['すべて',...new Set(db.menu.map(m=>m.type))];$('orderCategories').innerHTML=cats.map(c=>`<button class="${c===selectedCategory?'primary':'secondary'}" onclick="setCategory('${esc(c)}')">${esc(c)}</button>`).join('');const items=db.menu.filter(m=>selectedCategory==='すべて'||m.type===selectedCategory);$('tapMenuGrid').innerHTML=items.map(m=>`<button class="tap-btn" onclick="tapMenu('${m.id}')"><b>${esc(m.name)}</b><small>${yen(m.price)}・${esc(m.type)}</small></button>`).join('');$('castPicker').classList.add('hidden')}
-window.tapMenu=mid=>{if(!selectedOrderSeat)return toast('先に席をタップ');const m=db.menu.find(x=>x.id===mid);pendingMenu=mid;if(m.back>0||m.name.includes('キャスト')){const casts=db.staff.filter(x=>x.role==='cast');$('tapCastGrid').innerHTML=casts.map(c=>`<button class="choice" onclick="commitTapOrder('${mid}','${c.id}')">${esc(c.name)}</button>`).join('');$('castPicker').classList.remove('hidden');$('castPicker').scrollIntoView({behavior:'smooth',block:'center'})}else commitTapOrder(mid,'')}
+function renderTapOrders(){const occupied=db.seats.filter(s=>s.customerName);if(!occupied.some(s=>s.id===selectedOrderSeat))selectedOrderSeat=occupied[0]?.id||'';$('tapSeatGrid').innerHTML=occupied.length?occupied.map(s=>`<button class="tap-btn ${s.id===selectedOrderSeat?'selected':''}" onclick="selectOrderSeat('${s.id}')"><b>${esc(s.name)}</b><small>${esc(s.customerName)}・${yen(seatTotal(s))}</small></button>`).join(''):'<div class="empty">先に席管理で入店登録してください</div>';const visibleMenu=db.menu.filter(m=>m.visible!==false).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));const cats=['すべて',...new Set(visibleMenu.map(m=>m.type))];$('orderCategories').innerHTML=cats.map(c=>`<button class="${c===selectedCategory?'primary':'secondary'}" onclick="setCategory('${esc(c)}')">${esc(c)}</button>`).join('');const items=db.menu.filter(m=>selectedCategory==='すべて'||m.type===selectedCategory);$('tapMenuGrid').innerHTML=items.map(m=>`<button class="tap-btn" onclick="tapMenu('${m.id}')"><b>${esc(m.name)}</b><small>${yen(m.price)}・${esc(m.type)}</small></button>`).join('');$('castPicker').classList.add('hidden')}
+window.tapMenu=mid=>{if(!selectedOrderSeat)return toast('先に席をタップ');const m=db.menu.find(x=>x.id===mid);if(!m||m.visible===false)return toast('この商品は非表示です');pendingMenu=mid;if(m.back>0||m.name.includes('キャスト')){const casts=db.staff.filter(x=>x.role==='cast');$('tapCastGrid').innerHTML=casts.map(c=>`<button class="choice" onclick="commitTapOrder('${mid}','${c.id}')">${esc(c.name)}</button>`).join('');$('castPicker').classList.remove('hidden');$('castPicker').scrollIntoView({behavior:'smooth',block:'center'})}else commitTapOrder(mid,'')}
 window.commitTapOrder=(mid,castId)=>{const s=db.seats.find(x=>x.id===selectedOrderSeat),m=db.menu.find(x=>x.id===mid);if(!s||!m)return;if(Number(m.price||0)<=0)return toast('価格未設定です。メニュー管理で金額を設定してください');s.orders.push({id:id(),menuId:m.id,name:m.name,price:m.price,qty:1,castId,back:m.back,memo:''});lastOrder={sid:s.id,oid:s.orders.at(-1).id};persist();renderAll();showUndo(`${m.name}を追加`);toast('注文を追加しました')}
 function showUndo(text){$('undoText').textContent=text;$('undoBar').classList.remove('hidden');clearTimeout(undoTimer);undoTimer=setTimeout(()=>$('undoBar').classList.add('hidden'),5000)}
 $('undoBtn').onclick=()=>{if(lastOrder){const s=db.seats.find(x=>x.id===lastOrder.sid);if(s)s.orders=s.orders.filter(x=>x.id!==lastOrder.oid);persist();renderAll();toast('注文を取り消しました')}lastOrder=null;$('undoBar').classList.add('hidden')}
@@ -436,9 +478,120 @@ function renderNotices(){$('noticeList').innerHTML=db.notices.length?db.notices.
 $('saveStaff').onclick=()=>{if(!$('staffName').value.trim())return toast('名前を入力');db.staff.push({id:id(),name:$('staffName').value.trim(),role:$('staffRole').value,wage:Number($('staffWage').value),drinkBack:Number($('staffDrinkBack').value),bottleBack:Number($('staffBottleBack').value),pin:$('staffPin').value});persist();refreshSelects();renderStaff();toast('従業員登録')};
 function renderStaff(){$('staffList').innerHTML=db.staff.map(s=>`<div class="item"><h3>${esc(s.name)} <span class="tag">${esc(s.role)}</span></h3><div class="meta">時給 ${yen(s.wage)} / ドリンクバック ${yen(s.drinkBack)} / ボトルバック ${yen(s.bottleBack)}</div></div>`).join('')}
 
-$('saveMenu').onclick=()=>{if(!$('menuName').value.trim())return toast('商品名を入力');db.menu.push({id:id(),name:$('menuName').value.trim(),price:Number($('menuPrice').value),type:$('menuType').value,back:Number($('menuBack').value),tax:Number($('menuTax').value)});persist();refreshSelects();renderMenu();toast('商品登録')};
-function renderMenu(){$('menuList').innerHTML=db.menu.map(m=>`<div class="item"><h3>${esc(m.name)} <span class="tag">${esc(m.type)}</span></h3><div class="meta">${yen(m.price)} / バック ${yen(m.back)} / 税 ${m.tax}%</div><div class="item-actions"><button class="danger" onclick="delMenu('${m.id}')">削除</button></div></div>`).join('')}
-window.delMenu=x=>{db.menu=db.menu.filter(v=>v.id!==x);persist();refreshSelects();renderMenu()}
+function clearMenuForm(){
+ $('menuEditId').value='';
+ $('menuName').value='';
+ $('menuPrice').value='';
+ $('menuType').value='ドリンク';
+ $('menuBack').value='0';
+ $('menuTax').value='10';
+ $('menuVisible').value='true';
+ $('saveMenu').textContent='商品を追加';
+ $('cancelMenuEdit').classList.add('hidden');
+}
+
+$('saveMenu').onclick=()=>{
+ const name=$('menuName').value.trim();
+ if(!name)return toast('商品名を入力してください');
+
+ const editId=$('menuEditId').value;
+ const duplicate=db.menu.find(x=>x.name===name&&x.id!==editId);
+ if(duplicate)return toast('同じ商品名が登録されています');
+
+ const data={
+  name,
+  price:Number($('menuPrice').value||0),
+  type:$('menuType').value,
+  back:Number($('menuBack').value||0),
+  tax:Number($('menuTax').value||0),
+  visible:$('menuVisible').value==='true'
+ };
+
+ if(editId){
+  const item=db.menu.find(x=>x.id===editId);
+  if(!item)return toast('商品が見つかりません');
+  Object.assign(item,data);
+  toast('商品を更新しました');
+ }else{
+  const maxOrder=db.menu.reduce((m,x)=>Math.max(m,Number(x.sortOrder||0)),0);
+  db.menu.push({id:id(),...data,sortOrder:maxOrder+1});
+  toast('商品を追加しました');
+ }
+
+ persist();
+ clearMenuForm();
+ renderMenu();
+ renderTapOrders();
+};
+
+$('cancelMenuEdit').onclick=clearMenuForm;
+
+function renderMenu(){
+ const list=[...db.menu].sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+ $('menuList').innerHTML=list.length?list.map((m,index)=>`<div class="item" style="${m.visible===false?'opacity:.55':''}">
+  <h3>${esc(m.name)} <span class="tag">${esc(m.type)}</span> ${m.visible===false?'<span class="tag">非表示</span>':''}</h3>
+  <div class="meta">${yen(m.price)} / バック ${yen(m.back)} / 税 ${m.tax}%</div>
+  <div class="item-actions">
+   <button class="secondary" onclick="moveMenu('${m.id}',-1)" ${index===0?'disabled':''}>↑</button>
+   <button class="secondary" onclick="moveMenu('${m.id}',1)" ${index===list.length-1?'disabled':''}>↓</button>
+   <button class="primary" onclick="editMenu('${m.id}')">編集</button>
+   <button class="secondary" onclick="toggleMenu('${m.id}')">${m.visible===false?'表示する':'非表示'}</button>
+   <button class="danger" onclick="delMenu('${m.id}')">削除</button>
+  </div>
+ </div>`).join(''):'<div class="empty">商品が登録されていません</div>';
+}
+
+window.editMenu=idn=>{
+ const m=db.menu.find(x=>x.id===idn);
+ if(!m)return;
+ $('menuEditId').value=m.id;
+ $('menuName').value=m.name;
+ $('menuPrice').value=m.price;
+ $('menuType').value=m.type;
+ $('menuBack').value=m.back||0;
+ $('menuTax').value=String(m.tax??10);
+ $('menuVisible').value=m.visible===false?'false':'true';
+ $('saveMenu').textContent='変更を保存';
+ $('cancelMenuEdit').classList.remove('hidden');
+ document.getElementById('menu').scrollIntoView({behavior:'smooth',block:'start'});
+};
+
+window.toggleMenu=idn=>{
+ const m=db.menu.find(x=>x.id===idn);
+ if(!m)return;
+ m.visible=m.visible===false;
+ persist();
+ renderMenu();
+ renderTapOrders();
+ toast(m.visible?'注文画面に表示しました':'注文画面から非表示にしました');
+};
+
+window.moveMenu=(idn,direction)=>{
+ const list=[...db.menu].sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+ const index=list.findIndex(x=>x.id===idn);
+ const next=index+direction;
+ if(index<0||next<0||next>=list.length)return;
+ const currentOrder=list[index].sortOrder;
+ list[index].sortOrder=list[next].sortOrder;
+ list[next].sortOrder=currentOrder;
+ persist();
+ renderMenu();
+ renderTapOrders();
+};
+
+window.delMenu=idn=>{
+ const m=db.menu.find(x=>x.id===idn);
+ if(!m)return;
+ const usedInOpenOrders=db.seats.some(s=>s.orders.some(o=>o.menuId===idn));
+ if(usedInOpenOrders)return toast('会計前の注文で使用中のため削除できません');
+ if(!confirm(`${m.name} を削除しますか？`))return;
+ db.menu=db.menu.filter(x=>x.id!==idn);
+ persist();
+ clearMenuForm();
+ renderMenu();
+ renderTapOrders();
+ toast('商品を削除しました');
+};
 
 function renderReports(){const sales=db.checkouts.reduce((a,x)=>a+x.total,0),open=db.seats.reduce((a,x)=>a+seatTotal(x),0),orders=db.checkouts.reduce((a,x)=>a+x.orders.length,0)+db.seats.reduce((a,x)=>a+x.orders.length,0);$('metrics').innerHTML=`<div class="metric"><small>確定売上</small><b>${yen(sales)}</b></div><div class="metric"><small>未会計</small><b>${yen(open)}</b></div><div class="metric"><small>会計件数</small><b>${db.checkouts.length}</b></div><div class="metric"><small>注文数</small><b>${orders}</b></div>`;$('checkoutHistory').innerHTML=db.checkouts.length?`<table><tr><th>日時</th><th>席</th><th>お客様</th><th>金額</th></tr>${db.checkouts.slice().reverse().map(x=>`<tr><td>${new Date(x.closedAt).toLocaleString('ja-JP')}</td><td>${esc(x.seat)}</td><td>${esc(x.customerName)}</td><td>${yen(x.total)}</td></tr>`).join('')}</table>`:'会計履歴なし';$('attendanceReport').innerHTML=db.staff.map(s=>{const rs=db.attendance.filter(a=>a.staffId===s.id),hours=rs.reduce((sum,r)=>sum+(r.out?(new Date(r.out)-new Date(r.in))/36e5:0),0);return `<div class="item"><b>${esc(s.name)}</b><div class="meta">${hours.toFixed(1)}時間 / 概算 ${yen(Math.round(hours*s.wage))}</div></div>`}).join('')}
 
