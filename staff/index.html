@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#faf7ef">
-<title>Tinker Bell Staff v36</title>
+<title>Tinker Bell Staff v37</title>
 <style>
 :root{
   --bg:#faf7ef;--card:#fff;--gold:#c79a43;--gold2:#efd68f;--ink:#2f2921;
@@ -134,6 +134,11 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 .bottleTypeBadge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eee4cf;color:#75551e;font-size:11px;font-weight:800;margin-top:5px}
 @media(max-width:520px){.bottleFilterGrid{grid-template-columns:repeat(2,1fr)}}
 
+
+.summaryButton{text-align:left;color:var(--ink);border:1px solid var(--line);background:rgba(255,255,255,.95);cursor:pointer}
+.summaryButton .summaryHint{display:block;font-size:11px;color:var(--muted);margin-top:5px}
+.summaryButton:active{transform:scale(.99)}
+
 </style>
 </head>
 <body>
@@ -141,8 +146,14 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 <main>
 <section id="home">
   <div class="summary">
-    <div class="card"><small>今日の出勤予定</small><strong id="homeShiftCount">0</strong>人</div>
-    <div class="card"><small>今日の予定</small><strong id="homeScheduleCount">0</strong>件</div>
+    <button class="card summaryButton" data-action="today-shift-detail">
+      <small>今日の出勤予定</small><strong id="homeShiftCount">0</strong>人
+      <span class="summaryHint">タップして出勤者を確認</span>
+    </button>
+    <button class="card summaryButton" data-action="today-schedule-detail">
+      <small>今日の予定</small><strong id="homeScheduleCount">0</strong>件
+      <span class="summaryHint">タップして予約・同伴を確認</span>
+    </button>
   </div>
   <div class="card"><div class="sectionHead"><h2 style="font-size:18px">🎂 今月の誕生日</h2></div><div id="homeBirthdays" class="list"></div></div>
   <div class="menu">
@@ -337,6 +348,55 @@ function route(){
   if(r==='schedule'){show('schedules',false);openScheduleForm();return}
   if(r==='admin'){show('home',false);$('adminDialog').showModal();return}
   show({shift:'shift',today:'schedules',customers:'customers',bottles:'bottles'}[r]||'home',false);
+}
+
+
+function showTodayShiftDetail(){
+  const todayStr=today();
+  const working=db.shifts.filter(x=>x.date===todayStr&&x.mark==='o');
+  const consulting=db.shifts.filter(x=>x.date===todayStr&&x.mark==='tri');
+
+  $('detailTitle').textContent='今日の出勤予定';
+  $('detailBody').innerHTML=`
+    <div class="card">
+      <div class="rowTitle">〇 出勤予定（${working.length}人）</div>
+      <div class="list" style="margin-top:9px">
+        ${working.length?working.map(x=>{
+          const s=db.staff.find(v=>v.name===x.staff);
+          const role=s?.role==='floor'?'黒服':'キャスト';
+          return `<div class="row"><div class="rowTitle">${x.staff}</div><div class="meta">${role}</div></div>`;
+        }).join(''):'<div class="meta">出勤予定者はいません</div>'}
+      </div>
+    </div>
+    <div class="card">
+      <div class="rowTitle">△ 相談（${consulting.length}人）</div>
+      <div class="list" style="margin-top:9px">
+        ${consulting.length?consulting.map(x=>{
+          const s=db.staff.find(v=>v.name===x.staff);
+          const role=s?.role==='floor'?'黒服':'キャスト';
+          return `<div class="row"><div class="rowTitle">${x.staff}</div><div class="meta">${role}</div></div>`;
+        }).join(''):'<div class="meta">相談中のスタッフはいません</div>'}
+      </div>
+    </div>`;
+  $('detailDialog').showModal();
+}
+
+function showTodayScheduleDetail(){
+  const todayStr=today();
+  const list=db.schedules
+    .filter(x=>x.date===todayStr)
+    .sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')));
+
+  $('detailTitle').textContent='今日の予約・同伴';
+  $('detailBody').innerHTML=list.length?list.map(x=>`
+    <button class="row full" data-schedule="${x.id}">
+      <div class="rowTitle">${x.time||''}　${x.customer}</div>
+      <div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.cast}</div>
+      ${x.type==='companion'&&x.companions?.length?`<div class="meta">付き添い:${x.companions.join('・')}</div>`:''}
+      <div class="meta">人数:${x.people||1}名</div>
+      <div class="meta">備考:${x.memo||'なし'}</div>
+    </button>`).join(''):'<div class="card">今日の予約・同伴はありません</div>';
+  $('detailDialog').showModal();
 }
 
 function renderHome(){
@@ -756,6 +816,8 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
   if(t.dataset.nav)return show(t.dataset.nav);
   if(t.dataset.close)return $(t.dataset.close).close();
+  if(t.dataset.action==='today-shift-detail')return showTodayShiftDetail();
+  if(t.dataset.action==='today-schedule-detail')return showTodayScheduleDetail();
   if(t.dataset.action==='new-schedule')return openScheduleForm();
   if(t.dataset.action==='new-customer')return openCustomerForm();
   if(t.dataset.action==='new-bottle')return openBottleForm();
