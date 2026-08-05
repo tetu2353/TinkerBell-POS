@@ -172,7 +172,36 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 
 <section id="reports" class="screen manager"><h2>売上・勤怠集計</h2><div id="metrics" class="summary"></div><div class="card"><h3>会計履歴</h3><div id="checkoutHistory"></div></div><div class="card"><h3>従業員別勤怠</h3><div id="attendanceReport"></div></div></section>
 
-<section id="settings" class="screen manager"><h2>設定</h2><div class="card"><button id="exportData" class="primary" style="width:100%;margin-bottom:9px">データを書き出す</button><label>データを読み込む<input id="importData" type="file" accept=".json"></label><button id="resetData" class="danger" style="width:100%">全データを初期化</button></div><div class="card"><b>現在の保存方式</b><p>この端末のブラウザ内に保存。複数端末共有にはサーバー接続が必要。</p></div></section>
+<section id="settings" class="screen manager">
+<h2>設定・バックアップ</h2>
+
+<div class="card">
+  <h3 style="margin-top:0">バックアップ</h3>
+  <p class="meta">従業員・商品・お客様・ボトル・シフト・勤怠・予約・席・注文・会計履歴を1つのファイルに保存します。</p>
+  <button id="exportData" class="primary" style="width:100%;margin-bottom:10px">バックアップを作成</button>
+  <div id="backupStatus" class="meta">まだバックアップを作成していません</div>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0">バックアップから復元</h3>
+  <p class="meta">保存したJSONファイルを選択します。現在のデータは復元前に自動バックアップされます。</p>
+  <label>バックアップファイルを選択
+    <input id="importData" type="file" accept=".json,application/json">
+  </label>
+  <button id="restoreDataBtn" class="secondary" style="width:100%">選択したファイルを復元</button>
+  <div id="restoreFileName" class="meta" style="margin-top:8px">ファイル未選択</div>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0">保存方式</h3>
+  <p>現在は、この端末のブラウザ内に保存しています。クラウド化する前の安全版です。</p>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;color:#b52d3a">危険な操作</h3>
+  <button id="resetData" class="danger" style="width:100%">全データを初期化</button>
+</div>
+</section>
 </main>
 <nav><button data-go="home" class="active">⌂<small>ホーム</small></button><button data-go="seats">🛋️<small>席</small></button><button data-go="orders">🥂<small>注文</small></button><button data-go="customers">👤<small>顧客</small></button><button data-go="reports" class="manager">📊<small>集計</small></button></nav>
 </div>
@@ -209,7 +238,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v9-editable-products';
+const APP_VERSION='v10-safe-backup-restore';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -595,11 +624,100 @@ window.delMenu=idn=>{
 
 function renderReports(){const sales=db.checkouts.reduce((a,x)=>a+x.total,0),open=db.seats.reduce((a,x)=>a+seatTotal(x),0),orders=db.checkouts.reduce((a,x)=>a+x.orders.length,0)+db.seats.reduce((a,x)=>a+x.orders.length,0);$('metrics').innerHTML=`<div class="metric"><small>確定売上</small><b>${yen(sales)}</b></div><div class="metric"><small>未会計</small><b>${yen(open)}</b></div><div class="metric"><small>会計件数</small><b>${db.checkouts.length}</b></div><div class="metric"><small>注文数</small><b>${orders}</b></div>`;$('checkoutHistory').innerHTML=db.checkouts.length?`<table><tr><th>日時</th><th>席</th><th>お客様</th><th>金額</th></tr>${db.checkouts.slice().reverse().map(x=>`<tr><td>${new Date(x.closedAt).toLocaleString('ja-JP')}</td><td>${esc(x.seat)}</td><td>${esc(x.customerName)}</td><td>${yen(x.total)}</td></tr>`).join('')}</table>`:'会計履歴なし';$('attendanceReport').innerHTML=db.staff.map(s=>{const rs=db.attendance.filter(a=>a.staffId===s.id),hours=rs.reduce((sum,r)=>sum+(r.out?(new Date(r.out)-new Date(r.in))/36e5:0),0);return `<div class="item"><b>${esc(s.name)}</b><div class="meta">${hours.toFixed(1)}時間 / 概算 ${yen(Math.round(hours*s.wage))}</div></div>`}).join('')}
 
-$('exportData').onclick=()=>{const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tinkerbell_backup_'+today()+'.json';a.click();URL.revokeObjectURL(a.href)}
-$('importData').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);persist();refreshSelects();renderAll();toast('読み込み完了')}catch{toast('ファイル形式が違います')}};r.readAsText(f)}
-$('resetData').onclick=()=>{if(confirm('全データを初期化しますか？')){db=seed();persist();refreshSelects();renderAll();toast('初期化しました')}}
+const BACKUP_VERSION='tinkerbell-backup-v1';
+let pendingRestoreData=null;
 
-function renderAll(){renderAttendance();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports()}
+function makeBackupPayload(){
+ return {
+  backupVersion:BACKUP_VERSION,
+  appVersion:APP_VERSION,
+  exportedAt:new Date().toISOString(),
+  data:db
+ };
+}
+
+function downloadBackup(payload,reason='manual'){
+ const stamp=new Date().toLocaleString('sv-SE').replace(/[ :]/g,'-');
+ const filename=`TinkerBell_Backup_${reason}_${stamp}.json`;
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);
+ a.download=filename;
+ document.body.appendChild(a);
+ a.click();
+ setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+ localStorage.setItem('tinkerbell_last_backup_at',new Date().toISOString());
+ if($('backupStatus'))$('backupStatus').textContent=`最終バックアップ：${new Date().toLocaleString('ja-JP')}`;
+ return filename;
+}
+
+function validateBackupPayload(payload){
+ if(!payload||typeof payload!=='object')throw new Error('バックアップ形式ではありません');
+ const data=payload.data||payload;
+ const required=['staff','menu','seats','customers','bottles','attendance','shifts','visits','checkouts'];
+ const missing=required.filter(k=>!Array.isArray(data[k]) && !(k==='shifts'&&Array.isArray(data.shifts)));
+ if(missing.length)throw new Error(`必要なデータが不足しています：${missing.join('、')}`);
+ return data;
+}
+
+$('exportData').onclick=()=>{
+ const filename=downloadBackup(makeBackupPayload(),'manual');
+ toast('バックアップを作成しました');
+};
+
+$('importData').onchange=async e=>{
+ const file=e.target.files?.[0];
+ pendingRestoreData=null;
+ $('restoreFileName').textContent=file?`選択中：${file.name}`:'ファイル未選択';
+ if(!file)return;
+ try{
+  const payload=JSON.parse(await file.text());
+  const data=validateBackupPayload(payload);
+  pendingRestoreData={file,data};
+  toast('バックアップを確認しました');
+ }catch(err){
+  $('importData').value='';
+  $('restoreFileName').textContent='読み込めないファイルです';
+  alert(`復元できません。\n${err.message}`);
+ }
+};
+
+$('restoreDataBtn').onclick=()=>{
+ if(!pendingRestoreData)return toast('バックアップファイルを選択してください');
+ const ok=confirm(
+  `「${pendingRestoreData.file.name}」から復元します。\n\n`+
+  '現在のデータは先に自動バックアップされます。\n復元後は画面を再読み込みします。'
+ );
+ if(!ok)return;
+
+ downloadBackup(makeBackupPayload(),'before-restore');
+ db=pendingRestoreData.data;
+ persist();
+ alert('復元が完了しました。画面を再読み込みします。');
+ location.reload();
+};
+
+$('resetData').onclick=()=>{
+ const first=confirm('全データを初期化しますか？');
+ if(!first)return;
+ const second=prompt('確認のため「初期化」と入力してください');
+ if(second!=='初期化')return toast('初期化を中止しました');
+
+ downloadBackup(makeBackupPayload(),'before-reset');
+ localStorage.removeItem(KEY);
+ alert('初期化しました。画面を再読み込みします。');
+ location.reload();
+};
+
+function renderBackupStatus(){
+ const last=localStorage.getItem('tinkerbell_last_backup_at');
+ if($('backupStatus')){
+  $('backupStatus').textContent=last
+   ? `最終バックアップ：${new Date(last).toLocaleString('ja-JP')}`
+   : 'まだバックアップを作成していません';
+ }
+}
+function renderAll(){renderAttendance();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderBackupStatus()}
 $('visitDate').value=today();refreshSelects();renderAll();if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 </body></html>
