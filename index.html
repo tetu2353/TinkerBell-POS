@@ -129,7 +129,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 
 <section id="notices" class="screen"><h2>お知らせ</h2><div class="card manager"><label>タイトル<input id="noticeTitle"></label><label>本文<textarea id="noticeBody" rows="4"></textarea></label><button id="saveNotice" class="primary">投稿</button></div><div id="noticeList" class="list"></div></section>
 
-<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>暗証番号<input id="staffPin" value="0000"></label></div><button id="saveStaff" class="primary">従業員登録</button></div><div id="staffList" class="list"></div></section>
+<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>暗証番号<input id="staffPin" value="0000"></label></div><button id="saveStaff" class="primary">従業員登録</button></div><div id="staffList" class="list"></div></section>
 
 <section id="menu" class="screen manager">
 <h2>商品管理</h2>
@@ -244,7 +244,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v13-realtime-customers';
+const APP_VERSION='v14-realtime-staff';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -312,6 +312,14 @@ window.tinkerbellApplyCloudCustomers=customers=>{
   renderCustomers();
 };
 window.tinkerbellGetLocalCustomers=()=>Array.isArray(db.customers)?db.customers:[];
+window.tinkerbellApplyCloudStaff=staff=>{
+  if(!Array.isArray(staff))return;
+  db.staff=staff;
+  persist();
+  refreshSelects();
+  renderStaff();
+};
+window.tinkerbellGetLocalStaff=()=>Array.isArray(db.staff)?db.staff:[];
 function isManager(){return current?.role==='manager'}
 function fillSelect(el,arr,label='name',value='id',allowBlank=false){el.innerHTML=(allowBlank?'<option value="">未選択</option>':'')+arr.map(x=>`<option value="${esc(x[value])}">${esc(x[label])}</option>`).join('')}
 function refreshSelects(){
@@ -584,7 +592,53 @@ window.delVisit=x=>{db.visits=db.visits.filter(v=>v.id!==x);persist();renderVisi
 $('saveNotice').onclick=()=>{db.notices.unshift({id:id(),title:$('noticeTitle').value,body:$('noticeBody').value,date:today()});persist();renderNotices();toast('投稿しました')};
 function renderNotices(){$('noticeList').innerHTML=db.notices.length?db.notices.map(n=>`<div class="item"><h3>${esc(n.title)}</h3><div class="meta">${esc(n.date)}<br>${esc(n.body)}</div></div>`).join(''):'<div class="empty">お知らせなし</div>'}
 
-$('saveStaff').onclick=()=>{if(!$('staffName').value.trim())return toast('名前を入力');db.staff.push({id:id(),name:$('staffName').value.trim(),role:$('staffRole').value,wage:Number($('staffWage').value),drinkBack:Number($('staffDrinkBack').value),bottleBack:Number($('staffBottleBack').value),pin:$('staffPin').value});persist();refreshSelects();renderStaff();toast('従業員登録')};
+$('saveStaff').onclick=async()=>{
+ const button=$('saveStaff');
+ const name=$('staffName').value.trim();
+ if(!name)return toast('名前を入力してください');
+
+ button.disabled=true;
+ button.textContent='保存中...';
+
+ const staff={
+  id:id(),
+  name,
+  role:$('staffRole').value,
+  wage:Number($('staffWage').value||0),
+  drinkBack:Number($('staffDrinkBack').value||0),
+  bottleBack:Number($('staffBottleBack').value||0),
+  pin:$('staffPin').value.trim()||'0000'
+ };
+
+ db.staff.push(staff);
+ persist();
+ refreshSelects();
+ renderStaff();
+
+ try{
+  if(!window.tinkerbellFirebase?.saveStaff){
+   throw new Error('Firebase準備中');
+  }
+  await window.tinkerbellFirebase.saveStaff(db.staff);
+  $('staffName').value='';
+  $('staffWage').value='1500';
+  $('staffDrinkBack').value='200';
+  $('staffBottleBack').value='1000';
+  $('staffPin').value='0000';
+  toast('従業員をクラウド保存しました');
+ }catch(error){
+  console.error('Staff cloud save failed:',error);
+  db.staff=db.staff.filter(x=>x.id!==staff.id);
+  persist();
+  refreshSelects();
+  renderStaff();
+  toast('従業員のクラウド保存に失敗しました');
+ }finally{
+  button.disabled=false;
+  button.textContent='従業員登録';
+ }
+};
+
 function renderStaff(){$('staffList').innerHTML=db.staff.map(s=>`<div class="item"><h3>${esc(s.name)} <span class="tag">${esc(s.role)}</span></h3><div class="meta">時給 ${yen(s.wage)} / ドリンクバック ${yen(s.drinkBack)} / ボトルバック ${yen(s.bottleBack)}</div></div>`).join('')}
 
 function clearMenuForm(){
@@ -871,6 +925,57 @@ async function loadCustomersFromFirebase() {
   return Array.isArray(customers) ? customers : null;
 }
 
+
+async function saveStaffToFirebase(staff) {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  await setDoc(
+    doc(firestoreDb, "app", "data"),
+    {
+      staff,
+      staffUpdatedAt: new Date().toISOString()
+    },
+    { merge: true }
+  );
+}
+
+function startStaffRealtimeSync() {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+
+  const ref = doc(firestoreDb, "app", "data");
+
+  return onSnapshot(
+    ref,
+    async snap => {
+      if (!snap.exists()) return;
+
+      const cloudStaff = snap.data()?.staff;
+
+      if (Array.isArray(cloudStaff)) {
+        window.tinkerbellApplyCloudStaff?.(cloudStaff);
+        setStatus("Firebase接続：成功（お客様・従業員を同期）", true);
+      } else {
+        const localStaff = window.tinkerbellGetLocalStaff?.() || [];
+        await setDoc(
+          ref,
+          {
+            staff: localStaff,
+            staffUpdatedAt: new Date().toISOString()
+          },
+          { merge: true }
+        );
+      }
+    },
+    error => {
+      console.error("Staff realtime sync failed:", error);
+      if (error?.code === "permission-denied") {
+        setStatus("Firebase接続済み。従業員の同期がルールで拒否されています");
+      }
+    }
+  );
+}
+
 function startCustomerRealtimeSync() {
   firebaseApp ||= initializeApp(firebaseConfig);
   firestoreDb ||= getFirestore(firebaseApp);
@@ -923,10 +1028,12 @@ window.tinkerbellFirebase = {
   get db() { return firestoreDb; },
   checkConnection: checkFirebaseConnection,
   saveCustomers: saveCustomersToFirebase,
-  loadCustomers: loadCustomersFromFirebase
+  loadCustomers: loadCustomersFromFirebase,
+  saveStaff: saveStaffToFirebase
 };
 
 startCustomerRealtimeSync();
+startStaffRealtimeSync();
 </script>
 
 </body></html>
