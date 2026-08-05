@@ -121,7 +121,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <div id="castPicker" class="card hidden"><b>③ キャストをタップ</b><div id="tapCastGrid" class="choice-grid" style="margin-top:8px"></div></div></div>
 <div id="orderSummary"></div></section>
 
-<section id="customers" class="screen"><h2>お客様管理</h2><div class="card"><div class="meta">お客様データは端末保存＋Firebase保存です。</div></div><div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・メモ"></label></div><div class="card"><div class="row3"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label><label>電話番号<input id="customerPhone" inputmode="tel"></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><button id="saveCustomer" class="primary">お客様登録</button></div><div id="customerList" class="list"></div></section>
+<section id="customers" class="screen"><h2>お客様管理</h2><div class="card"><div class="meta">お客様データはFirebaseとリアルタイム同期します。</div></div><div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・メモ"></label></div><div class="card"><div class="row3"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label><label>電話番号<input id="customerPhone" inputmode="tel"></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><button id="saveCustomer" class="primary">お客様登録</button></div><div id="customerList" class="list"></div></section>
 
 <section id="bottles" class="screen"><h2>ボトル管理</h2><div class="card"><div class="row3"><label>お客様<select id="bottleCustomer"></select></label><label>ボトル名<input id="bottleName"></label><label>残量<select id="bottleLevel"><option>満タン</option><option>75%</option><option>50%</option><option>25%</option><option>ほぼ空</option></select></label></div><label>保管場所<input id="bottlePlace"></label><button id="saveBottle" class="primary">ボトル登録</button></div><div id="bottleList" class="list"></div></section>
 
@@ -244,7 +244,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v12-cloud-customers';
+const APP_VERSION='v13-realtime-customers';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -311,6 +311,7 @@ window.tinkerbellApplyCloudCustomers=customers=>{
   refreshSelects();
   renderCustomers();
 };
+window.tinkerbellGetLocalCustomers=()=>Array.isArray(db.customers)?db.customers:[];
 function isManager(){return current?.role==='manager'}
 function fillSelect(el,arr,label='name',value='id',allowBlank=false){el.innerHTML=(allowBlank?'<option value="">未選択</option>':'')+arr.map(x=>`<option value="${esc(x[value])}">${esc(x[label])}</option>`).join('')}
 function refreshSelects(){
@@ -501,8 +502,12 @@ function renderOrders(){renderTapOrders();$('orderSummary').innerHTML=db.seats.f
 window.delOrder=(sid,oid)=>{const s=db.seats.find(x=>x.id===sid);s.orders=s.orders.filter(x=>x.id!==oid);persist();renderAll()}
 
 $('saveCustomer').onclick=async()=>{
+ const button=$('saveCustomer');
  const name=$('customerName').value.trim();
  if(!name)return toast('お客様名を入力');
+
+ button.disabled=true;
+ button.textContent='保存中...';
 
  const customer={
   id:id(),
@@ -518,25 +523,54 @@ $('saveCustomer').onclick=async()=>{
  refreshSelects();
  renderCustomers();
 
- $('customerName').value='';
- $('customerPhone').value='';
- $('customerMemo').value='';
-
  try{
-  if(window.tinkerbellFirebase?.saveCustomers){
-   await window.tinkerbellFirebase.saveCustomers(db.customers);
-   toast('お客様をFirebaseへ保存しました');
-  }else{
-   toast('お客様を端末へ保存しました');
+  if(!window.tinkerbellFirebase?.saveCustomers){
+   throw new Error('Firebase準備中');
   }
+  await window.tinkerbellFirebase.saveCustomers(db.customers);
+  $('customerName').value='';
+  $('customerPhone').value='';
+  $('customerMemo').value='';
+  toast('クラウド保存しました');
  }catch(error){
   console.error('Customer cloud save failed:',error);
-  toast('端末保存は完了。Firebase保存に失敗');
+  db.customers=db.customers.filter(x=>x.id!==customer.id);
+  persist();
+  refreshSelects();
+  renderCustomers();
+  toast('クラウド保存に失敗しました');
+ }finally{
+  button.disabled=false;
+  button.textContent='お客様登録';
  }
 };
 
 function renderCustomers(){const q=$('customerSearch').value.toLowerCase();const a=db.customers.filter(c=>(c.name+c.phone+c.memo+(staffById(c.castId)?.name||'')).toLowerCase().includes(q));$('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)}</h3><div class="meta">担当 ${esc(staffById(c.castId)?.name||'未設定')}<br>電話 ${esc(c.phone||'未登録')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>`${esc(b.name)}(${esc(b.level)})`).join('、'):'なし'}</div><div class="item-actions"><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>'}
-window.delCustomer=x=>{if(!confirm('削除しますか？'))return;db.customers=db.customers.filter(v=>v.id!==x);db.bottles=db.bottles.filter(v=>v.customerId!==x);persist();refreshSelects();renderAll()}
+window.delCustomer=async x=>{
+ if(!confirm('削除しますか？'))return;
+ const beforeCustomers=[...db.customers];
+ const beforeBottles=[...db.bottles];
+
+ db.customers=db.customers.filter(v=>v.id!==x);
+ db.bottles=db.bottles.filter(v=>v.customerId!==x);
+ persist();
+ refreshSelects();
+ renderAll();
+
+ try{
+  if(!window.tinkerbellFirebase?.saveCustomers)throw new Error('Firebase準備中');
+  await window.tinkerbellFirebase.saveCustomers(db.customers);
+  toast('クラウドから削除しました');
+ }catch(error){
+  console.error('Customer cloud delete failed:',error);
+  db.customers=beforeCustomers;
+  db.bottles=beforeBottles;
+  persist();
+  refreshSelects();
+  renderAll();
+  toast('削除に失敗しました');
+ }
+}
 
 $('saveBottle').onclick=()=>{if(!$('bottleCustomer').value||!$('bottleName').value.trim())return toast('お客様とボトル名を入力');db.bottles.push({id:id(),customerId:$('bottleCustomer').value,name:$('bottleName').value.trim(),level:$('bottleLevel').value,place:$('bottlePlace').value});persist();$('bottleName').value='';$('bottlePlace').value='';renderBottles();renderCustomers();toast('ボトル登録')};
 function renderBottles(){$('bottleList').innerHTML=db.bottles.length?db.bottles.map(b=>`<div class="item"><h3>${esc(b.name)} <span class="tag">${esc(b.level)}</span></h3><div class="meta">${esc(customerById(b.customerId)?.name||'不明')} / ${esc(b.place||'保管場所未登録')}</div><div class="item-actions"><button class="secondary" onclick="changeBottle('${b.id}')">残量変更</button><button class="danger" onclick="delBottle('${b.id}')">削除</button></div></div>`).join(''):'<div class="empty">ボトルなし</div>'}
@@ -769,7 +803,7 @@ $('visitDate').value=today();refreshSelects();renderAll();if('serviceWorker' in 
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCUGu1dEan0D0-kfXXiiag7eKKwdmkg_TQ",
@@ -837,21 +871,48 @@ async function loadCustomersFromFirebase() {
   return Array.isArray(customers) ? customers : null;
 }
 
-async function syncCustomersOnStart() {
-  try {
-    const cloudCustomers = await loadCustomersFromFirebase();
-    if (cloudCustomers) {
-      window.tinkerbellApplyCloudCustomers?.(cloudCustomers);
-      setStatus(`Firebase接続：成功（お客様 ${cloudCustomers.length}件を同期）`, true);
-    } else {
-      setStatus("Firebase接続：成功（お客様データはまだ未登録）", true);
+function startCustomerRealtimeSync() {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+
+  const ref = doc(firestoreDb, "app", "data");
+
+  return onSnapshot(
+    ref,
+    async snap => {
+      if (!snap.exists()) {
+        await setDoc(ref, { customers: [], customersUpdatedAt: new Date().toISOString() }, { merge: true });
+        setStatus("Firebase接続：成功（お客様0件）", true);
+        return;
+      }
+
+      const cloudCustomers = snap.data()?.customers;
+
+      if (Array.isArray(cloudCustomers)) {
+        window.tinkerbellApplyCloudCustomers?.(cloudCustomers);
+        setStatus(`Firebase接続：成功（お客様 ${cloudCustomers.length}件をリアルタイム同期）`, true);
+      } else {
+        const localCustomers = window.tinkerbellGetLocalCustomers?.() || [];
+        await setDoc(
+          ref,
+          {
+            customers: localCustomers,
+            customersUpdatedAt: new Date().toISOString()
+          },
+          { merge: true }
+        );
+        setStatus(`Firebase接続：成功（端末のお客様 ${localCustomers.length}件を初回送信）`, true);
+      }
+    },
+    error => {
+      console.error("Customer realtime sync failed:", error);
+      if (error?.code === "permission-denied") {
+        setStatus("Firebase接続済み。Firestoreルールで同期が拒否されています");
+      } else {
+        setStatus(`Firebase同期エラー：${error?.code || error?.message || "不明"}`);
+      }
     }
-  } catch (error) {
-    console.error("Customer cloud load failed:", error);
-    if (error?.code === "permission-denied") {
-      setStatus("Firebase接続済み。お客様の読み取り権限がありません");
-    }
-  }
+  );
 }
 
 retryBtn?.addEventListener("click", checkFirebaseConnection);
@@ -865,7 +926,7 @@ window.tinkerbellFirebase = {
   loadCustomers: loadCustomersFromFirebase
 };
 
-syncCustomersOnStart();
+startCustomerRealtimeSync();
 </script>
 
 </body></html>
