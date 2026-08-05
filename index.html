@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111111">
-<title>ティンカーベル 店舗管理</title>
+<title>ティンカーベル POS v6</title>
 <style>
 :root{--bg:#f3edf4;--card:#fff;--ink:#201923;--muted:#756a77;--line:#dfd4e1;--gold:#b88a35;--dark:#171219;--danger:#b8425a}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;background:linear-gradient(180deg,#f8f3f8,#eee7f1);color:var(--ink)}
@@ -37,20 +37,6 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 #shifts{max-width:760px;margin:0 auto}.shift-page-head{background:linear-gradient(135deg,#7e69ad,#9b83c3);color:#fff;margin:-14px -14px 16px;padding:18px 18px 20px;border-radius:0 0 22px 22px;box-shadow:0 8px 22px #6d579130}.shift-page-head h2{margin:0;font-size:22px}.shift-page-head p{margin:5px 0 0;color:#eee8fa;font-size:12px}.shift-shell{background:#fff;border:1px solid #ded4e9;border-radius:20px;padding:14px;box-shadow:0 8px 24px #6f58701a}.shift-toolbar{margin:0 0 12px}.shift-toolbar button{min-width:44px;width:44px;height:40px;padding:0;border-radius:11px;background:#f2edf8;color:#58456f}.shift-month-title{font-size:21px;color:#392d48}.shift-banner{padding:11px 13px;border-radius:12px;font-size:13px;margin-bottom:12px}.shift-banner.staff-view{background:#f2ecff;color:#5a4178}.shift-banner.manager{background:#eee8fb;color:#554176}.shift-person-picker{display:flex;gap:8px;overflow:auto;padding:1px 1px 10px}.shift-person-picker button{white-space:nowrap;border:1px solid #dcd1e9;background:#fff;color:#62516f;padding:9px 12px;border-radius:999px;font-weight:800}.shift-person-picker button.active{background:#7f69ad;color:#fff;border-color:#7f69ad}.month-calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.month-calendar .dow{text-align:center;font-size:11px;font-weight:900;color:#85788e;padding:5px 0}.month-calendar .dow.sun{color:#db5f6a}.month-calendar .dow.sat{color:#557dc6}.month-day{min-height:67px;border:1px solid #e8e0ef;background:#fff;border-radius:12px;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}.month-day.blank{border-color:transparent;background:transparent}.month-day.editable{cursor:pointer}.month-day.today{outline:2px solid #8c72bd}.month-day .num{font-size:12px;font-weight:900;color:#5e5265;align-self:flex-start}.month-day.sun .num{color:#db5f6a}.month-day.sat .num{color:#557dc6}.month-day .mark{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#f2eef5;color:#aa9eae;font-size:21px;font-weight:900}.month-day.status-ok .mark{background:#e9f7eb;color:#2c9a49}.month-day.status-late .mark{background:#fff2db;color:#df8b0e}.month-day.status-off .mark{background:#fde9ed;color:#d6495a}.shift-legend{justify-content:center;font-size:12px;gap:10px;margin:13px 0}.my-entry-state{background:#f5f1fb;border-color:#e2d8ef}.shift-save{background:#2e9d4b;box-shadow:0 6px 14px #2e9d4b33}.shift-publish{background:#7d68ae;box-shadow:0 6px 14px #7d68ae33}.shift-status-card{background:#fbf9fd;border-color:#e5dced}.shift-status-row{align-items:center}.roster-card{margin-top:14px;background:#fff;border:1px solid #e3d9eb;border-radius:16px;padding:13px}.roster-card h3{margin:0 0 10px;font-size:16px}.roster-scroll{overflow:auto}.roster-mini{min-width:620px}.roster-mini th{background:#7d68ae}.roster-mini td,.roster-mini th{text-align:center;padding:8px}.roster-mini td:first-child,.roster-mini th:first-child{text-align:left;position:sticky;left:0;background:#fff;color:#34293d;font-weight:900}.shift-actions button{min-height:47px}.shift-footnote{text-align:center;color:#786d7e;font-size:11px;margin-top:8px}
 @media(max-width:560px){#shifts{padding-bottom:30px}.month-day{min-height:58px;padding:4px}.month-day .mark{width:30px;height:30px;font-size:19px}.shift-shell{padding:11px}.shift-page-head{margin:-14px -14px 14px}.shift-actions{grid-template-columns:1fr 1fr}.shift-actions .wide{grid-column:1/-1}}
 
-
-/* ===== Tinker Bell unified home dashboard ===== */
-.home-hero{position:relative;overflow:hidden;background:linear-gradient(145deg,#171018 0%,#36233c 58%,#6d466f 100%);color:#fff;border:1px solid #b9954e;border-radius:24px;padding:24px 20px 21px;box-shadow:0 16px 36px rgba(48,22,52,.20);margin-bottom:14px}
-.home-hero:before{content:"";position:absolute;width:190px;height:190px;border-radius:50%;right:-70px;top:-90px;background:radial-gradient(circle,rgba(255,222,145,.28),transparent 68%)}
-.home-hero:after{content:"✦";position:absolute;right:22px;bottom:12px;color:#e8c879;font-size:28px;opacity:.75}
-.home-brand{font-family:Georgia,serif;font-size:29px;font-weight:700;letter-spacing:.04em;margin:0 0 4px}.home-welcome{margin:0;color:#eadfeb;font-size:14px}.home-status{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}.home-status div{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.15);border-radius:13px;padding:10px}.home-status small{display:block;color:#ddcfe0;font-size:10px}.home-status strong{display:block;margin-top:2px;font-size:17px;color:#fff}
-.home-section{margin:18px 0 8px}.home-section-head{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:0 2px 10px}.home-section-head h2{font-size:18px;margin:0}.home-section-head span{font-size:11px;color:var(--muted)}
-.home-primary{display:grid;grid-template-columns:1fr 1fr;gap:11px}.home-primary .home-card{min-height:145px;background:linear-gradient(145deg,#fff,#f7eef9);border:1px solid #cfb6d3;border-radius:19px;padding:17px;text-align:left;box-shadow:0 9px 24px rgba(69,35,75,.10)}.home-primary .home-card:first-child{background:linear-gradient(145deg,#2a1b30,#65416d);color:#fff;border-color:#b89550}.home-primary .home-card:nth-child(2){background:linear-gradient(145deg,#fff8e9,#fff);border-color:#d6b875}.home-card .home-icon{font-size:31px;display:block;margin-bottom:14px}.home-card b{display:block;font-size:19px;margin-bottom:5px}.home-card small{display:block;line-height:1.45;color:var(--muted)}.home-primary .home-card:first-child small{color:#dfd1e2}.home-card .arrow{float:right;font-size:20px;opacity:.55}
-.home-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.home-grid .home-card{min-height:112px;background:#fff;border:1px solid var(--line);border-radius:17px;padding:14px 11px;text-align:left;box-shadow:0 6px 17px rgba(48,31,52,.06)}.home-grid .home-card b{font-size:15px}.home-grid .home-card small{font-size:10px}.home-grid .home-icon{font-size:24px;margin-bottom:9px}
-.home-grid.management .home-card{background:#fbf8fc;border-color:#dacdde}.home-card:active{transform:scale(.985)}
-.home-help{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px 15px;color:var(--muted);font-size:12px;line-height:1.6;margin-top:16px}.home-help b{color:var(--ink)}
-@media(max-width:620px){.home-status{grid-template-columns:repeat(3,1fr)}.home-status strong{font-size:14px}.home-grid{grid-template-columns:repeat(2,1fr)}.home-primary{grid-template-columns:1fr 1fr}.home-primary .home-card{min-height:135px;padding:15px}.home-primary .home-card b{font-size:17px}}
-@media(max-width:370px){.home-primary{grid-template-columns:1fr}.home-grid{grid-template-columns:1fr 1fr}}
-
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -68,50 +54,40 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <header><div class="brand"><small>TINKER BELL</small><b>店舗管理</b></div><div class="header-actions"><button id="userBadge" class="pill"></button><button id="logoutBtn" class="pill">退出</button></div></header>
 <main>
 <section id="home" class="screen active">
- <div class="home-hero">
-  <div class="home-brand">Tinker Bell</div>
-  <p class="home-welcome" id="welcome"></p>
-  <div class="home-status">
-   <div><small>営業中の席</small><strong id="homeSeatCount">0席</strong></div>
-   <div><small>本日の出勤</small><strong id="homeAttendanceCount">0名</strong></div>
-   <div><small>来店予定</small><strong id="homeVisitCount">0件</strong></div>
-  </div>
+ <div class="hero"><div style="font-size:25px;color:#f0cf75">✦</div><h1>Tinker Bell POS</h1><p id="welcome"></p></div>
+ <div class="card" style="margin-top:13px;border:2px solid #c79b43;background:linear-gradient(145deg,#fffaf0,#fff)"><h2 style="margin:0 0 10px">店舗POS</h2><div class="grid" style="margin-top:0">
+  <button class="tile" data-go="seats" style="border:2px solid #b88a35"><span>🛋️</span><b>席管理</b><small>入店・担当キャスト</small></button>
+  <button class="tile" data-go="orders" style="border:2px solid #b88a35"><span>💰</span><b>注文・会計</b><small>商品追加・会計確定</small></button>
+ </div></div>
+ <h2 style="margin-top:18px">スタッフ管理</h2>
+ <div class="grid">
+  <button class="tile" data-go="attendance"><span>🕒</span><b>出勤・退勤</b><small>勤怠を記録</small></button>
+  <button class="tile" data-go="shifts"><span>📅</span><b>シフト</b><small>予定を確認・登録</small></button>
+  <button class="tile" data-go="customers"><span>👤</span><b>お客様</b><small>担当・履歴・メモ</small></button>
+  <button class="tile" data-go="bottles"><span>🍾</span><b>ボトル</b><small>残量・保管場所</small></button>
+  <button class="tile" data-go="visits"><span>🤝</span><b>同伴・来店予定</b><small>予約を共有</small></button>
+  <button class="tile" data-go="notices"><span>🔔</span><b>お知らせ</b><small>店舗からの連絡</small></button>
+  <button class="tile manager" data-go="staff"><span>👥</span><b>従業員管理</b><small>時給・手当・権限</small></button>
+  <button class="tile manager" data-go="menu"><span>📖</span><b>メニュー管理</b><small>料金・バック設定</small></button>
+  <button class="tile manager" data-go="reports"><span>📊</span><b>売上・勤怠集計</b><small>日別集計</small></button>
+  <button class="tile manager" data-go="settings"><span>⚙️</span><b>設定</b><small>データ保存・初期化</small></button>
  </div>
-
- <div class="home-section">
-  <div class="home-section-head"><h2>営業でよく使う</h2><span>大きなボタンからすぐ操作</span></div>
-  <div class="home-primary">
-   <button class="home-card" data-go="seats"><span class="arrow">›</span><span class="home-icon">🛋️</span><b>席管理</b><small>来店入力・担当配置・席状況</small></button>
-   <button class="home-card" data-go="orders"><span class="arrow">›</span><span class="home-icon">🥂</span><b>注文・会計</b><small>商品追加・伝票・お会計</small></button>
-  </div>
- </div>
-
- <div class="home-section">
-  <div class="home-section-head"><h2>スタッフ業務</h2><span>毎日の登録と確認</span></div>
-  <div class="home-grid">
-   <button class="home-card" data-go="attendance"><span class="home-icon">🕒</span><b>出勤・退勤</b><small>勤怠を記録</small></button>
-   <button class="home-card" data-go="shifts"><span class="home-icon">📅</span><b>シフト</b><small>入力・全員確認</small></button>
-   <button class="home-card" data-go="visits"><span class="home-icon">🤝</span><b>同伴・来店予定</b><small>予定を共有</small></button>
-   <button class="home-card" data-go="customers"><span class="home-icon">👤</span><b>お客様</b><small>担当・履歴・メモ</small></button>
-   <button class="home-card" data-go="bottles"><span class="home-icon">🍾</span><b>ボトル</b><small>キープ・残量管理</small></button>
-   <button class="home-card" data-go="notices"><span class="home-icon">🔔</span><b>お知らせ</b><small>店舗からの連絡</small></button>
-  </div>
- </div>
-
- <div class="home-section manager">
-  <div class="home-section-head"><h2>幹部・管理</h2><span>設定と集計</span></div>
-  <div class="home-grid management">
-   <button class="home-card manager" data-go="staff"><span class="home-icon">👥</span><b>従業員管理</b><small>時給・手当・権限</small></button>
-   <button class="home-card manager" data-go="menu"><span class="home-icon">📖</span><b>メニュー管理</b><small>料金・カテゴリ・バック</small></button>
-   <button class="home-card manager" data-go="reports"><span class="home-icon">📊</span><b>売上・勤怠集計</b><small>日別の確認</small></button>
-   <button class="home-card manager" data-go="settings"><span class="home-icon">⚙️</span><b>設定</b><small>保存・バックアップ</small></button>
-  </div>
- </div>
-
- <div class="home-help"><b>迷ったとき：</b> 来店は「席管理」、商品追加と精算は「注文・会計」、出勤できる日の提出は「シフト」を押してくなんしょ。</div>
 </section>
 
-<section id="attendance" class="screen"><h2>出勤・退勤</h2><div class="card"><div class="row"><button id="clockIn" class="primary">出勤を記録</button><button id="clockOut" class="secondary">退勤を記録</button></div></div><div id="attendanceList" class="list"></div></section>
+<section id="attendance" class="screen">
+<h2>出勤・退勤</h2>
+<div class="card">
+  <label>本人の名前
+    <select id="attendanceStaff"></select>
+  </label>
+  <div class="meta" style="margin-bottom:10px">名前選択後、確認画面でもう一度同じ本人を選んで登録します。</div>
+  <div class="row">
+    <button id="clockIn" class="primary">出勤を登録</button>
+    <button id="clockOut" class="secondary">退勤を登録</button>
+  </div>
+</div>
+<div id="attendanceList" class="list"></div>
+</section>
 
 <section id="shifts" class="screen">
  <div class="shift-page-head"><h2 id="shiftScreenTitle">シフト入力</h2><p>出勤できる日をタップして登録します</p></div>
@@ -163,6 +139,32 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 </main>
 <nav><button data-go="home" class="active">⌂<small>ホーム</small></button><button data-go="seats">🛋️<small>席</small></button><button data-go="orders">🥂<small>注文</small></button><button data-go="customers">👤<small>顧客</small></button><button data-go="reports" class="manager">📊<small>集計</small></button></nav>
 </div>
+<div id="attendanceModal" class="modal hidden">
+  <div class="modal-card">
+    <h2 id="attendanceModalTitle">本人確認</h2>
+    <div id="attendanceModalDetails"></div>
+    <label style="margin-top:12px">本人確認（2回目）
+      <select id="attendanceConfirmStaff"></select>
+    </label>
+    <div id="transportCheckBox" class="card hidden" style="margin-top:12px">
+      <h3 style="margin-top:0">送迎確認</h3>
+      <label>現在、誰かを送迎していますか？
+        <select id="transportStatus">
+          <option value="">選択してください</option>
+          <option value="no">送迎していない</option>
+          <option value="yes">送迎している</option>
+        </select>
+      </label>
+      <label id="transportWhoWrap" class="hidden">送迎している相手
+        <input id="transportWho" placeholder="例：あや、田中様">
+      </label>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button id="attendanceModalCancel" class="secondary">キャンセル</button>
+      <button id="attendanceModalSave" class="primary">確認して登録</button>
+    </div>
+  </div>
+</div>
 <div id="seatModal" class="modal hidden"><div class="modal-card"><h2 id="seatModalTitle">入店登録</h2><label>お客様名<input id="seatCustomerName" list="customerNames" placeholder="名前を入力"></label><datalist id="customerNames"></datalist><p><b>担当キャスト</b></p><div id="seatCastChoices" class="choice-grid"></div><div class="row" style="margin-top:14px"><button id="seatModalCancel" class="secondary">閉じる</button><button id="seatModalSave" class="primary">保存</button></div></div></div>
 <div id="undoBar" class="undo hidden"><span id="undoText">注文を追加しました</span><button id="undoBtn" class="secondary">取り消す</button></div>
 <div id="toast" class="toast hidden"></div>
@@ -170,6 +172,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
+const APP_VERSION='v8-expanded-order-menu';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -186,13 +189,40 @@ const seed=()=>({
   {id:'mn1',name:'生ビール',price:1000,type:'ドリンク',back:0,tax:10},
   {id:'mn2',name:'キャストドリンク',price:1500,type:'ドリンク',back:200,tax:10},
   {id:'mn3',name:'吉四六',price:10000,type:'ボトル',back:1000,tax:10},
-  {id:'mn4',name:'セット料金',price:5000,type:'セット',back:0,tax:10}
+  {id:'mn4',name:'セット料金',price:5000,type:'セット',back:0,tax:10},
+  {id:'mn5',name:'アイス大',price:0,type:'備品・割物',back:0,tax:10},
+  {id:'mn6',name:'アイス小',price:0,type:'備品・割物',back:0,tax:10},
+  {id:'mn7',name:'水',price:0,type:'備品・割物',back:0,tax:10},
+  {id:'mn8',name:'割物 烏龍茶',price:0,type:'備品・割物',back:0,tax:10},
+  {id:'mn9',name:'割物 お茶',price:0,type:'備品・割物',back:0,tax:10},
+  {id:'mn10',name:'ドリンク',price:0,type:'ドリンク',back:0,tax:10},
+  {id:'mn11',name:'グラスシャンパン',price:0,type:'ドリンク',back:0,tax:10},
+  {id:'mn12',name:'単品焼酎',price:0,type:'単品酒',back:0,tax:10},
+  {id:'mn13',name:'単品ウイスキー',price:0,type:'単品酒',back:0,tax:10},
+  {id:'mn14',name:'チェーサー',price:0,type:'備品・割物',back:0,tax:10}
  ],
  seats:[...Array.from({length:6},(_,i)=>({id:'C'+(i+1),name:'カウンター'+(i+1),customerId:'',customerName:'',casts:[],openedAt:'',orders:[]})),
  ...Array.from({length:5},(_,i)=>({id:'B'+(i+1),name:'BOX '+(i+1),customerId:'',customerName:'',casts:[],openedAt:'',orders:[]}))],
  customers:[], bottles:[], attendance:[], shifts:[], shiftMeta:{submitted:{},published:{}}, visits:[], notices:[], checkouts:[]
 });
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||seed(), current=null;
+const REQUIRED_MENU_ITEMS=[
+  {id:'mn5',name:'アイス大',price:0,type:'備品・割物',back:0,tax:10},
+  {id:'mn6',name:'アイス小',price:0,type:'備品・割物',back:0,tax:10},
+  {id:'mn7',name:'水',price:0,type:'備品・割物',back:0,tax:10},
+  {id:'mn8',name:'割物 烏龍茶',price:0,type:'備品・割物',back:0,tax:10},
+  {id:'mn9',name:'割物 お茶',price:0,type:'備品・割物',back:0,tax:10},
+  {id:'mn10',name:'ドリンク',price:0,type:'ドリンク',back:0,tax:10},
+  {id:'mn11',name:'グラスシャンパン',price:0,type:'ドリンク',back:0,tax:10},
+  {id:'mn12',name:'単品焼酎',price:0,type:'単品酒',back:0,tax:10},
+  {id:'mn13',name:'単品ウイスキー',price:0,type:'単品酒',back:0,tax:10},
+  {id:'mn14',name:'チェーサー',price:0,type:'備品・割物',back:0,tax:10}
+];
+db.menu=Array.isArray(db.menu)?db.menu:[];
+REQUIRED_MENU_ITEMS.forEach(item=>{
+  if(!db.menu.some(x=>x.name===item.name))db.menu.push({...item});
+});
+localStorage.setItem(KEY,JSON.stringify(db));
 function persist(){localStorage.setItem(KEY,JSON.stringify(db))}
 function toast(t){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),1500)}
 function staffById(x){return db.staff.find(s=>s.id===x)}
@@ -201,6 +231,8 @@ function isManager(){return current?.role==='manager'}
 function fillSelect(el,arr,label='name',value='id',allowBlank=false){el.innerHTML=(allowBlank?'<option value="">未選択</option>':'')+arr.map(x=>`<option value="${esc(x[value])}">${esc(x[label])}</option>`).join('')}
 function refreshSelects(){
  fillSelect($('loginStaff'),db.staff);
+ fillSelect($('attendanceStaff'),db.staff);
+ fillSelect($('attendanceConfirmStaff'),db.staff);
  ['customerCast','visitCast'].forEach(x=>fillSelect($(x),db.staff.filter(s=>s.role==='cast')));
  fillSelect($('bottleCustomer'),db.customers);
  $('customerNames').innerHTML=db.customers.map(c=>`<option value="${esc(c.name)}"></option>`).join('');
@@ -211,9 +243,114 @@ qsa('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
 $('loginBtn').onclick=()=>{const s=staffById($('loginStaff').value);if(!s||s.pin!==$('loginPin').value)return toast('暗証番号が違います');current=s;$('login').classList.add('hidden');$('app').classList.remove('hidden');$('userBadge').textContent=s.name;$('welcome').textContent=`${s.name}でログイン中`;applyRole();show('home')};
 $('logoutBtn').onclick=()=>location.reload();$('userBadge').onclick=()=>show('home');
 
-$('clockIn').onclick=()=>{db.attendance.push({id:id(),staffId:current.id,in:nowISO(),out:''});persist();renderAttendance();toast('出勤を記録しました')};
-$('clockOut').onclick=()=>{const r=[...db.attendance].reverse().find(x=>x.staffId===current.id&&!x.out);if(!r)return toast('出勤記録がありません');r.out=nowISO();persist();renderAttendance();toast('退勤を記録しました')};
-function renderAttendance(){const a=db.attendance.filter(x=>isManager()||x.staffId===current?.id).slice().reverse();$('attendanceList').innerHTML=a.length?a.map(x=>`<div class="item"><h3>${esc(staffById(x.staffId)?.name||'不明')}</h3><div class="meta">出勤 ${new Date(x.in).toLocaleString('ja-JP')}<br>退勤 ${x.out?new Date(x.out).toLocaleString('ja-JP'):'未退勤'}</div></div>`).join(''):'<div class="empty">勤怠記録なし</div>'}
+let attendanceAction='';
+let attendanceTargetId='';
+
+function todayVisitsForStaff(staffId){
+ const d=today();
+ return db.visits
+  .filter(v=>v.date===d && (v.castId===staffId || (Array.isArray(v.companionIds)&&v.companionIds.includes(staffId))))
+  .sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')));
+}
+
+function openAttendanceConfirm(action){
+ const staffId=$('attendanceStaff').value;
+ const staff=staffById(staffId);
+ if(!staff)return toast('本人の名前を選択してください');
+
+ if(action==='in'){
+  const openRecord=[...db.attendance].reverse().find(x=>x.staffId===staffId&&!x.out);
+  if(openRecord)return toast('この方はすでに出勤登録されています');
+ }else{
+  const openRecord=[...db.attendance].reverse().find(x=>x.staffId===staffId&&!x.out);
+  if(!openRecord)return toast('出勤記録がありません');
+ }
+
+ attendanceAction=action;
+ attendanceTargetId=staffId;
+ $('attendanceModalTitle').textContent=action==='in'?'出勤登録の本人確認':'退勤登録の本人確認';
+ $('attendanceConfirmStaff').value='';
+ $('attendanceConfirmStaff').innerHTML='<option value="">もう一度本人を選択</option>'+db.staff.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+
+ const visits=todayVisitsForStaff(staffId);
+ const visitHtml=visits.length?visits.map(v=>`<div class="item">
+   <h3>${esc(v.customer)} <span class="tag">${esc(v.type)}</span></h3>
+   <div class="meta">${esc(v.time||'時間未定')} / ${esc(v.people||1)}名<br>担当 ${esc(staffById(v.castId)?.name||'')}<br>${esc(v.memo||'メモなし')}</div>
+  </div>`).join(''):'<div class="empty">本日の同伴・来店予定はありません</div>';
+
+ $('attendanceModalDetails').innerHTML=`
+  <div class="card">
+   <h3 style="margin-top:0">1回目の本人確認</h3>
+   <div class="item"><h3>${esc(staff.name)}</h3><div class="meta">${staff.role==='cast'?'キャスト':staff.role==='staff'?'黒服':'幹部'}</div></div>
+  </div>
+  ${action==='out'?`<div class="card"><h3 style="margin-top:0">本日の同伴・来店予定</h3>${visitHtml}</div>`:''}`;
+
+ const needsTransport=action==='out'&&(staff.role==='staff'||staff.role==='manager');
+ $('transportCheckBox').classList.toggle('hidden',!needsTransport);
+ $('transportStatus').value='';
+ $('transportWho').value='';
+ $('transportWhoWrap').classList.add('hidden');
+
+ $('attendanceModal').classList.remove('hidden');
+}
+
+$('transportStatus').onchange=()=>{
+ $('transportWhoWrap').classList.toggle('hidden',$('transportStatus').value!=='yes');
+};
+
+$('attendanceModalCancel').onclick=()=>$('attendanceModal').classList.add('hidden');
+
+$('attendanceModalSave').onclick=()=>{
+ const secondId=$('attendanceConfirmStaff').value;
+ if(!secondId)return toast('2回目の本人確認をしてください');
+ if(secondId!==attendanceTargetId)return toast('本人が一致しません');
+
+ const staff=staffById(attendanceTargetId);
+ const needsTransport=attendanceAction==='out'&&(staff.role==='staff'||staff.role==='manager');
+ if(needsTransport&&!$('transportStatus').value)return toast('送迎状況を選択してください');
+ if(needsTransport&&$('transportStatus').value==='yes'&&!$('transportWho').value.trim())return toast('送迎している相手を入力してください');
+
+ if(attendanceAction==='in'){
+  db.attendance.push({
+   id:id(),staffId:attendanceTargetId,in:nowISO(),out:'',
+   inConfirmedTwice:true
+  });
+  toast('出勤を登録しました');
+ }else{
+  const r=[...db.attendance].reverse().find(x=>x.staffId===attendanceTargetId&&!x.out);
+  if(!r)return toast('出勤記録がありません');
+  r.out=nowISO();
+  r.outConfirmedTwice=true;
+  r.todayVisitIds=todayVisitsForStaff(attendanceTargetId).map(v=>v.id);
+  if(needsTransport){
+   r.transportStatus=$('transportStatus').value;
+   r.transportWho=$('transportStatus').value==='yes' ? $('transportWho').value.trim() : '';
+  }
+  toast('退勤を登録しました');
+ }
+
+ persist();
+ $('attendanceModal').classList.add('hidden');
+ renderAttendance();
+};
+
+$('clockIn').onclick=()=>openAttendanceConfirm('in');
+$('clockOut').onclick=()=>openAttendanceConfirm('out');
+
+function renderAttendance(){
+ const a=db.attendance.slice().reverse();
+ $('attendanceList').innerHTML=a.length?a.map(x=>{
+  const staff=staffById(x.staffId);
+  const transport=x.transportStatus?`<br>送迎：${x.transportStatus==='yes'?`あり（${esc(x.transportWho||'相手未入力')}）`:'なし'}`:'';
+  return `<div class="item">
+   <h3>${esc(staff?.name||'不明')}</h3>
+   <div class="meta">
+    出勤 ${new Date(x.in).toLocaleString('ja-JP')} ${x.inConfirmedTwice?'✓本人確認2回':''}<br>
+    退勤 ${x.out?new Date(x.out).toLocaleString('ja-JP'):'未退勤'} ${x.outConfirmedTwice?'✓本人確認2回':''}${transport}
+   </div>
+  </div>`;
+ }).join(''):'<div class="empty">勤怠記録なし</div>';
+}
 
 let shiftViewMonth=new Date();shiftViewMonth.setDate(1);
 let selectedShiftStaffId='';
@@ -273,7 +410,7 @@ window.selectOrderSeat=sid=>{selectedOrderSeat=sid;pendingMenu='';renderTapOrder
 window.setCategory=c=>{selectedCategory=c;renderTapOrders()}
 function renderTapOrders(){const occupied=db.seats.filter(s=>s.customerName);if(!occupied.some(s=>s.id===selectedOrderSeat))selectedOrderSeat=occupied[0]?.id||'';$('tapSeatGrid').innerHTML=occupied.length?occupied.map(s=>`<button class="tap-btn ${s.id===selectedOrderSeat?'selected':''}" onclick="selectOrderSeat('${s.id}')"><b>${esc(s.name)}</b><small>${esc(s.customerName)}・${yen(seatTotal(s))}</small></button>`).join(''):'<div class="empty">先に席管理で入店登録してください</div>';const cats=['すべて',...new Set(db.menu.map(m=>m.type))];$('orderCategories').innerHTML=cats.map(c=>`<button class="${c===selectedCategory?'primary':'secondary'}" onclick="setCategory('${esc(c)}')">${esc(c)}</button>`).join('');const items=db.menu.filter(m=>selectedCategory==='すべて'||m.type===selectedCategory);$('tapMenuGrid').innerHTML=items.map(m=>`<button class="tap-btn" onclick="tapMenu('${m.id}')"><b>${esc(m.name)}</b><small>${yen(m.price)}・${esc(m.type)}</small></button>`).join('');$('castPicker').classList.add('hidden')}
 window.tapMenu=mid=>{if(!selectedOrderSeat)return toast('先に席をタップ');const m=db.menu.find(x=>x.id===mid);pendingMenu=mid;if(m.back>0||m.name.includes('キャスト')){const casts=db.staff.filter(x=>x.role==='cast');$('tapCastGrid').innerHTML=casts.map(c=>`<button class="choice" onclick="commitTapOrder('${mid}','${c.id}')">${esc(c.name)}</button>`).join('');$('castPicker').classList.remove('hidden');$('castPicker').scrollIntoView({behavior:'smooth',block:'center'})}else commitTapOrder(mid,'')}
-window.commitTapOrder=(mid,castId)=>{const s=db.seats.find(x=>x.id===selectedOrderSeat),m=db.menu.find(x=>x.id===mid);if(!s||!m)return;s.orders.push({id:id(),menuId:m.id,name:m.name,price:m.price,qty:1,castId,back:m.back,memo:''});lastOrder={sid:s.id,oid:s.orders.at(-1).id};persist();renderAll();showUndo(`${m.name}を追加`);toast('注文を追加しました')}
+window.commitTapOrder=(mid,castId)=>{const s=db.seats.find(x=>x.id===selectedOrderSeat),m=db.menu.find(x=>x.id===mid);if(!s||!m)return;if(Number(m.price||0)<=0)return toast('価格未設定です。メニュー管理で金額を設定してください');s.orders.push({id:id(),menuId:m.id,name:m.name,price:m.price,qty:1,castId,back:m.back,memo:''});lastOrder={sid:s.id,oid:s.orders.at(-1).id};persist();renderAll();showUndo(`${m.name}を追加`);toast('注文を追加しました')}
 function showUndo(text){$('undoText').textContent=text;$('undoBar').classList.remove('hidden');clearTimeout(undoTimer);undoTimer=setTimeout(()=>$('undoBar').classList.add('hidden'),5000)}
 $('undoBtn').onclick=()=>{if(lastOrder){const s=db.seats.find(x=>x.id===lastOrder.sid);if(s)s.orders=s.orders.filter(x=>x.id!==lastOrder.oid);persist();renderAll();toast('注文を取り消しました')}lastOrder=null;$('undoBar').classList.add('hidden')}
 function renderOrders(){renderTapOrders();$('orderSummary').innerHTML=db.seats.filter(s=>s.customerName).map(s=>`<div class="card"><h3>${esc(s.name)}　${esc(s.customerName)}</h3>${s.orders.length?s.orders.map(o=>`<div class="item"><b>${esc(o.name)} × ${o.qty}</b><div class="meta">${yen(o.price*o.qty)} / ${esc(staffById(o.castId)?.name||'担当なし')}</div><div class="item-actions"><button class="danger" onclick="delOrder('${s.id}','${o.id}')">削除</button></div></div>`).join(''):'<div class="empty">注文なし</div>'}<p><b>合計 ${yen(seatTotal(s))}</b></p><button class="primary" onclick="checkoutSeat('${s.id}')">この席を会計</button></div>`).join('')||'<div class="empty">入店中の席がありません</div>'}
@@ -311,18 +448,5 @@ $('resetData').onclick=()=>{if(confirm('全データを初期化しますか？'
 
 function renderAll(){renderAttendance();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports()}
 $('visitDate').value=today();refreshSelects();renderAll();if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
-
-function updateHomeStatus(){
- try{
-  const seats=(data&&Array.isArray(data.seats))?data.seats:[];
-  const working=(data&&Array.isArray(data.attendance))?data.attendance.filter(x=>!x.out&&String(x.date||x.in||'').slice(0,10)===new Date().toISOString().slice(0,10)).length:0;
-  const visits=(data&&Array.isArray(data.visits))?data.visits.filter(x=>String(x.date||'')===new Date().toISOString().slice(0,10)).length:0;
-  const used=seats.filter(s=>s.status&&s.status!=='empty').length;
-  const a=document.getElementById('homeSeatCount'),b=document.getElementById('homeAttendanceCount'),c=document.getElementById('homeVisitCount');
-  if(a)a.textContent=used+'席'; if(b)b.textContent=working+'名'; if(c)c.textContent=visits+'件';
- }catch(e){}
-}
-
-setTimeout(updateHomeStatus,0);
 </script>
 </body></html>
