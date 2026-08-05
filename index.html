@@ -193,8 +193,14 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 </div>
 
 <div class="card">
+  <h3 style="margin-top:0">Firebase接続</h3>
+  <div id="firebaseConnectionStatus" class="meta">接続確認中...</div>
+  <button id="retryFirebaseConnection" class="secondary" style="width:100%;margin-top:10px">接続を再確認</button>
+</div>
+
+<div class="card">
   <h3 style="margin-top:0">保存方式</h3>
-  <p>現在は、この端末のブラウザ内に保存しています。クラウド化する前の安全版です。</p>
+  <p>現在の保存先は、この端末のブラウザ内です。Firebaseへの接続確認だけ追加してあり、既存データの保存方法はまだ変更していません。</p>
 </div>
 
 <div class="card">
@@ -238,7 +244,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v10-safe-backup-restore';
+const APP_VERSION='v11-firebase-connection';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -720,4 +726,63 @@ function renderBackupStatus(){
 function renderAll(){renderAttendance();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderBackupStatus()}
 $('visitDate').value=today();refreshSelects();renderAll();if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCUGu1dEan0D0-kfXXiiag7eKKwdmkg_TQ",
+  authDomain: "tinkerbell-pos.firebaseapp.com",
+  projectId: "tinkerbell-pos",
+  storageBucket: "tinkerbell-pos.firebasestorage.app",
+  messagingSenderId: "475881462705",
+  appId: "1:475881462705:web:2715d0514e7ef21730fb90"
+};
+
+const statusEl = document.getElementById("firebaseConnectionStatus");
+const retryBtn = document.getElementById("retryFirebaseConnection");
+
+let firebaseApp;
+let firestoreDb;
+
+function setStatus(message, ok = false) {
+  if (!statusEl) return;
+  statusEl.textContent = message;
+  statusEl.style.color = ok ? "#27813b" : "#9a4b21";
+  statusEl.style.fontWeight = "800";
+}
+
+async function checkFirebaseConnection() {
+  setStatus("Firebaseへ接続確認中...");
+  try {
+    firebaseApp ||= initializeApp(firebaseConfig);
+    firestoreDb ||= getFirestore(firebaseApp);
+
+    const snap = await getDoc(doc(firestoreDb, "app", "data"));
+    if (snap.exists()) {
+      setStatus("Firebase接続：成功（app/dataを確認済み）", true);
+    } else {
+      setStatus("Firebase接続：成功。ただし app/data が見つかりません");
+    }
+  } catch (error) {
+    console.error("Firebase connection check failed:", error);
+    if (error?.code === "permission-denied") {
+      setStatus("Firebase本体には接続済み。Firestoreルールで読み取りが拒否されています");
+    } else {
+      setStatus(`Firebase接続エラー：${error?.code || error?.message || "不明"}`);
+    }
+  }
+}
+
+retryBtn?.addEventListener("click", checkFirebaseConnection);
+checkFirebaseConnection();
+
+window.tinkerbellFirebase = {
+  get app() { return firebaseApp; },
+  get db() { return firestoreDb; },
+  checkConnection: checkFirebaseConnection
+};
+</script>
+
 </body></html>
