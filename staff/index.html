@@ -153,6 +153,10 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 .scheduleCustomerChoice{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px;text-align:left;color:var(--ink)}
 .scheduleCustomerChoice b{display:block;font-size:16px}.scheduleCustomerChoice small{display:block;color:var(--muted);margin-top:4px;line-height:1.45}
 .scheduleCustomerChoice:active{background:#fff6db}
+.companionExtraCasts{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+.companionExtraCastOption{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:11px;padding:10px;font-weight:800}
+.companionExtraCastOption input{width:auto;margin:0}
+@media(max-width:420px){.companionExtraCasts{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -309,7 +313,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
-const APP_VERSION='line-v40-schedule-customer-link';
+const APP_VERSION='line-v41-companion-extra-casts';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -558,10 +562,31 @@ function openScheduleForm(existing=null){
 
     <label><span>担当</span><select id="fCast"></select></label>
 
+    <div id="companionExtraCastBox" class="card">
+      <div class="rowTitle">一緒に行く女の子</div>
+      <div class="meta">同伴に同行する女の子を複数選べます</div>
+      <div id="companionExtraCasts" class="companionExtraCasts"></div>
+    </div>
+
     <div id="selectedCustomerBottles" class="card hidden"></div>
 
     <label><span>備考</span><textarea id="fMemo">${existing?.memo||''}</textarea></label>
     <button class="btn gold full" id="saveForm">保存</button>`;
+
+  const renderExtraCasts=()=>{
+    const isCompanion=$('fType').value==='companion';
+    $('companionExtraCastBox').classList.toggle('hidden',!isCompanion);
+    if(!isCompanion)return;
+
+    const primary=$('fCast').value;
+    const selected=new Set(Array.isArray(existing?.extraCasts)?existing.extraCasts:[]);
+    $('companionExtraCasts').innerHTML=names()
+      .filter(n=>n!==primary)
+      .map(n=>`<label class="companionExtraCastOption">
+        <input type="checkbox" value="${n}" ${selected.has(n)?'checked':''}>
+        <span>${n}</span>
+      </label>`).join('')||'<div class="meta">選択できる女の子がいません</div>';
+  };
 
   const renderCastOptions=()=>{
     const isReservation=$('fType').value==='reservation';
@@ -573,6 +598,8 @@ function openScheduleForm(existing=null){
     $('fCast').innerHTML=
       (isReservation?`<option value="担当なし" ${preferred==='担当なし'?'selected':''}>担当なし</option>`:'')+
       names().map(n=>`<option value="${n}" ${n===preferred?'selected':''}>${n}</option>`).join('');
+
+    renderExtraCasts();
   };
 
   const renderCustomerChoices=()=>{
@@ -644,6 +671,7 @@ function openScheduleForm(existing=null){
   };
 
   $('fType').onchange=renderCastOptions;
+  $('fCast').onchange=renderExtraCasts;
   $('formDialog').showModal();
 
   $('saveForm').onclick=()=>{
@@ -659,6 +687,9 @@ function openScheduleForm(existing=null){
       customerId:linked?.id||'',
       customer:customerName,
       cast:$('fCast').value,
+      extraCasts:$('fType').value==='companion'
+        ?Array.from(document.querySelectorAll('#companionExtraCasts input:checked')).map(x=>x.value)
+        :[],
       people:$('fPeople').value==='数名'?'数名':Number($('fPeople').value||1),
       memo:$('fMemo').value.trim()
     };
@@ -681,12 +712,12 @@ function renderSchedules(){
   if(state.scheduleMode==='upcoming')list=list.filter(x=>x.date>=today());
   if(state.scheduleMode==='date')list=list.filter(x=>x.date===$('scheduleViewDate').value);
   list.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'予約'}／${peopleText(x.people)}／担当:${x.cast||'担当なし'}</div><div class="meta">${x.customerId?"登録済みのお客様":"手入力のお客様"}／タップで詳細</div></button>`).join(''):'<div class="card">予定はありません</div>';
+  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'予約'}／${peopleText(x.people)}／担当:${x.cast||'担当なし'}${x.type==='companion'&&x.extraCasts?.length?`／同行:${x.extraCasts.join('・')}`:''}</div><div class="meta">${x.customerId?"登録済みのお客様":"手入力のお客様"}／タップで詳細</div></button>`).join(''):'<div class="card">予定はありません</div>';
 }
 function showSchedule(id){
   const x=db.schedules.find(v=>v.id===id);if(!x)return;
   $('detailTitle').textContent='予定詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'予約'}</div><div class="meta">担当:${x.cast||'担当なし'}</div><div class="meta">人数:${peopleText(x.people)}</div><div class="meta">備考:${x.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'予約'}</div><div class="meta">担当:${x.cast||'担当なし'}</div>${x.type==='companion'?`<div class="meta">同行:${x.extraCasts?.length?x.extraCasts.join('・'):'なし'}</div>`:''}<div class="meta">人数:${peopleText(x.people)}</div><div class="meta">備考:${x.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
   $('detailDialog').showModal();
 }
 
