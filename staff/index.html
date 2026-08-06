@@ -156,7 +156,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 <main>
 <section id="home">
   <div class="summary">
-    <button type="button" class="card summaryTap" data-nav="shift"><small>今日の出勤予定</small><strong id="homeShiftCount">0</strong>人</button>
+    <button type="button" class="card summaryTap" data-action="today-shift-detail"><small>今日の出勤予定</small><strong id="homeShiftCount">0</strong>人</button>
     <button type="button" class="card summaryTap" data-nav="schedules"><small>今日の予定</small><strong id="homeScheduleCount">0</strong>件</button>
   </div>
   <div class="card"><div class="sectionHead"><h2 style="font-size:18px">🎂 今月の誕生日</h2></div><div id="homeBirthdays" class="list"></div></div>
@@ -305,7 +305,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
-const APP_VERSION='line-v38-customer-kana-index';
+const APP_VERSION='line-v39-people-1to20-and-today-shift';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -506,6 +506,9 @@ function saveShift(){
   save();renderShiftCheck();renderHome();toast('シフトを登録しました');
 }
 
+function peopleText(value){
+  return String(value)==='数名'?'数名':`${Number(value||1)}名`;
+}
 function openScheduleForm(existing=null){
   const existingType=existing?.type==='visit'?'reservation':(existing?.type||'companion');
   $('formTitle').textContent=existing?'予定編集':'予定登録';
@@ -521,8 +524,8 @@ function openScheduleForm(existing=null){
     <label><span>お客様名</span><input id="fCustomer" value="${existing?.customer||''}"></label>
     <label><span>人数</span>
       <select id="fPeople">
-        ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}" ${Number(existing?.people||1)===n?'selected':''}>${n}名</option>`).join('')}
-        <option value="11" ${Number(existing?.people||1)>=11?'selected':''}>11名以上</option>
+        ${Array.from({length:20},(_,i)=>i+1).map(n=>`<option value="${n}" ${String(existing?.people||1)===String(n)?'selected':''}>${n}名</option>`).join('')}
+        <option value="数名" ${String(existing?.people||'')==='数名'?'selected':''}>数名</option>
       </select>
     </label>
     <label><span>担当</span><select id="fCast"></select></label>
@@ -549,7 +552,7 @@ function openScheduleForm(existing=null){
       time:$('fTime').value,
       customer:$('fCustomer').value.trim(),
       cast:$('fCast').value,
-      people:+$('fPeople').value||1,
+      people:$('fPeople').value==='数名'?'数名':Number($('fPeople').value||1),
       memo:$('fMemo').value.trim()
     };
     if(!obj.customer)return toast('お客様名を入力');
@@ -568,12 +571,12 @@ function renderSchedules(){
   if(state.scheduleMode==='upcoming')list=list.filter(x=>x.date>=today());
   if(state.scheduleMode==='date')list=list.filter(x=>x.date===$('scheduleViewDate').value);
   list.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'予約'}／${x.people||1}名／担当:${x.cast||'担当なし'}</div><div class="meta">タップで備考確認</div></button>`).join(''):'<div class="card">予定はありません</div>';
+  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'予約'}／${peopleText(x.people)}／担当:${x.cast||'担当なし'}</div><div class="meta">タップで備考確認</div></button>`).join(''):'<div class="card">予定はありません</div>';
 }
 function showSchedule(id){
   const x=db.schedules.find(v=>v.id===id);if(!x)return;
   $('detailTitle').textContent='予定詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'予約'}</div><div class="meta">担当:${x.cast||'担当なし'}</div><div class="meta">人数:${x.people}名</div><div class="meta">備考:${x.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'予約'}</div><div class="meta">担当:${x.cast||'担当なし'}</div><div class="meta">人数:${peopleText(x.people)}</div><div class="meta">備考:${x.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
   $('detailDialog').showModal();
 }
 
@@ -869,6 +872,11 @@ document.addEventListener('click',e=>{
   if(t.dataset.editStaff){
     const staff=db.staff.find(s=>s.id===t.dataset.editStaff);
     return openStaffForm(staff);
+  }
+  if(t.dataset.action==='today-shift-detail'){
+    show('shift');
+    setTimeout(()=>openShiftDateDetail(today()),0);
+    return;
   }
   if(t.dataset.customerKana){
     state.customerKana=t.dataset.customerKana;
