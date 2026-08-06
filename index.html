@@ -345,7 +345,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v25-order-quantity-merge';
+const APP_VERSION='v26-menu-edit-fix';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1319,8 +1319,10 @@ $('saveMenu').onclick=async()=>{
  if(!name)return toast('商品名を入力してください');
 
  const editId=$('menuEditId').value;
- const duplicate=db.menu.find(x=>x.name===name&&x.id!==editId);
- if(duplicate)return toast('同じ商品名が登録されています');
+ if(!editId){
+  const duplicate=db.menu.find(x=>String(x.name||'').trim()===name);
+  if(duplicate)return toast('同じ商品名が登録されています');
+ }
 
  button.disabled=true;
  button.textContent='保存中...';
