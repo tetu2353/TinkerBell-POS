@@ -89,6 +89,18 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .attendance-month-list{border-top:1px solid var(--line)}
 .attendance-day-row{display:grid;grid-template-columns:90px 1fr 1.3fr;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);align-items:center}
 @media(max-width:560px){.attendance-day-row{grid-template-columns:1fr}.attendance-person-card summary{align-items:flex-start}}
+.attendance-main-action{min-height:64px;font-size:21px}
+.attendance-staff-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.attendance-staff-button{min-height:82px;border:2px solid #c79b43;background:#fffaf0;border-radius:16px;padding:14px;text-align:left}
+.attendance-staff-button b{display:block;font-size:22px}
+.attendance-staff-button small{display:block;margin-top:5px;color:#76656f;font-weight:800}
+.attendance-confirm-card{padding-top:28px;text-align:center}
+.attendance-confirm-action{font-size:24px;font-weight:900;color:#7a5315}
+.attendance-confirm-name{font-size:42px;font-weight:1000;margin:20px 0;color:#2f2330}
+.attendance-confirm-question{font-size:24px;font-weight:900;line-height:1.45;margin-bottom:28px}
+.attendance-confirm-buttons{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.attendance-confirm-buttons button{min-height:72px;font-size:25px;font-weight:1000}
+@media(max-width:560px){.attendance-staff-grid{grid-template-columns:1fr}.attendance-confirm-name{font-size:36px}.attendance-confirm-question{font-size:21px}}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -129,14 +141,14 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <section id="attendance" class="screen">
 <h2>出勤・退勤</h2>
 <div class="card">
-  <label>本人の名前
-    <select id="attendanceStaff"></select>
-  </label>
-  <div class="meta" style="margin-bottom:10px">名前選択後、確認画面でもう一度同じ本人を選んで登録します。</div>
   <div class="row">
-    <button id="clockIn" class="primary">出勤を登録</button>
-    <button id="clockOut" class="secondary">退勤を登録</button>
+    <button id="clockIn" class="primary attendance-main-action">出勤する</button>
+    <button id="clockOut" class="secondary attendance-main-action">退勤する</button>
   </div>
+</div>
+<div id="attendancePickCard" class="card hidden">
+  <h2 id="attendancePickTitle">名前を選択</h2>
+  <div id="attendanceStaffButtons" class="attendance-staff-grid"></div>
 </div>
 <div id="attendanceList" class="list"></div>
 </section>
@@ -315,41 +327,50 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <nav><button data-go="home" class="active">⌂<small>ホーム</small></button><button data-go="seats">🛋️<small>席</small></button><button data-go="orders">🥂<small>注文</small></button><button data-go="customers">👤<small>顧客</small></button><button data-go="reports" class="manager">📊<small>集計</small></button></nav>
 </div>
 <div id="attendanceModal" class="modal hidden">
-  <div class="modal-card">
-    <h2 id="attendanceModalTitle">本人確認</h2>
-    <div id="attendanceModalDetails"></div>
-    <label style="margin-top:12px">本人確認（2回目）
-      <select id="attendanceConfirmStaff"></select>
-    </label>
-    <div id="transportCheckBox" class="card hidden" style="margin-top:12px">
-      <h3 style="margin-top:0">送迎確認</h3>
-      <label>現在、誰かを送迎していますか？
-        <select id="transportStatus">
-          <option value="">選択してください</option>
-          <option value="no">送迎していない</option>
-          <option value="yes">送迎している</option>
-        </select>
-      </label>
-      <label id="transportWhoWrap" class="hidden">送迎している相手
-        <input id="transportWho" placeholder="例：あや、田中様">
-      </label>
+  <div class="modal-card attendance-confirm-card">
+    <div id="attendanceConfirmStep">
+      <div id="attendanceConfirmAction" class="attendance-confirm-action">出勤確認</div>
+      <div id="attendanceConfirmName" class="attendance-confirm-name"></div>
+      <div id="attendanceConfirmQuestion" class="attendance-confirm-question"></div>
+      <div class="attendance-confirm-buttons">
+        <button id="attendanceConfirmNo" class="danger">NO</button>
+        <button id="attendanceConfirmYes" class="primary">YES</button>
+      </div>
     </div>
-    <div id="companionCheckBox" class="card hidden" style="margin-top:12px">
-      <h3 style="margin-top:0">同伴確認</h3>
-      <label>今日は同伴がありましたか？
-        <select id="companionStatus">
-          <option value="">選択してください</option>
-          <option value="no">同伴なし</option>
-          <option value="yes">同伴あり</option>
-        </select>
-      </label>
-      <label id="companionCustomerWrap" class="hidden">同伴したお客様
-        <input id="companionCustomer" placeholder="例：田中様">
-      </label>
-    </div>
-    <div class="row" style="margin-top:14px">
-      <button id="attendanceModalCancel" class="secondary">キャンセル</button>
-      <button id="attendanceModalSave" class="primary">確認して登録</button>
+
+    <div id="attendanceExtraStep" class="hidden">
+      <h2 id="attendanceExtraTitle"></h2>
+
+      <div id="transportCheckBox" class="card hidden">
+        <label>送迎はありましたか？
+          <select id="transportStatus">
+            <option value="">選択してください</option>
+            <option value="no">送迎なし</option>
+            <option value="yes">送迎あり</option>
+          </select>
+        </label>
+        <label id="transportWhoWrap" class="hidden">送迎した相手
+          <input id="transportWho" placeholder="例：あや、田中様">
+        </label>
+      </div>
+
+      <div id="companionCheckBox" class="card hidden">
+        <label>同伴はありましたか？
+          <select id="companionStatus">
+            <option value="">選択してください</option>
+            <option value="no">同伴なし</option>
+            <option value="yes">同伴あり</option>
+          </select>
+        </label>
+        <label id="companionCustomerWrap" class="hidden">同伴したお客様
+          <input id="companionCustomer" placeholder="例：田中様">
+        </label>
+      </div>
+
+      <div class="row" style="margin-top:14px">
+        <button id="attendanceExtraBack" class="secondary">戻る</button>
+        <button id="attendanceModalSave" class="primary">退勤を登録</button>
+      </div>
     </div>
   </div>
 </div>
@@ -379,7 +400,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v29-monthly-attendance-checkout-fields';
+const APP_VERSION='v30-attendance-confirm-flow';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -479,8 +500,6 @@ function fillSelect(el,arr,label='name',value='id',allowBlank=false){
 
 function refreshSelects(){
  fillSelect($('loginStaff'),db.staff);
- fillSelect($('attendanceStaff'),db.staff);
- fillSelect($('attendanceConfirmStaff'),db.staff);
  ['customerCast','visitCast'].forEach(x=>fillSelect($(x),db.staff.filter(s=>s.role==='cast')));
  fillSelect($('bottleCustomer'),db.customers);
  $('customerNames').innerHTML=db.customers.map(c=>`<option value="${esc(c.name)}"></option>`).join('');
@@ -556,127 +575,167 @@ $('userBadge').onclick=()=>{
 let attendanceAction='';
 let attendanceTargetId='';
 
-function todayVisitsForStaff(staffId){
- const d=today();
- return db.visits
-  .filter(v=>v.date===d && (v.castId===staffId || (Array.isArray(v.companionIds)&&v.companionIds.includes(staffId))))
-  .sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')));
+function openAttendancePicker(action){
+ attendanceAction=action;
+ const activeIds=new Set(
+  db.attendance
+   .filter(r=>r.in&&!r.out)
+   .map(r=>r.staffId)
+ );
+
+ const candidates=db.staff.filter(s=>
+  action==='in' ? !activeIds.has(s.id) : activeIds.has(s.id)
+ );
+
+ $('attendancePickTitle').textContent=action==='in'?'出勤する人を選択':'退勤する人を選択';
+ $('attendanceStaffButtons').innerHTML=candidates.length
+  ?candidates.map(s=>`
+    <button class="attendance-staff-button" onclick="selectAttendanceStaff('${s.id}')">
+      <b>${esc(s.name)}</b>
+      <small>${s.role==='cast'?'キャスト':s.role==='staff'?'黒服':'幹部'}</small>
+    </button>`).join('')
+  :`<div class="empty">${action==='in'?'出勤できる人はいません':'出勤中の人はいません'}</div>`;
+
+ $('attendancePickCard').classList.remove('hidden');
+ $('attendancePickCard').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function openAttendanceConfirm(action){
- const staffId=$('attendanceStaff').value;
+window.selectAttendanceStaff=staffId=>{
  const staff=staffById(staffId);
- if(!staff)return toast('本人の名前を選択してください');
+ if(!staff)return;
 
- if(action==='in'){
-  const openRecord=[...db.attendance].reverse().find(x=>x.staffId===staffId&&!x.out);
-  if(openRecord)return toast('この方はすでに出勤登録されています');
- }else{
-  const openRecord=[...db.attendance].reverse().find(x=>x.staffId===staffId&&!x.out);
-  if(!openRecord)return toast('出勤記録がありません');
+ attendanceTargetId=staffId;
+
+ $('attendanceConfirmAction').textContent=attendanceAction==='in'?'出勤確認':'退勤確認';
+ $('attendanceConfirmName').textContent=staff.name;
+ $('attendanceConfirmQuestion').textContent=
+  `${staff.name}で${attendanceAction==='in'?'出勤':'退勤'}登録していいですか？`;
+
+ $('attendanceConfirmStep').classList.remove('hidden');
+ $('attendanceExtraStep').classList.add('hidden');
+ $('attendanceModal').classList.remove('hidden');
+};
+
+$('attendanceConfirmNo').onclick=()=>{
+ $('attendanceModal').classList.add('hidden');
+};
+
+$('attendanceConfirmYes').onclick=()=>{
+ const staff=staffById(attendanceTargetId);
+ if(!staff)return;
+
+ if(attendanceAction==='in'){
+  db.attendance.push({
+   id:id(),
+   staffId:attendanceTargetId,
+   in:nowISO(),
+   out:''
+  });
+  persist();
+  $('attendanceModal').classList.add('hidden');
+  $('attendancePickCard').classList.add('hidden');
+  renderAttendance();
+  toast(`${staff.name}を出勤登録しました`);
+  return;
  }
 
- attendanceAction=action;
- attendanceTargetId=staffId;
- $('attendanceModalTitle').textContent=action==='in'?'出勤登録の本人確認':'退勤登録の本人確認';
- $('attendanceConfirmStaff').value='';
- $('attendanceConfirmStaff').innerHTML='<option value="">もう一度本人を選択</option>'+db.staff.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+ $('attendanceConfirmStep').classList.add('hidden');
+ $('attendanceExtraStep').classList.remove('hidden');
+ $('attendanceExtraTitle').textContent=`${staff.name}の退勤登録`;
 
- const visits=todayVisitsForStaff(staffId);
- const visitHtml=visits.length?visits.map(v=>`<div class="item">
-   <h3>${esc(v.customer)} <span class="tag">${esc(v.type)}</span></h3>
-   <div class="meta">${esc(v.time||'時間未定')} / ${esc(v.people||1)}名<br>担当 ${esc(staffById(v.castId)?.name||'')}<br>${esc(v.memo||'メモなし')}</div>
-  </div>`).join(''):'<div class="empty">本日の同伴・来店予定はありません</div>';
-
- $('attendanceModalDetails').innerHTML=`
-  <div class="card">
-   <h3 style="margin-top:0">1回目の本人確認</h3>
-   <div class="item"><h3>${esc(staff.name)}</h3><div class="meta">${staff.role==='cast'?'キャスト':staff.role==='staff'?'黒服':'幹部'}</div></div>
-  </div>
-  ${action==='out'?`<div class="card"><h3 style="margin-top:0">本日の同伴・来店予定</h3>${visitHtml}</div>`:''}`;
-
- const needsTransport=action==='out'&&(staff.role==='staff'||staff.role==='manager');
- const needsCompanion=action==='out'&&staff.role==='cast';
+ const needsTransport=staff.role==='staff'||staff.role==='manager';
+ const needsCompanion=staff.role==='cast';
 
  $('transportCheckBox').classList.toggle('hidden',!needsTransport);
+ $('companionCheckBox').classList.toggle('hidden',!needsCompanion);
+
  $('transportStatus').value='';
  $('transportWho').value='';
  $('transportWhoWrap').classList.add('hidden');
 
- $('companionCheckBox').classList.toggle('hidden',!needsCompanion);
  $('companionStatus').value='';
  $('companionCustomer').value='';
  $('companionCustomerWrap').classList.add('hidden');
+};
 
- $('attendanceModal').classList.remove('hidden');
-}
+$('attendanceExtraBack').onclick=()=>{
+ $('attendanceExtraStep').classList.add('hidden');
+ $('attendanceConfirmStep').classList.remove('hidden');
+};
 
 $('transportStatus').onchange=()=>{
  $('transportWhoWrap').classList.toggle('hidden',$('transportStatus').value!=='yes');
 };
+
 $('companionStatus').onchange=()=>{
  $('companionCustomerWrap').classList.toggle('hidden',$('companionStatus').value!=='yes');
 };
 
-$('attendanceModalCancel').onclick=()=>$('attendanceModal').classList.add('hidden');
-
 $('attendanceModalSave').onclick=()=>{
- const secondId=$('attendanceConfirmStaff').value;
- if(!secondId)return toast('2回目の本人確認をしてください');
- if(secondId!==attendanceTargetId)return toast('本人が一致しません');
-
  const staff=staffById(attendanceTargetId);
- const needsTransport=attendanceAction==='out'&&(staff.role==='staff'||staff.role==='manager');
- const needsCompanion=attendanceAction==='out'&&staff.role==='cast';
+ if(!staff)return;
 
- if(needsTransport&&!$('transportStatus').value)return toast('送迎状況を選択してください');
- if(needsTransport&&$('transportStatus').value==='yes'&&!$('transportWho').value.trim())return toast('送迎している相手を入力してください');
+ const needsTransport=staff.role==='staff'||staff.role==='manager';
+ const needsCompanion=staff.role==='cast';
+
+ if(needsTransport&&!$('transportStatus').value)return toast('送迎の有無を選択してください');
+ if(needsTransport&&$('transportStatus').value==='yes'&&!$('transportWho').value.trim()){
+  return toast('送迎した相手を入力してください');
+ }
 
  if(needsCompanion&&!$('companionStatus').value)return toast('同伴の有無を選択してください');
- if(needsCompanion&&$('companionStatus').value==='yes'&&!$('companionCustomer').value.trim())return toast('同伴したお客様を入力してください');
+ if(needsCompanion&&$('companionStatus').value==='yes'&&!$('companionCustomer').value.trim()){
+  return toast('同伴したお客様を入力してください');
+ }
 
- if(attendanceAction==='in'){
-  db.attendance.push({
-   id:id(),staffId:attendanceTargetId,in:nowISO(),out:'',
-   inConfirmedTwice:true
-  });
-  toast('出勤を登録しました');
- }else{
-  const r=[...db.attendance].reverse().find(x=>x.staffId===attendanceTargetId&&!x.out);
-  if(!r)return toast('出勤記録がありません');
-  r.out=nowISO();
-  r.outConfirmedTwice=true;
-  r.todayVisitIds=todayVisitsForStaff(attendanceTargetId).map(v=>v.id);
-  if(needsTransport){
-   r.transportStatus=$('transportStatus').value;
-   r.transportWho=$('transportStatus').value==='yes' ? $('transportWho').value.trim() : '';
-  }
-  if(needsCompanion){
-   r.companionStatus=$('companionStatus').value;
-   r.companionCustomer=$('companionStatus').value==='yes' ? $('companionCustomer').value.trim() : '';
-  }
-  toast('退勤を登録しました');
+ const record=[...db.attendance].reverse().find(
+  r=>r.staffId===attendanceTargetId&&r.in&&!r.out
+ );
+ if(!record)return toast('出勤記録がありません');
+
+ record.out=nowISO();
+
+ if(needsTransport){
+  record.transportStatus=$('transportStatus').value;
+  record.transportWho=$('transportStatus').value==='yes'
+   ?$('transportWho').value.trim()
+   :'';
+ }
+
+ if(needsCompanion){
+  record.companionStatus=$('companionStatus').value;
+  record.companionCustomer=$('companionStatus').value==='yes'
+   ?$('companionCustomer').value.trim()
+   :'';
  }
 
  persist();
  $('attendanceModal').classList.add('hidden');
+ $('attendancePickCard').classList.add('hidden');
  renderAttendance();
+ toast(`${staff.name}を退勤登録しました`);
 };
 
-$('clockIn').onclick=()=>openAttendanceConfirm('in');
-$('clockOut').onclick=()=>openAttendanceConfirm('out');
+$('clockIn').onclick=()=>openAttendancePicker('in');
+$('clockOut').onclick=()=>openAttendancePicker('out');
 
 function renderAttendance(){
  const a=db.attendance.slice().reverse();
+
  $('attendanceList').innerHTML=a.length?a.map(x=>{
   const staff=staffById(x.staffId);
-  const transport=x.transportStatus?`<br>送迎：${x.transportStatus==='yes'?`あり（${esc(x.transportWho||'相手未入力')}）`:'なし'}`:'';
-  const companion=x.companionStatus?`<br>同伴：${x.companionStatus==='yes'?`あり（${esc(x.companionCustomer||'お客様未入力')}）`:'なし'}`:'';
+  const transport=x.transportStatus
+   ?`<br>送迎：${x.transportStatus==='yes'?`あり（${esc(x.transportWho||'')}）`:'なし'}`
+   :'';
+  const companion=x.companionStatus
+   ?`<br>同伴：${x.companionStatus==='yes'?`あり（${esc(x.companionCustomer||'')}）`:'なし'}`
+   :'';
+
   return `<div class="item">
    <h3>${esc(staff?.name||'不明')}</h3>
    <div class="meta">
-    出勤 ${new Date(x.in).toLocaleString('ja-JP')} ${x.inConfirmedTwice?'✓本人確認2回':''}<br>
-    退勤 ${x.out?new Date(x.out).toLocaleString('ja-JP'):'未退勤'} ${x.outConfirmedTwice?'✓本人確認2回':''}${transport}${companion}
+    出勤 ${new Date(x.in).toLocaleString('ja-JP')}<br>
+    退勤 ${x.out?new Date(x.out).toLocaleString('ja-JP'):'未退勤'}${transport}${companion}
    </div>
   </div>`;
  }).join(''):'<div class="empty">勤怠記録なし</div>';
