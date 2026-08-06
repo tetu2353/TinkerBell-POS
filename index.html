@@ -142,7 +142,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 
 <section id="notices" class="screen"><h2>お知らせ</h2><div class="card manager"><label>タイトル<input id="noticeTitle"></label><label>本文<textarea id="noticeBody" rows="4"></textarea></label><button id="saveNotice" class="primary">投稿</button></div><div id="noticeList" class="list"></div></section>
 
-<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>暗証番号<input id="staffPin" value="0000"></label></div><button id="saveStaff" class="primary">従業員登録</button></div><div id="staffList" class="list"></div></section>
+<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><input id="staffEditId" type="hidden"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>暗証番号<input id="staffPin" value="0000"></label></div><div class="row"><button id="saveStaff" class="primary">従業員登録</button><button id="cancelStaffEdit" class="secondary hidden">編集をやめる</button></div></div><div id="staffList" class="list"></div></section>
 
 <section id="menu" class="screen manager">
 <h2>商品管理</h2>
@@ -265,7 +265,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v16-shift-overview';
+const APP_VERSION='v17-staff-edit-delete';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -686,16 +686,39 @@ window.delVisit=x=>{db.visits=db.visits.filter(v=>v.id!==x);persist();renderVisi
 $('saveNotice').onclick=()=>{db.notices.unshift({id:id(),title:$('noticeTitle').value,body:$('noticeBody').value,date:today()});persist();renderNotices();toast('投稿しました')};
 function renderNotices(){$('noticeList').innerHTML=db.notices.length?db.notices.map(n=>`<div class="item"><h3>${esc(n.title)}</h3><div class="meta">${esc(n.date)}<br>${esc(n.body)}</div></div>`).join(''):'<div class="empty">お知らせなし</div>'}
 
+function staffRoleLabel(role){
+ if(role==='cast')return 'キャスト';
+ if(role==='staff')return '黒服';
+ if(role==='manager')return '幹部';
+ return role||'未設定';
+}
+
+function clearStaffForm(){
+ $('staffEditId').value='';
+ $('staffName').value='';
+ $('staffRole').value='cast';
+ $('staffWage').value='1500';
+ $('staffDrinkBack').value='200';
+ $('staffBottleBack').value='1000';
+ $('staffPin').value='0000';
+ $('saveStaff').textContent='従業員登録';
+ $('cancelStaffEdit').classList.add('hidden');
+}
+
 $('saveStaff').onclick=async()=>{
  const button=$('saveStaff');
  const name=$('staffName').value.trim();
  if(!name)return toast('名前を入力してください');
 
+ const editId=$('staffEditId').value;
+ const duplicate=db.staff.find(x=>x.name===name&&x.id!==editId);
+ if(duplicate)return toast('同じ名前が登録されています');
+
+ const before=JSON.parse(JSON.stringify(db.staff));
  button.disabled=true;
  button.textContent='保存中...';
 
- const staff={
-  id:id(),
+ const data={
   name,
   role:$('staffRole').value,
   wage:Number($('staffWage').value||0),
@@ -704,36 +727,93 @@ $('saveStaff').onclick=async()=>{
   pin:$('staffPin').value.trim()||'0000'
  };
 
- db.staff.push(staff);
+ try{
+  if(editId){
+   const item=db.staff.find(x=>x.id===editId);
+   if(!item)throw new Error('従業員が見つかりません');
+   Object.assign(item,data);
+  }else{
+   db.staff.push({id:id(),...data});
+  }
+
+  persist();
+  refreshSelects();
+  renderStaff();
+
+  if(!window.tinkerbellFirebase?.saveStaff)throw new Error('Firebase準備中');
+  await window.tinkerbellFirebase.saveStaff(db.staff);
+
+  clearStaffForm();
+  toast(editId?'従業員をクラウド更新しました':'従業員をクラウド保存しました');
+ }catch(error){
+  console.error('Staff cloud save failed:',error);
+  db.staff=before;
+  persist();
+  refreshSelects();
+  renderStaff();
+  toast('従業員の保存に失敗しました');
+ }finally{
+  button.disabled=false;
+  if(!$('staffEditId').value)button.textContent='従業員登録';
+ }
+};
+
+$('cancelStaffEdit').onclick=clearStaffForm;
+
+window.editStaff=idn=>{
+ const s=db.staff.find(x=>x.id===idn);
+ if(!s)return;
+ $('staffEditId').value=s.id;
+ $('staffName').value=s.name||'';
+ $('staffRole').value=s.role||'cast';
+ $('staffWage').value=Number(s.wage||0);
+ $('staffDrinkBack').value=Number(s.drinkBack||0);
+ $('staffBottleBack').value=Number(s.bottleBack||0);
+ $('staffPin').value=s.pin||'0000';
+ $('saveStaff').textContent='変更を保存';
+ $('cancelStaffEdit').classList.remove('hidden');
+ window.scrollTo({top:0,behavior:'smooth'});
+};
+
+window.delStaff=async idn=>{
+ const s=db.staff.find(x=>x.id===idn);
+ if(!s)return;
+ if(db.staff.length<=1)return toast('従業員を0人にはできません');
+ if(current?.id===idn)return toast('現在ログイン中の従業員は削除できません');
+ if(!confirm(`${s.name}を削除しますか？`))return;
+
+ const before=JSON.parse(JSON.stringify(db.staff));
+ db.staff=db.staff.filter(x=>x.id!==idn);
  persist();
  refreshSelects();
  renderStaff();
 
  try{
-  if(!window.tinkerbellFirebase?.saveStaff){
-   throw new Error('Firebase準備中');
-  }
+  if(!window.tinkerbellFirebase?.saveStaff)throw new Error('Firebase準備中');
   await window.tinkerbellFirebase.saveStaff(db.staff);
-  $('staffName').value='';
-  $('staffWage').value='1500';
-  $('staffDrinkBack').value='200';
-  $('staffBottleBack').value='1000';
-  $('staffPin').value='0000';
-  toast('従業員をクラウド保存しました');
+  clearStaffForm();
+  toast('従業員をクラウドから削除しました');
  }catch(error){
-  console.error('Staff cloud save failed:',error);
-  db.staff=db.staff.filter(x=>x.id!==staff.id);
+  console.error('Staff delete failed:',error);
+  db.staff=before;
   persist();
   refreshSelects();
   renderStaff();
-  toast('従業員のクラウド保存に失敗しました');
- }finally{
-  button.disabled=false;
-  button.textContent='従業員登録';
+  toast('従業員の削除に失敗しました');
  }
 };
 
-function renderStaff(){$('staffList').innerHTML=db.staff.map(s=>`<div class="item"><h3>${esc(s.name)} <span class="tag">${esc(s.role)}</span></h3><div class="meta">時給 ${yen(s.wage)} / ドリンクバック ${yen(s.drinkBack)} / ボトルバック ${yen(s.bottleBack)}</div></div>`).join('')}
+function renderStaff(){
+ $('staffList').innerHTML=db.staff.length?db.staff.map(s=>`
+  <div class="item">
+   <h3>${esc(s.name)} <span class="tag">${esc(staffRoleLabel(s.role))}</span></h3>
+   <div class="meta">時給 ${yen(s.wage)} / ドリンクバック ${yen(s.drinkBack)} / ボトルバック ${yen(s.bottleBack)}</div>
+   <div class="item-actions">
+    <button class="secondary" onclick="editStaff('${s.id}')">編集</button>
+    <button class="danger" onclick="delStaff('${s.id}')">削除</button>
+   </div>
+  </div>`).join(''):'<div class="card">従業員は登録されていません</div>';
+}
 
 function clearMenuForm(){
  $('menuEditId').value='';
