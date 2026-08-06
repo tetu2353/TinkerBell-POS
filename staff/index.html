@@ -158,7 +158,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
   <div class="card"><div class="sectionHead"><h2 style="font-size:18px">🎂 今月の誕生日</h2></div><div id="homeBirthdays" class="list"></div></div>
   <div class="menu">
     <button class="tile" data-nav="shift"><span class="ico">🗓️</span><b>シフト登録・確認</b><small>1週間登録／全員確認</small></button>
-    <button class="tile" data-nav="schedules"><span class="ico">📋</span><b>今日の予定</b><small>同伴・来店予定</small></button>
+    <button class="tile" data-nav="schedules"><span class="ico">📋</span><b>今日の予定</b><small>同伴・予約</small></button>
     <button class="tile" data-action="new-schedule"><span class="ico">🥂</span><b>予定登録・変更</b><small>未来の予定も登録</small></button>
     <button class="tile" data-nav="customers"><span class="ico">👤</span><b>お客様情報</b><small>誕生日・備考・ボトル</small></button>
     <button class="tile" data-nav="bottles"><span class="ico">🍾</span><b>ボトル確認</b><small>No.検索・編集・削除</small></button>
@@ -189,7 +189,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
     <div class="card">
       <label><span>名前</span><select id="shiftStaff"></select></label>
       <div id="shiftPeriodText" class="meta"></div>
-      <div class="meta">各日をタップすると「〇 → △ → × → 未入力」の順に切り替わります</div>
+      <div class="meta">各日をタップすると「〇 → △（要相談）→ × → 未入力」の順に切り替わります</div>
       <input id="shiftStartDate" type="hidden">
       <input id="shiftEndDate" type="hidden">
       <div id="shiftInputTable" style="margin-top:10px"></div>
@@ -208,7 +208,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <section id="schedules" class="hidden">
   <button class="btn ghost" data-nav="home">← ホーム</button>
-  <div class="sectionHead"><h2>同伴・来店予定</h2><button class="btn gold" data-action="new-schedule">＋登録</button></div>
+  <div class="sectionHead"><h2>同伴・予約</h2><button class="btn gold" data-action="new-schedule">＋登録</button></div>
   <div class="tabs"><button class="tab active" data-schedule-tab="today">今日</button><button class="tab" data-schedule-tab="upcoming">今後</button><button class="tab" data-schedule-tab="date">日付指定</button></div>
   <div id="scheduleDateBox" class="card hidden"><label><span>表示日</span><input id="scheduleViewDate" type="date"></label></div>
   <div id="scheduleList" class="list"></div>
@@ -282,7 +282,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
-const APP_VERSION='line-v35-shift-overview';
+const APP_VERSION='line-v36-shift-consultation-reservations';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -446,13 +446,13 @@ function openShiftDateDetail(date){
   $('detailBody').innerHTML=`
     <div class="shiftDetailSummary">
       <div class="shiftDetailMetric"><small>〇 出勤可</small><b style="color:#13a42b">${groups.o.length}</b></div>
-      <div class="shiftDetailMetric"><small>△ 相談</small><b style="color:#df8d00">${groups.tri.length}</b></div>
+      <div class="shiftDetailMetric"><small>△ 要相談</small><b style="color:#df8d00">${groups.tri.length}</b></div>
       <div class="shiftDetailMetric"><small>× 休み</small><b style="color:#d23a48">${groups.x.length}</b></div>
       <div class="shiftDetailMetric"><small>未回答</small><b>${groups.none.length}</b></div>
     </div>
     ${[
       ['o','〇 出勤できる','#13a42b'],
-      ['tri','△ 遅れる・相談','#df8d00'],
+      ['tri','△ 要相談','#df8d00'],
       ['x','× 休み','#d23a48'],
       ['none','未回答','#777']
     ].map(([key,label,color])=>`
@@ -479,14 +479,59 @@ function saveShift(){
 }
 
 function openScheduleForm(existing=null){
+  const existingType=existing?.type==='visit'?'reservation':(existing?.type||'companion');
   $('formTitle').textContent=existing?'予定編集':'予定登録';
-  $('formBody').innerHTML=`<label><span>日付</span><input id="fDate" type="date" value="${existing?.date||today()}"></label><label><span>種別</span><select id="fType"><option value="companion" ${existing?.type==='companion'?'selected':''}>同伴</option><option value="visit" ${existing?.type==='visit'?'selected':''}>来店予定</option></select></label><label><span>時間</span><input id="fTime" type="time" value="${existing?.time||'21:00'}"></label><label><span>お客様名</span><input id="fCustomer" value="${existing?.customer||''}"></label><label><span>担当</span><select id="fCast">${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>人数</span><input id="fPeople" type="number" min="1" value="${existing?.people||1}"></label><label><span>備考</span><textarea id="fMemo">${existing?.memo||''}</textarea></label><button class="btn gold full" id="saveForm">保存</button>`;
+  $('formBody').innerHTML=`
+    <label><span>日付</span><input id="fDate" type="date" value="${existing?.date||today()}"></label>
+    <label><span>種別</span>
+      <select id="fType">
+        <option value="companion" ${existingType==='companion'?'selected':''}>同伴</option>
+        <option value="reservation" ${existingType==='reservation'?'selected':''}>予約</option>
+      </select>
+    </label>
+    <label><span>時間</span><input id="fTime" type="time" value="${existing?.time||'21:00'}"></label>
+    <label><span>お客様名</span><input id="fCustomer" value="${existing?.customer||''}"></label>
+    <label><span>人数</span>
+      <select id="fPeople">
+        ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}" ${Number(existing?.people||1)===n?'selected':''}>${n}名</option>`).join('')}
+        <option value="11" ${Number(existing?.people||1)>=11?'selected':''}>11名以上</option>
+      </select>
+    </label>
+    <label><span>担当</span><select id="fCast"></select></label>
+    <label><span>備考</span><textarea id="fMemo">${existing?.memo||''}</textarea></label>
+    <button class="btn gold full" id="saveForm">保存</button>`;
+
+  const renderCastOptions=()=>{
+    const isReservation=$('fType').value==='reservation';
+    const currentCast=existing?.cast||'';
+    $('fCast').innerHTML=
+      (isReservation?`<option value="担当なし" ${currentCast==='担当なし'?'selected':''}>担当なし</option>`:'')+
+      names().map(n=>`<option value="${n}" ${n===currentCast?'selected':''}>${n}</option>`).join('');
+  };
+
+  renderCastOptions();
+  $('fType').onchange=renderCastOptions;
   $('formDialog').showModal();
+
   $('saveForm').onclick=()=>{
-    const obj={id:existing?.id||uid(),date:$('fDate').value,type:$('fType').value,time:$('fTime').value,customer:$('fCustomer').value.trim(),cast:$('fCast').value,people:+$('fPeople').value||1,memo:$('fMemo').value.trim()};
+    const obj={
+      id:existing?.id||uid(),
+      date:$('fDate').value,
+      type:$('fType').value,
+      time:$('fTime').value,
+      customer:$('fCustomer').value.trim(),
+      cast:$('fCast').value,
+      people:+$('fPeople').value||1,
+      memo:$('fMemo').value.trim()
+    };
     if(!obj.customer)return toast('お客様名を入力');
+    if(obj.type==='companion'&&obj.cast==='担当なし')return toast('同伴は担当を選択してください');
     if(existing)Object.assign(existing,obj);else db.schedules.push(obj);
-    save();$('formDialog').close();renderSchedules();renderHome();toast('予定を保存しました');
+    save();
+    $('formDialog').close();
+    renderSchedules();
+    renderHome();
+    toast('予定を保存しました');
   };
 }
 function renderSchedules(){
@@ -495,12 +540,12 @@ function renderSchedules(){
   if(state.scheduleMode==='upcoming')list=list.filter(x=>x.date>=today());
   if(state.scheduleMode==='date')list=list.filter(x=>x.date===$('scheduleViewDate').value);
   list.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.cast}</div><div class="meta">タップで備考確認</div></button>`).join(''):'<div class="card">予定はありません</div>';
+  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'予約'}／${x.people||1}名／担当:${x.cast||'担当なし'}</div><div class="meta">タップで備考確認</div></button>`).join(''):'<div class="card">予定はありません</div>';
 }
 function showSchedule(id){
   const x=db.schedules.find(v=>v.id===id);if(!x)return;
   $('detailTitle').textContent='予定詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'来店予定'}</div><div class="meta">担当:${x.cast}</div><div class="meta">人数:${x.people}名</div><div class="meta">備考:${x.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'予約'}</div><div class="meta">担当:${x.cast||'担当なし'}</div><div class="meta">人数:${x.people}名</div><div class="meta">備考:${x.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
   $('detailDialog').showModal();
 }
 
