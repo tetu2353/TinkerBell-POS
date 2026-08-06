@@ -37,6 +37,15 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 #shifts{max-width:760px;margin:0 auto}.shift-page-head{background:linear-gradient(135deg,#7e69ad,#9b83c3);color:#fff;margin:-14px -14px 16px;padding:18px 18px 20px;border-radius:0 0 22px 22px;box-shadow:0 8px 22px #6d579130}.shift-page-head h2{margin:0;font-size:22px}.shift-page-head p{margin:5px 0 0;color:#eee8fa;font-size:12px}.shift-shell{background:#fff;border:1px solid #ded4e9;border-radius:20px;padding:14px;box-shadow:0 8px 24px #6f58701a}.shift-toolbar{margin:0 0 12px}.shift-toolbar button{min-width:44px;width:44px;height:40px;padding:0;border-radius:11px;background:#f2edf8;color:#58456f}.shift-month-title{font-size:21px;color:#392d48}.shift-banner{padding:11px 13px;border-radius:12px;font-size:13px;margin-bottom:12px}.shift-banner.staff-view{background:#f2ecff;color:#5a4178}.shift-banner.manager{background:#eee8fb;color:#554176}.shift-person-picker{display:flex;gap:8px;overflow:auto;padding:1px 1px 10px}.shift-person-picker button{white-space:nowrap;border:1px solid #dcd1e9;background:#fff;color:#62516f;padding:9px 12px;border-radius:999px;font-weight:800}.shift-person-picker button.active{background:#7f69ad;color:#fff;border-color:#7f69ad}.month-calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.month-calendar .dow{text-align:center;font-size:11px;font-weight:900;color:#85788e;padding:5px 0}.month-calendar .dow.sun{color:#db5f6a}.month-calendar .dow.sat{color:#557dc6}.month-day{min-height:67px;border:1px solid #e8e0ef;background:#fff;border-radius:12px;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}.month-day.blank{border-color:transparent;background:transparent}.month-day.editable{cursor:pointer}.month-day.today{outline:2px solid #8c72bd}.month-day .num{font-size:12px;font-weight:900;color:#5e5265;align-self:flex-start}.month-day.sun .num{color:#db5f6a}.month-day.sat .num{color:#557dc6}.month-day .mark{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#f2eef5;color:#aa9eae;font-size:21px;font-weight:900}.month-day.status-ok .mark{background:#e9f7eb;color:#2c9a49}.month-day.status-late .mark{background:#fff2db;color:#df8b0e}.month-day.status-off .mark{background:#fde9ed;color:#d6495a}.shift-legend{justify-content:center;font-size:12px;gap:10px;margin:13px 0}.my-entry-state{background:#f5f1fb;border-color:#e2d8ef}.shift-save{background:#2e9d4b;box-shadow:0 6px 14px #2e9d4b33}.shift-publish{background:#7d68ae;box-shadow:0 6px 14px #7d68ae33}.shift-status-card{background:#fbf9fd;border-color:#e5dced}.shift-status-row{align-items:center}.roster-card{margin-top:14px;background:#fff;border:1px solid #e3d9eb;border-radius:16px;padding:13px}.roster-card h3{margin:0 0 10px;font-size:16px}.roster-scroll{overflow:auto}.roster-mini{min-width:620px}.roster-mini th{background:#7d68ae}.roster-mini td,.roster-mini th{text-align:center;padding:8px}.roster-mini td:first-child,.roster-mini th:first-child{text-align:left;position:sticky;left:0;background:#fff;color:#34293d;font-weight:900}.shift-actions button{min-height:47px}.shift-footnote{text-align:center;color:#786d7e;font-size:11px;margin-top:8px}
 @media(max-width:560px){#shifts{padding-bottom:30px}.month-day{min-height:58px;padding:4px}.month-day .mark{width:30px;height:30px;font-size:19px}.shift-shell{padding:11px}.shift-page-head{margin:-14px -14px 14px}.shift-actions{grid-template-columns:1fr 1fr}.shift-actions .wide{grid-column:1/-1}}
 
+
+.shift-overall-list{display:grid;gap:0;border:1px solid #e4dce8;border-radius:14px;overflow:hidden}
+.shift-overall-row{width:100%;border:0;border-bottom:1px solid #eee7f1;background:#fff;padding:15px 14px;display:grid;grid-template-columns:minmax(110px,1fr) auto auto auto;gap:16px;align-items:center;text-align:left;color:#33283a}
+.shift-overall-row:last-child{border-bottom:0}.shift-overall-row:active{background:#f5eff8}
+.shift-overall-date{font-size:16px;font-weight:900}.shift-overall-date.sun{color:#d84b58}.shift-overall-date.sat{color:#4673bc}
+.shift-count{font-size:18px;font-weight:900;white-space:nowrap}.shift-count.ok{color:#23903c}.shift-count.late{color:#dc8900}.shift-count.off{color:#d23b4a}
+.shift-detail-group{margin-bottom:12px}.shift-detail-group h3{margin:0 0 8px}.shift-detail-name{padding:10px 12px;border-radius:11px;background:#f7f3f8;margin-bottom:7px;font-weight:850}
+@media(max-width:560px){.shift-overall-row{grid-template-columns:minmax(90px,1fr) auto auto auto;gap:9px;padding:14px 10px}.shift-count{font-size:16px}}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -90,7 +99,11 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 </section>
 
 <section id="shifts" class="screen">
- <div class="shift-page-head"><h2 id="shiftScreenTitle">シフト入力</h2><p>出勤できる日をタップして登録します</p></div>
+ <div class="shift-page-head"><h2 id="shiftScreenTitle">シフト入力</h2><p>全体一覧の日付をタップすると回答詳細を確認できます</p></div>
+ <div id="shiftOverallCard" class="roster-card manager">
+  <h3>全体の回答状況</h3>
+  <div id="shiftOverallList" class="shift-overall-list"></div>
+ </div>
  <div class="shift-shell">
   <div class="shift-banner staff-view">自分の予定を入力してください。日付をタップすると ○ → △ → × → 空欄 に切り替わります。</div>
   <div class="shift-banner manager">従業員を選んで予定を編集できます。全員の入力状況も下で確認できます。</div>
@@ -165,7 +178,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
   </div>
 </div>
 <div class="card">
-  <div class="meta">商品を「編集」で開き、金額やバックを変更できます。↑↓で注文画面の並び順を変更できます。</div>
+  <div class="meta">商品はFirebaseとリアルタイム同期します。「編集」で金額やバックを変更でき、↑↓で注文画面の並び順を変更できます。</div>
 </div>
 <div id="menuList" class="list"></div>
 </section>
@@ -239,12 +252,20 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 </div>
 <div id="seatModal" class="modal hidden"><div class="modal-card"><h2 id="seatModalTitle">入店登録</h2><label>お客様名<input id="seatCustomerName" list="customerNames" placeholder="名前を入力"></label><datalist id="customerNames"></datalist><p><b>担当キャスト</b></p><div id="seatCastChoices" class="choice-grid"></div><div class="row" style="margin-top:14px"><button id="seatModalCancel" class="secondary">閉じる</button><button id="seatModalSave" class="primary">保存</button></div></div></div>
 <div id="undoBar" class="undo hidden"><span id="undoText">注文を追加しました</span><button id="undoBtn" class="secondary">取り消す</button></div>
+<div id="shiftDayModal" class="modal hidden">
+ <div class="modal-card">
+  <h2 id="shiftDayModalTitle">シフト詳細</h2>
+  <div id="shiftDayModalSummary" class="summary"></div>
+  <div id="shiftDayModalList" class="list"></div>
+  <button id="shiftDayModalClose" class="secondary" style="width:100%;margin-top:12px">閉じる</button>
+ </div>
+</div>
 <div id="toast" class="toast hidden"></div>
 
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v14-realtime-staff';
+const APP_VERSION='v16-shift-overview';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -320,6 +341,18 @@ window.tinkerbellApplyCloudStaff=staff=>{
   renderStaff();
 };
 window.tinkerbellGetLocalStaff=()=>Array.isArray(db.staff)?db.staff:[];
+window.tinkerbellApplyCloudMenu=menu=>{
+  if(!Array.isArray(menu))return;
+  db.menu=menu.map((item,index)=>({
+    ...item,
+    visible:item.visible!==false,
+    sortOrder:Number.isFinite(Number(item.sortOrder))?Number(item.sortOrder):index
+  }));
+  persist();
+  renderMenu();
+  renderTapOrders();
+};
+window.tinkerbellGetLocalMenu=()=>Array.isArray(db.menu)?db.menu:[];
 function isManager(){return current?.role==='manager'}
 function fillSelect(el,arr,label='name',value='id',allowBlank=false){el.innerHTML=(allowBlank?'<option value="">未選択</option>':'')+arr.map(x=>`<option value="${esc(x[value])}">${esc(x[label])}</option>`).join('')}
 function refreshSelects(){
@@ -460,6 +493,31 @@ function renderShifts(){
  if(!selectedShiftStaffId||!staffById(selectedShiftStaffId))selectedShiftStaffId=current?.id||db.staff[0]?.id;
  const targetId=isManager()?selectedShiftStaffId:current?.id,target=staffById(targetId);
  $('shiftMonthTitle').textContent=`${y}年${m+1}月`;
+
+ if(isManager()){
+  const weekdayNames=['日','月','火','水','木','金','土'];
+  let overall='';
+  for(let d=1;d<=days;d++){
+   const date=`${key}-${String(d).padStart(2,'0')}`;
+   const dow=new Date(y,m,d).getDay();
+   const counts={ok:0,late:0,off:0};
+   db.staff.forEach(st=>{
+    const r=shiftRecord(st.id,date);
+    const v=r?.status||(r?.time?'○':'');
+    if(v==='○')counts.ok++;
+    else if(v==='△')counts.late++;
+    else if(v==='×')counts.off++;
+   });
+   overall+=`<button class="shift-overall-row" onclick="openShiftDayDetail('${date}')">
+    <span class="shift-overall-date ${dow===0?'sun':dow===6?'sat':''}">${String(m+1).padStart(2,'0')}.${String(d).padStart(2,'0')}(${weekdayNames[dow]})</span>
+    <span class="shift-count ok">○ ${counts.ok}</span>
+    <span class="shift-count late">△ ${counts.late}</span>
+    <span class="shift-count off">× ${counts.off}</span>
+   </button>`;
+  }
+  $('shiftOverallList').innerHTML=overall;
+ }
+
  $('shiftScreenTitle').textContent=isManager()?'シフト管理（店長）':'シフト入力';
  $('shiftPersonPicker').innerHTML=db.staff.map(st=>`<button class="${st.id===targetId?'active':''}" onclick="selectShiftPerson('${st.id}')">${esc(st.name)}</button>`).join('');
  const weekdays=['日','月','火','水','木','金','土'],firstDow=new Date(y,m,1).getDay();
@@ -479,6 +537,42 @@ function renderShifts(){
  db.staff.forEach(st=>{roster+=`<tr><td>${esc(st.name)}</td>`;for(let d=startDay;d<=endDay;d++){const r=shiftRecord(st.id,`${key}-${String(d).padStart(2,'0')}`),v=r?.status||(r?.time?'○':'');roster+=`<td class="${shiftStatusClass(v)}">${v||'・'}</td>`}roster+='</tr>'});roster+='</table>';$('shiftRoster').innerHTML=roster;
  const pub=db.shiftMeta.published[key];$('shiftPublishedNote').textContent=pub?`公開済み：${new Date(pub).toLocaleString('ja-JP')}`:'まだ公開されていません';
 }
+window.openShiftDayDetail=date=>{
+ const dt=new Date(`${date}T00:00:00`);
+ const weekdays=['日','月','火','水','木','金','土'];
+ const groups={'○':[],'△':[],'×':[],'未回答':[]};
+
+ db.staff.forEach(st=>{
+  const r=shiftRecord(st.id,date);
+  const status=r?.status||(r?.time?'○':'');
+  groups[status||'未回答'].push(st.name);
+ });
+
+ $('shiftDayModalTitle').textContent=`${dt.getMonth()+1}月${dt.getDate()}日（${weekdays[dt.getDay()]}）の詳細`;
+ $('shiftDayModalSummary').innerHTML=`
+  <div class="metric"><small>○ 出勤可</small><b style="color:#23903c">${groups['○'].length}</b></div>
+  <div class="metric"><small>△ 相談</small><b style="color:#dc8900">${groups['△'].length}</b></div>
+  <div class="metric"><small>× 休み</small><b style="color:#d23b4a">${groups['×'].length}</b></div>
+  <div class="metric"><small>未回答</small><b>${groups['未回答'].length}</b></div>`;
+
+ const labels=[
+  ['○','○ 出勤できる','#23903c'],
+  ['△','△ 遅れる・相談','#dc8900'],
+  ['×','× 休み','#d23b4a'],
+  ['未回答','未回答','#756a77']
+ ];
+ $('shiftDayModalList').innerHTML=labels.map(([key,label,color])=>`
+  <div class="shift-detail-group">
+   <h3 style="color:${color}">${label}</h3>
+   ${groups[key].length
+    ? groups[key].map(name=>`<div class="shift-detail-name">${esc(name)}</div>`).join('')
+    : '<div class="meta">該当者なし</div>'}
+  </div>`).join('');
+
+ $('shiftDayModal').classList.remove('hidden');
+};
+$('shiftDayModalClose').onclick=()=>$('shiftDayModal').classList.add('hidden');
+
 window.selectShiftPerson=x=>{if(!isManager())return;selectedShiftStaffId=x;renderShifts()};
 $('prevShiftMonth').onclick=()=>{shiftViewMonth.setMonth(shiftViewMonth.getMonth()-1);renderShifts()};
 $('nextShiftMonth').onclick=()=>{shiftViewMonth.setMonth(shiftViewMonth.getMonth()+1);renderShifts()};
@@ -653,7 +747,8 @@ function clearMenuForm(){
  $('cancelMenuEdit').classList.add('hidden');
 }
 
-$('saveMenu').onclick=()=>{
+$('saveMenu').onclick=async()=>{
+ const button=$('saveMenu');
  const name=$('menuName').value.trim();
  if(!name)return toast('商品名を入力してください');
 
@@ -661,6 +756,10 @@ $('saveMenu').onclick=()=>{
  const duplicate=db.menu.find(x=>x.name===name&&x.id!==editId);
  if(duplicate)return toast('同じ商品名が登録されています');
 
+ button.disabled=true;
+ button.textContent='保存中...';
+
+ const beforeMenu=JSON.parse(JSON.stringify(db.menu));
  const data={
   name,
   price:Number($('menuPrice').value||0),
@@ -670,21 +769,38 @@ $('saveMenu').onclick=()=>{
   visible:$('menuVisible').value==='true'
  };
 
- if(editId){
-  const item=db.menu.find(x=>x.id===editId);
-  if(!item)return toast('商品が見つかりません');
-  Object.assign(item,data);
-  toast('商品を更新しました');
- }else{
-  const maxOrder=db.menu.reduce((m,x)=>Math.max(m,Number(x.sortOrder||0)),0);
-  db.menu.push({id:id(),...data,sortOrder:maxOrder+1});
-  toast('商品を追加しました');
- }
+ try{
+  if(editId){
+   const item=db.menu.find(x=>x.id===editId);
+   if(!item)throw new Error('商品が見つかりません');
+   Object.assign(item,data);
+  }else{
+   const maxOrder=db.menu.reduce((m,x)=>Math.max(m,Number(x.sortOrder||0)),0);
+   db.menu.push({id:id(),...data,sortOrder:maxOrder+1});
+  }
 
- persist();
- clearMenuForm();
- renderMenu();
- renderTapOrders();
+  persist();
+  clearMenuForm();
+  renderMenu();
+  renderTapOrders();
+
+  if(!window.tinkerbellFirebase?.saveMenu){
+   throw new Error('Firebase準備中');
+  }
+  await window.tinkerbellFirebase.saveMenu(db.menu);
+  toast(editId?'商品をクラウド更新しました':'商品をクラウド保存しました');
+ }catch(error){
+  console.error('Menu cloud save failed:',error);
+  db.menu=beforeMenu;
+  persist();
+  clearMenuForm();
+  renderMenu();
+  renderTapOrders();
+  toast('商品のクラウド保存に失敗しました');
+ }finally{
+  button.disabled=false;
+  if(!$('menuEditId').value)$('saveMenu').textContent='商品を追加';
+ }
 };
 
 $('cancelMenuEdit').onclick=clearMenuForm;
@@ -719,17 +835,31 @@ window.editMenu=idn=>{
  document.getElementById('menu').scrollIntoView({behavior:'smooth',block:'start'});
 };
 
-window.toggleMenu=idn=>{
+window.toggleMenu=async idn=>{
+ const before=JSON.parse(JSON.stringify(db.menu));
  const m=db.menu.find(x=>x.id===idn);
  if(!m)return;
  m.visible=m.visible===false;
  persist();
  renderMenu();
  renderTapOrders();
- toast(m.visible?'注文画面に表示しました':'注文画面から非表示にしました');
+
+ try{
+  if(!window.tinkerbellFirebase?.saveMenu)throw new Error('Firebase準備中');
+  await window.tinkerbellFirebase.saveMenu(db.menu);
+  toast(m.visible?'注文画面に表示しました':'注文画面から非表示にしました');
+ }catch(error){
+  console.error('Menu visibility sync failed:',error);
+  db.menu=before;
+  persist();
+  renderMenu();
+  renderTapOrders();
+  toast('表示設定の同期に失敗しました');
+ }
 };
 
-window.moveMenu=(idn,direction)=>{
+window.moveMenu=async(idn,direction)=>{
+ const before=JSON.parse(JSON.stringify(db.menu));
  const list=[...db.menu].sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
  const index=list.findIndex(x=>x.id===idn);
  const next=index+direction;
@@ -740,20 +870,46 @@ window.moveMenu=(idn,direction)=>{
  persist();
  renderMenu();
  renderTapOrders();
+
+ try{
+  if(!window.tinkerbellFirebase?.saveMenu)throw new Error('Firebase準備中');
+  await window.tinkerbellFirebase.saveMenu(db.menu);
+ }catch(error){
+  console.error('Menu order sync failed:',error);
+  db.menu=before;
+  persist();
+  renderMenu();
+  renderTapOrders();
+  toast('並び順の同期に失敗しました');
+ }
 };
 
-window.delMenu=idn=>{
+window.delMenu=async idn=>{
  const m=db.menu.find(x=>x.id===idn);
  if(!m)return;
  const usedInOpenOrders=db.seats.some(s=>s.orders.some(o=>o.menuId===idn));
  if(usedInOpenOrders)return toast('会計前の注文で使用中のため削除できません');
  if(!confirm(`${m.name} を削除しますか？`))return;
+
+ const before=JSON.parse(JSON.stringify(db.menu));
  db.menu=db.menu.filter(x=>x.id!==idn);
  persist();
  clearMenuForm();
  renderMenu();
  renderTapOrders();
- toast('商品を削除しました');
+
+ try{
+  if(!window.tinkerbellFirebase?.saveMenu)throw new Error('Firebase準備中');
+  await window.tinkerbellFirebase.saveMenu(db.menu);
+  toast('商品をクラウドから削除しました');
+ }catch(error){
+  console.error('Menu cloud delete failed:',error);
+  db.menu=before;
+  persist();
+  renderMenu();
+  renderTapOrders();
+  toast('商品の削除に失敗しました');
+ }
 };
 
 function renderReports(){const sales=db.checkouts.reduce((a,x)=>a+x.total,0),open=db.seats.reduce((a,x)=>a+seatTotal(x),0),orders=db.checkouts.reduce((a,x)=>a+x.orders.length,0)+db.seats.reduce((a,x)=>a+x.orders.length,0);$('metrics').innerHTML=`<div class="metric"><small>確定売上</small><b>${yen(sales)}</b></div><div class="metric"><small>未会計</small><b>${yen(open)}</b></div><div class="metric"><small>会計件数</small><b>${db.checkouts.length}</b></div><div class="metric"><small>注文数</small><b>${orders}</b></div>`;$('checkoutHistory').innerHTML=db.checkouts.length?`<table><tr><th>日時</th><th>席</th><th>お客様</th><th>金額</th></tr>${db.checkouts.slice().reverse().map(x=>`<tr><td>${new Date(x.closedAt).toLocaleString('ja-JP')}</td><td>${esc(x.seat)}</td><td>${esc(x.customerName)}</td><td>${yen(x.total)}</td></tr>`).join('')}</table>`:'会計履歴なし';$('attendanceReport').innerHTML=db.staff.map(s=>{const rs=db.attendance.filter(a=>a.staffId===s.id),hours=rs.reduce((sum,r)=>sum+(r.out?(new Date(r.out)-new Date(r.in))/36e5:0),0);return `<div class="item"><b>${esc(s.name)}</b><div class="meta">${hours.toFixed(1)}時間 / 概算 ${yen(Math.round(hours*s.wage))}</div></div>`}).join('')}
@@ -976,6 +1132,57 @@ function startStaffRealtimeSync() {
   );
 }
 
+
+async function saveMenuToFirebase(menu) {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  await setDoc(
+    doc(firestoreDb, "app", "data"),
+    {
+      menu,
+      menuUpdatedAt: new Date().toISOString()
+    },
+    { merge: true }
+  );
+}
+
+function startMenuRealtimeSync() {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+
+  const ref = doc(firestoreDb, "app", "data");
+
+  return onSnapshot(
+    ref,
+    async snap => {
+      if (!snap.exists()) return;
+
+      const cloudMenu = snap.data()?.menu;
+
+      if (Array.isArray(cloudMenu)) {
+        window.tinkerbellApplyCloudMenu?.(cloudMenu);
+        setStatus("Firebase接続：成功（お客様・従業員・商品を同期）", true);
+      } else {
+        const localMenu = window.tinkerbellGetLocalMenu?.() || [];
+        await setDoc(
+          ref,
+          {
+            menu: localMenu,
+            menuUpdatedAt: new Date().toISOString()
+          },
+          { merge: true }
+        );
+      }
+    },
+    error => {
+      console.error("Menu realtime sync failed:", error);
+      if (error?.code === "permission-denied") {
+        setStatus("Firebase接続済み。商品の同期がルールで拒否されています");
+      }
+    }
+  );
+}
+
 function startCustomerRealtimeSync() {
   firebaseApp ||= initializeApp(firebaseConfig);
   firestoreDb ||= getFirestore(firebaseApp);
@@ -1029,11 +1236,13 @@ window.tinkerbellFirebase = {
   checkConnection: checkFirebaseConnection,
   saveCustomers: saveCustomersToFirebase,
   loadCustomers: loadCustomersFromFirebase,
-  saveStaff: saveStaffToFirebase
+  saveStaff: saveStaffToFirebase,
+  saveMenu: saveMenuToFirebase
 };
 
 startCustomerRealtimeSync();
 startStaffRealtimeSync();
+startMenuRealtimeSync();
 </script>
 
 </body></html>
