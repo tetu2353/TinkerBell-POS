@@ -291,9 +291,9 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
     <button class="btn gold full" data-action="admin-login">ログイン</button>
   </div>
   <div id="adminPanel" class="hidden">
-    <div class="card" style="margin-bottom:12px">
-      <div class="rowTitle">クラウド同期</div>
-      <div id="firebaseSyncStatus" class="meta">接続確認中...</div>
+    <div class="card" style="margin-bottom:12px;background:#fff8e8">
+      <div class="rowTitle">LINEデータ復旧版</div>
+      <div class="meta">クラウド同期を停止し、この端末に保存されたLINEデータを使用しています。</div>
     </div>
     <div class="adminMenuGrid">
       <button class="adminMenuCard" data-action="staff-management">
@@ -317,7 +317,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
-const APP_VERSION='line-v44-firebase-fillselects-fix';
+const APP_VERSION='line-v45-emergency-local-restore';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -346,48 +346,6 @@ function load(){
   return {staff:[...DEFAULT_STAFF],shifts:[],schedules:[],customers:[],bottles:[]};
 }
 let db=load();
-
-window.tinkerbellGetLineSharedData=()=>({
-  staff:Array.isArray(db.staff)?db.staff:[],
-  customers:Array.isArray(db.customers)?db.customers:[],
-  menu:Array.isArray(db.menu)?db.menu:[]
-});
-
-window.tinkerbellApplySharedCloudData=data=>{
-  let changed=false;
-  if(Array.isArray(data.staff)){
-    db.staff=data.staff.map((s,index)=>({...s,id:s.id||`cloud-staff-${index}`,role:s.role||'cast'}));
-    changed=true;
-  }
-  if(Array.isArray(data.customers)){
-    db.customers=data.customers.map((c,index)=>({...c,id:c.id||`cloud-customer-${index}`,kana:c.kana||''}));
-    changed=true;
-  }
-  if(Array.isArray(data.menu)){
-    db.menu=data.menu;
-    changed=true;
-  }
-  if(changed){
-    save();
-    renderHome();
-    renderCustomers();
-    renderShiftRegister();
-    renderShiftCheck();
-    renderSchedules();
-    renderBottles();
-    if(typeof renderStaffList==='function')renderStaffList();
-  }
-};
-
-async function saveSharedToFirebase(fields){
-  if(!window.tinkerbellLineFirebase?.saveSharedData)return;
-  try{
-    await window.tinkerbellLineFirebase.saveSharedData(fields);
-  }catch(error){
-    console.error('Shared Firebase save failed:',error);
-    toast('クラウド保存に失敗しました');
-  }
-}
 const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),1500)}
 function names(){return db.staff.map(s=>s.name)}
@@ -801,7 +759,7 @@ function openCustomerForm(existing=null){
     else db.customers.push({id,name,kana,birthMonth:+month||'',birthDay:+day||'',cast:$('cCast').value,memo:$('cMemo').value.trim()});
     db.bottles=db.bottles.filter(b=>b.customerId!==id||entered.some(r=>r.id===b.id));
     entered.forEach(r=>{if(r.id){const b=db.bottles.find(x=>x.id===r.id);Object.assign(b,{number:r.number,name:r.name,cast:r.cast,qty:r.qty,customerId:id,customer:name})}else db.bottles.push({id:uid(),number:r.number,name:r.name,cast:r.cast,qty:r.qty,customerId:id,customer:name,status:'stored',emptyDate:''})});
-    save();saveSharedToFirebase({customers:db.customers});$('formDialog').close();renderCustomers();renderBottles();renderHome();toast('お客様をクラウド保存しました');
+    save();$('formDialog').close();renderCustomers();renderBottles();renderHome();toast('お客様を保存しました');
   };
 }
 function normalizeKana(value){
@@ -1061,10 +1019,7 @@ document.addEventListener('click',e=>{
     renderStaff();
     return;
   }
-  if(t.dataset.action==='open-pos'){
-    window.open('https://tetu2353.github.io/TinkerBell-POS/','_blank','noopener');
-    return;
-  }
+  if(t.dataset.action==='open-pos'){window.open('https://tetu2353.github.io/TinkerBell-POS/','_blank');return}
   if(t.dataset.action==='new-staff')return openStaffForm();
   if(t.dataset.editStaff){
     const staff=db.staff.find(s=>s.id===t.dataset.editStaff);
@@ -1181,116 +1136,5 @@ document.addEventListener('input',e=>{
   }
 });
 </script>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCUGu1dEan0D0-kfXXiiag7eKKwdmkg_TQ",
-  authDomain: "tinkerbell-pos.firebaseapp.com",
-  projectId: "tinkerbell-pos",
-  storageBucket: "tinkerbell-pos.firebasestorage.app",
-  messagingSenderId: "475881462705",
-  appId: "1:475881462705:web:2715d0514e7ef21730fb90"
-};
-
-const app = initializeApp(firebaseConfig);
-const firestore = getFirestore(app);
-const dataRef = doc(firestore, "app", "data");
-const statusEl = document.getElementById("firebaseSyncStatus");
-
-function setStatus(message,ok=false){
-  if(!statusEl)return;
-  statusEl.textContent=message;
-  statusEl.style.color=ok?"#21823a":"#9a4b21";
-  statusEl.style.fontWeight="800";
-}
-
-function normalizeText(value){
-  return String(value||'')
-    .trim()
-    .replace(/[\u30a1-\u30f6]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60))
-    .replace(/\s+/g,'');
-}
-
-function mergeByIdentity(cloudList,localList,type){
-  const result=[];
-  const index=new Map();
-  const keyOf=item=>{
-    if(item?.id)return `id:${item.id}`;
-    if(type==='customer')return `name:${normalizeText(item?.kana||item?.name)}`;
-    return `name:${normalizeText(item?.name)}`;
-  };
-
-  [...(cloudList||[]),...(localList||[])].forEach(item=>{
-    if(!item||typeof item!=='object')return;
-    const key=keyOf(item);
-    if(index.has(key)){
-      const existing=index.get(key);
-      Object.keys(item).forEach(k=>{
-        if(existing[k]===undefined||existing[k]===null||existing[k]==='')existing[k]=item[k];
-      });
-      return;
-    }
-    const copy={...item};
-    index.set(key,copy);
-    result.push(copy);
-  });
-  return result;
-}
-
-async function initialMerge(){
-  setStatus("Firebaseへ接続中...");
-  const snap=await getDoc(dataRef);
-  const cloud=snap.exists()?snap.data():{};
-  const local=window.tinkerbellGetLineSharedData?.()||{};
-
-  const mergedStaff=mergeByIdentity(cloud.staff,local.staff,'staff');
-  const mergedCustomers=mergeByIdentity(cloud.customers,local.customers,'customer');
-  const mergedMenu=mergeByIdentity(cloud.menu,local.menu,'menu');
-
-  await setDoc(dataRef,{
-    staff:mergedStaff,
-    customers:mergedCustomers,
-    menu:mergedMenu,
-    lineMergeUpdatedAt:new Date().toISOString()
-  },{merge:true});
-
-  window.tinkerbellApplySharedCloudData?.({
-    staff:mergedStaff,
-    customers:mergedCustomers,
-    menu:mergedMenu
-  });
-
-  setStatus(`同期成功：従業員${mergedStaff.length}人・お客様${mergedCustomers.length}人・商品${mergedMenu.length}件`,true);
-}
-
-onSnapshot(dataRef,snap=>{
-  if(!snap.exists())return;
-  const data=snap.data();
-  window.tinkerbellApplySharedCloudData?.({
-    staff:Array.isArray(data.staff)?data.staff:[],
-    customers:Array.isArray(data.customers)?data.customers:[],
-    menu:Array.isArray(data.menu)?data.menu:[]
-  });
-  setStatus(`同期中：従業員${data.staff?.length||0}人・お客様${data.customers?.length||0}人・商品${data.menu?.length||0}件`,true);
-},error=>{
-  console.error("LINE Firebase sync failed:",error);
-  setStatus(`同期エラー：${error.code||error.message||'不明'}`);
-});
-
-initialMerge().catch(error=>{
-  console.error("Initial Firebase merge failed:",error);
-  setStatus(`初回同期エラー：${error.code||error.message||'不明'}`);
-});
-
-window.tinkerbellLineFirebase={
-  async saveSharedData(partial){
-    await setDoc(dataRef,{...partial,lineUpdatedAt:new Date().toISOString()},{merge:true});
-  }
-};
-</script>
-
 </body>
 </html>
