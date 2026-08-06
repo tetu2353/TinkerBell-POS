@@ -145,6 +145,10 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 .shiftDetailGroup{margin-top:14px}.shiftDetailGroup h3{margin:0 0 8px}.shiftDetailName{padding:10px 12px;background:#f8f5f8;border:1px solid var(--line);border-radius:11px;margin-bottom:7px;font-weight:800}
 @media(max-width:560px){.shiftOverviewRow{grid-template-columns:minmax(90px,1fr) auto auto auto;gap:8px;padding:14px 10px}.shiftOverviewCount{font-size:16px}.shiftDetailSummary{grid-template-columns:repeat(2,1fr)}}
 
+.summaryTap{width:100%;text-align:left;color:inherit;cursor:pointer}.summaryTap:active{transform:scale(.99);background:#fff8e8}
+.customerKanaFilters{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:8px}
+.customerKanaFilters .filterBtn{min-width:0;padding:10px 5px}
+@media(max-width:420px){.customerKanaFilters{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
 <body>
@@ -152,8 +156,8 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 <main>
 <section id="home">
   <div class="summary">
-    <div class="card"><small>今日の出勤予定</small><strong id="homeShiftCount">0</strong>人</div>
-    <div class="card"><small>今日の予定</small><strong id="homeScheduleCount">0</strong>件</div>
+    <button type="button" class="card summaryTap" data-nav="shift"><small>今日の出勤予定</small><strong id="homeShiftCount">0</strong>人</button>
+    <button type="button" class="card summaryTap" data-nav="schedules"><small>今日の予定</small><strong id="homeScheduleCount">0</strong>件</button>
   </div>
   <div class="card"><div class="sectionHead"><h2 style="font-size:18px">🎂 今月の誕生日</h2></div><div id="homeBirthdays" class="list"></div></div>
   <div class="menu">
@@ -217,6 +221,25 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 <section id="customers" class="hidden">
   <button class="btn ghost" data-nav="home">← ホーム</button>
   <div class="sectionHead"><h2>お客様情報</h2><button class="btn gold" data-action="new-customer">＋登録</button></div>
+  <div class="card">
+    <label><span>名前・ふりがな・担当で検索</span><input id="customerSearch" placeholder="例：田中、たなか、あい"></label>
+    <div class="filterTitle">五十音</div>
+    <div id="customerKanaFilters" class="customerKanaFilters">
+      <button class="filterBtn active" data-customer-kana="all">全部</button>
+      <button class="filterBtn" data-customer-kana="a">あ行</button>
+      <button class="filterBtn" data-customer-kana="ka">か行</button>
+      <button class="filterBtn" data-customer-kana="sa">さ行</button>
+      <button class="filterBtn" data-customer-kana="ta">た行</button>
+      <button class="filterBtn" data-customer-kana="na">な行</button>
+      <button class="filterBtn" data-customer-kana="ha">は行</button>
+      <button class="filterBtn" data-customer-kana="ma">ま行</button>
+      <button class="filterBtn" data-customer-kana="ya">や行</button>
+      <button class="filterBtn" data-customer-kana="ra">ら行</button>
+      <button class="filterBtn" data-customer-kana="wa">わ行</button>
+      <button class="filterBtn" data-customer-kana="other">その他</button>
+    </div>
+    <div id="customerResultCount" class="meta" style="margin-top:10px"></div>
+  </div>
   <div id="customerList" class="list"></div>
 </section>
 
@@ -282,11 +305,11 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
-const APP_VERSION='line-v36-shift-consultation-reservations';
+const APP_VERSION='line-v38-customer-kana-index';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
-const state={scheduleMode:'today',editing:null,bottleCategory:'all',bottleStatus:'all'};
+const state={scheduleMode:'today',editing:null,bottleCategory:'all',bottleStatus:'all',customerKana:'all',customerSearch:''};
 const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2);
 const today=()=>new Date().toLocaleDateString('sv-SE');
 function load(){
@@ -339,7 +362,12 @@ function show(section,updateHash=true){
   $(section).classList.remove('hidden');
   if(section==='home')renderHome();
   if(section==='shift'){renderShiftRegister();renderShiftCheck()}
-  if(section==='schedules')renderSchedules();
+  if(section==='schedules'){
+    state.scheduleMode='today';
+    document.querySelectorAll('[data-schedule-tab]').forEach(x=>x.classList.toggle('active',x.dataset.scheduleTab==='today'));
+    $('scheduleDateBox')?.classList.add('hidden');
+    renderSchedules();
+  }
   if(section==='customers')renderCustomers();
   if(section==='bottles')renderBottles();
   if(updateHash){
@@ -552,7 +580,7 @@ function showSchedule(id){
 function openCustomerForm(existing=null){
   const linked=existing?db.bottles.filter(b=>b.customerId===existing.id):[];
   $('formTitle').textContent=existing?'お客様編集':'お客様登録';
-  $('formBody').innerHTML=`<label><span>お客様名</span><input id="cName" value="${existing?.name||''}"></label><div class="form2"><label><span>誕生月</span><select id="cMonth"><option value="">未登録</option>${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthMonth)===i+1?'selected':''}>${i+1}月</option>`).join('')}</select></label><label><span>誕生日</span><select id="cDay"><option value="">未登録</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthDay)===i+1?'selected':''}>${i+1}日</option>`).join('')}</select></label></div><label><span>担当</span><select id="cCast"><option>担当不明</option>${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>備考</span><textarea id="cMemo">${existing?.memo||''}</textarea></label><div class="card"><div class="rowTitle">🍾 キープボトル登録</div><div id="customerBottleRows" class="list" style="margin-top:9px"></div><button type="button" class="btn ghost full" id="addCustomerBottle">＋ボトル追加</button></div><button class="btn gold full" id="saveCustomer">保存</button>`;
+  $('formBody').innerHTML=`<label><span>お客様名</span><input id="cName" value="${existing?.name||''}"></label><label><span>ふりがな</span><input id="cKana" value="${existing?.kana||''}" placeholder="例：たなか"></label><div class="form2"><label><span>誕生月</span><select id="cMonth"><option value="">未登録</option>${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthMonth)===i+1?'selected':''}>${i+1}月</option>`).join('')}</select></label><label><span>誕生日</span><select id="cDay"><option value="">未登録</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthDay)===i+1?'selected':''}>${i+1}日</option>`).join('')}</select></label></div><label><span>担当</span><select id="cCast"><option>担当不明</option>${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>備考</span><textarea id="cMemo">${existing?.memo||''}</textarea></label><div class="card"><div class="rowTitle">🍾 キープボトル登録</div><div id="customerBottleRows" class="list" style="margin-top:9px"></div><button type="button" class="btn ghost full" id="addCustomerBottle">＋ボトル追加</button></div><button class="btn gold full" id="saveCustomer">保存</button>`;
   $('formDialog').showModal();
   const rows=linked.map(b=>({...b}));
   if(!rows.length)rows.push({id:'',number:'',name:'',cast:existing?.cast||'担当不明',qty:1});
@@ -563,26 +591,75 @@ function openCustomerForm(existing=null){
   $('addCustomerBottle').onclick=()=>{rows.push({id:'',number:'',name:'',cast:$('cCast').value,qty:1});renderRows()};
   $('customerBottleRows').onclick=e=>{const b=e.target.closest('[data-remove-row]');if(!b)return;rows.splice(+b.dataset.removeRow,1);if(!rows.length)rows.push({id:'',number:'',name:'',cast:$('cCast').value,qty:1});renderRows()};
   $('saveCustomer').onclick=()=>{
-    const name=$('cName').value.trim();if(!name)return toast('お客様名を入力');
+    const name=$('cName').value.trim();if(!name)return toast('お客様名を入力');const kana=normalizeKana($('cKana').value.trim());if(!kana)return toast('ふりがなを入力');
     const month=$('cMonth').value,day=$('cDay').value;if((month&&!day)||(!month&&day))return toast('誕生日は月日両方');
     rows.forEach((r,i)=>{r.number=document.querySelector(`[data-bn="${i}"]`).value.trim();r.name=document.querySelector(`[data-bname="${i}"]`).value.trim();r.cast=document.querySelector(`[data-bcast="${i}"]`).value;r.qty=+document.querySelector(`[data-bqty="${i}"]`).value||1});
     const entered=rows.filter(r=>r.number||r.name);if(entered.some(r=>!r.number||!r.name))return toast('No.とボトル名を両方入力');
     if(entered.some(r=>db.bottles.some(b=>String(b.number)===String(r.number)&&b.id!==r.id)))return toast('登録済みNo.があります');
     const id=existing?.id||uid();
-    if(existing)Object.assign(existing,{name,birthMonth:+month||'',birthDay:+day||'',cast:$('cCast').value,memo:$('cMemo').value.trim()});
-    else db.customers.push({id,name,birthMonth:+month||'',birthDay:+day||'',cast:$('cCast').value,memo:$('cMemo').value.trim()});
+    if(existing)Object.assign(existing,{name,kana,birthMonth:+month||'',birthDay:+day||'',cast:$('cCast').value,memo:$('cMemo').value.trim()});
+    else db.customers.push({id,name,kana,birthMonth:+month||'',birthDay:+day||'',cast:$('cCast').value,memo:$('cMemo').value.trim()});
     db.bottles=db.bottles.filter(b=>b.customerId!==id||entered.some(r=>r.id===b.id));
     entered.forEach(r=>{if(r.id){const b=db.bottles.find(x=>x.id===r.id);Object.assign(b,{number:r.number,name:r.name,cast:r.cast,qty:r.qty,customerId:id,customer:name})}else db.bottles.push({id:uid(),number:r.number,name:r.name,cast:r.cast,qty:r.qty,customerId:id,customer:name,status:'stored',emptyDate:''})});
     save();$('formDialog').close();renderCustomers();renderBottles();renderHome();toast('お客様を保存しました');
   };
 }
+function normalizeKana(value){
+  return String(value||'')
+    .trim()
+    .replace(/[\u30a1-\u30f6]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60))
+    .replace(/\s+/g,'');
+}
+function customerKanaGroup(customer){
+  const first=normalizeKana(customer.kana||customer.name).charAt(0);
+  if('あいうえお'.includes(first))return 'a';
+  if('かきくけこがぎぐげご'.includes(first))return 'ka';
+  if('さしすせそざじずぜぞ'.includes(first))return 'sa';
+  if('たちつてとだぢづでど'.includes(first))return 'ta';
+  if('なにぬねの'.includes(first))return 'na';
+  if('はひふへほばびぶべぼぱぴぷぺぽ'.includes(first))return 'ha';
+  if('まみむめも'.includes(first))return 'ma';
+  if('やゆよ'.includes(first))return 'ya';
+  if('らりるれろ'.includes(first))return 'ra';
+  if('わをん'.includes(first))return 'wa';
+  return 'other';
+}
 function renderCustomers(){
-  $('customerList').innerHTML=db.customers.length?db.customers.map(c=>`<button class="row full" data-customer="${c.id}"><div class="rowTitle">${c.name}</div><div class="meta">誕生日:${birthdayText(c)}／担当:${c.cast||'担当不明'}</div><div class="meta">ボトル:${db.bottles.filter(b=>b.customerId===c.id).length}本</div></button>`).join(''):'<div class="card">登録なし</div>';
+  const query=normalizeKana(state.customerSearch);
+  let list=[...db.customers];
+
+  if(state.customerKana!=='all'){
+    list=list.filter(c=>customerKanaGroup(c)===state.customerKana);
+  }
+  if(query){
+    list=list.filter(c=>{
+      const target=normalizeKana(`${c.name||''}${c.kana||''}${c.cast||''}${c.memo||''}`);
+      return target.includes(query);
+    });
+  }
+
+  list.sort((a,b)=>{
+    const ak=normalizeKana(a.kana||a.name);
+    const bk=normalizeKana(b.kana||b.name);
+    return ak.localeCompare(bk,'ja');
+  });
+
+  if($('customerResultCount')){
+    $('customerResultCount').textContent=`該当 ${list.length}人／登録 ${db.customers.length}人`;
+  }
+
+  $('customerList').innerHTML=list.length
+    ?list.map(c=>`<button class="row full" data-customer="${c.id}">
+      <div class="rowTitle">${c.name}</div>
+      <div class="meta">${c.kana?`${c.kana}／`:''}誕生日:${birthdayText(c)}／担当:${c.cast||'担当不明'}</div>
+      <div class="meta">ボトル:${db.bottles.filter(b=>b.customerId===c.id).length}本</div>
+    </button>`).join('')
+    :'<div class="card">該当するお客様はいません</div>';
 }
 function showCustomer(id){
   const c=db.customers.find(x=>x.id===id);if(!c)return;const bs=db.bottles.filter(b=>b.customerId===id);
   $('detailTitle').textContent='お客様詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${c.name}</div><div class="meta">誕生日:${birthdayText(c)}</div><div class="meta">担当:${c.cast||'担当不明'}</div><div class="meta">備考:${c.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-customer="${c.id}">編集</button><button class="btn red" data-delete-customer="${c.id}">削除</button></div></div><div class="card"><div class="sectionHead"><div class="rowTitle">🍾 キープボトル</div><button class="btn gold" data-add-bottle-for="${c.id}">＋追加</button></div>${bs.length?bs.map(b=>`<button class="row full" data-bottle="${b.id}">No.${b.number} ${b.name}</button>`).join(''):'<div class="meta">なし</div>'}</div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${c.name}</div><div class="meta">ふりがな:${c.kana||'未登録'}</div><div class="meta">誕生日:${birthdayText(c)}</div><div class="meta">担当:${c.cast||'担当不明'}</div><div class="meta">備考:${c.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-customer="${c.id}">編集</button><button class="btn red" data-delete-customer="${c.id}">削除</button></div></div><div class="card"><div class="sectionHead"><div class="rowTitle">🍾 キープボトル</div><button class="btn gold" data-add-bottle-for="${c.id}">＋追加</button></div>${bs.length?bs.map(b=>`<button class="row full" data-bottle="${b.id}">No.${b.number} ${b.name}</button>`).join(''):'<div class="meta">なし</div>'}</div>`;
   $('detailDialog').showModal();
 }
 
@@ -767,6 +844,11 @@ function openStaffForm(existing=null){
 
 document.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
+  const navTarget=t.closest?.('[data-nav]')?.dataset.nav;
+  if(navTarget){
+    show(navTarget);
+    return;
+  }
   if(t.dataset.nav)return show(t.dataset.nav);
   if(t.dataset.close)return $(t.dataset.close).close();
   if(t.dataset.action==='new-schedule')return openScheduleForm();
@@ -787,6 +869,12 @@ document.addEventListener('click',e=>{
   if(t.dataset.editStaff){
     const staff=db.staff.find(s=>s.id===t.dataset.editStaff);
     return openStaffForm(staff);
+  }
+  if(t.dataset.customerKana){
+    state.customerKana=t.dataset.customerKana;
+    document.querySelectorAll('[data-customer-kana]').forEach(x=>x.classList.toggle('active',x.dataset.customerKana===state.customerKana));
+    renderCustomers();
+    return;
   }
   if(t.dataset.shiftDetailDate){openShiftDateDetail(t.dataset.shiftDetailDate);return}
   if(t.dataset.shiftTab){document.querySelectorAll('[data-shift-tab]').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('shiftRegisterPane').classList.toggle('hidden',t.dataset.shiftTab!=='register');$('shiftCheckPane').classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderShiftCheck();return}
@@ -881,6 +969,12 @@ function start(){
   route();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+document.addEventListener('input',e=>{
+  if(e.target?.id==='customerSearch'){
+    state.customerSearch=e.target.value;
+    renderCustomers();
+  }
+});
 </script>
 </body>
 </html>
