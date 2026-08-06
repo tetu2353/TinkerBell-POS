@@ -296,7 +296,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v21-seat-detail-casts';
+const APP_VERSION='v22-seat-name-preserve';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -744,6 +744,13 @@ $('seatDetailOrder').onclick=()=>{
  show('orders');
 };
 
+function renderSeatCastChoices(){
+ $('seatCastChoices').innerHTML=db.staff.filter(x=>x.role==='cast').map(c=>`
+  <button class="choice ${seatCastSelected.includes(c.id)?'selected':''}" onclick="chooseSeatCast('${c.id}')">
+   ${esc(c.name)}
+  </button>`).join('');
+}
+
 function openSeatModal(sid){
  const s=db.seats.find(x=>x.id===sid);
  seatEditId=sid;
@@ -751,10 +758,7 @@ function openSeatModal(sid){
 
  $('seatModalTitle').textContent=s.customerName?`${s.name}を変更`:`${s.name}へ入店`;
  $('seatCustomerName').value=s.customerName||'';
- $('seatCastChoices').innerHTML=db.staff.filter(x=>x.role==='cast').map(c=>`
-  <button class="choice ${seatCastSelected.includes(c.id)?'selected':''}" onclick="chooseSeatCast('${c.id}')">
-   ${esc(c.name)}
-  </button>`).join('');
+ renderSeatCastChoices();
  $('seatModal').classList.remove('hidden');
 }
 
@@ -767,7 +771,7 @@ window.chooseSeatCast=x=>{
  }else{
   seatCastSelected.push(x);
  }
- openSeatModal(seatEditId);
+ renderSeatCastChoices();
 };
 
 $('seatModalCancel').onclick=()=>$('seatModal').classList.add('hidden');
