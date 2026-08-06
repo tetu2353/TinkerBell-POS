@@ -157,6 +157,9 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 .companionExtraCastOption{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:11px;padding:10px;font-weight:800}
 .companionExtraCastOption input{width:auto;margin:0}
 @media(max-width:420px){.companionExtraCasts{grid-template-columns:1fr}}
+.schedule-bottle-box{margin-top:14px;padding:12px;border:2px solid #d8bc78;border-radius:14px;background:#fff8e8}
+.schedule-bottle-list{display:grid;gap:8px;margin-top:9px}
+.schedule-bottle-name{padding:10px 12px;border-radius:10px;background:#fff;font-weight:900;border:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -317,7 +320,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
-const APP_VERSION='line-v46-staff-only-shared';
+const APP_VERSION='line-v47-schedule-bottle-names';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -774,8 +777,22 @@ function renderSchedules(){
 }
 function showSchedule(id){
   const x=db.schedules.find(v=>v.id===id);if(!x)return;
+
+  const bottles=x.customerId
+    ?db.bottles.filter(b=>b.customerId===x.customerId)
+    :[];
+
+  const bottleHtml=x.customerId
+    ?`<div class="schedule-bottle-box">
+        <div class="rowTitle">🍾 キープボトル</div>
+        ${bottles.length
+          ?`<div class="schedule-bottle-list">${bottles.map(b=>`<div class="schedule-bottle-name">${b.name}${Number(b.qty||1)>1?` × ${Number(b.qty||1)}`:''}</div>`).join('')}</div>`
+          :'<div class="meta">登録ボトルなし</div>'}
+      </div>`
+    :'';
+
   $('detailTitle').textContent='予定詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'予約'}</div><div class="meta">担当:${x.cast||'担当なし'}</div>${x.type==='companion'?`<div class="meta">同行:${x.extraCasts?.length?x.extraCasts.join('・'):'なし'}</div>`:''}<div class="meta">人数:${peopleText(x.people)}</div><div class="meta">備考:${x.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'予約'}</div><div class="meta">担当:${x.cast||'担当なし'}</div>${x.type==='companion'?`<div class="meta">同行:${x.extraCasts?.length?x.extraCasts.join('・'):'なし'}</div>`:''}<div class="meta">人数:${peopleText(x.people)}</div><div class="meta">備考:${x.memo||'なし'}</div>${bottleHtml}<div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
   $('detailDialog').showModal();
 }
 
