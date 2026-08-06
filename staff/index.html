@@ -317,7 +317,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
-const APP_VERSION='line-v43-firebase-shared-master';
+const APP_VERSION='line-v44-firebase-fillselects-fix';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -369,7 +369,6 @@ window.tinkerbellApplySharedCloudData=data=>{
   }
   if(changed){
     save();
-    fillSelects();
     renderHome();
     renderCustomers();
     renderShiftRegister();
