@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#faf7ef">
-<title>Tinker Bell Staff v37</title>
+<title>Tinker Bell Staff v34</title>
 <style>
 :root{
   --bg:#faf7ef;--card:#fff;--gold:#c79a43;--gold2:#efd68f;--ink:#2f2921;
@@ -80,11 +80,11 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 
 .quickRange{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:4px 0 12px}
-.posShiftTable{grid-template-columns:112px repeat(var(--day-count),minmax(88px,1fr))}
-.posShiftCell.name{padding:10px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.posShiftTable{grid-template-columns:76px repeat(var(--day-count),minmax(88px,1fr))}
+.posShiftCell.name{padding:10px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .posShiftCell.corner{padding-left:4px;padding-right:4px}
 @media(max-width:520px){
- .posShiftTable{grid-template-columns:104px repeat(var(--day-count),minmax(84px,1fr))}
+ .posShiftTable{grid-template-columns:68px repeat(var(--day-count),minmax(84px,1fr))}
  .posShiftCell{padding:8px 5px}
  .posMark{min-height:38px;font-size:17px}
 }
@@ -135,9 +135,15 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 @media(max-width:520px){.bottleFilterGrid{grid-template-columns:repeat(2,1fr)}}
 
 
-.summaryButton{text-align:left;color:var(--ink);border:1px solid var(--line);background:rgba(255,255,255,.95);cursor:pointer}
-.summaryButton .summaryHint{display:block;font-size:11px;color:var(--muted);margin-top:5px}
-.summaryButton:active{transform:scale(.99)}
+.shiftOverview{display:grid;gap:0;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.shiftOverviewRow{width:100%;border:0;border-bottom:1px solid var(--line);background:#fff;padding:15px 14px;display:grid;grid-template-columns:minmax(105px,1fr) auto auto auto;gap:14px;align-items:center;text-align:left;color:var(--ink)}
+.shiftOverviewRow:last-child{border-bottom:0}.shiftOverviewRow:active{background:#fff8e8}
+.shiftOverviewDate{font-size:16px;font-weight:900}.shiftOverviewDate.sun{color:#d64b58}.shiftOverviewDate.sat{color:#4675bc}
+.shiftOverviewCount{font-size:18px;font-weight:900;white-space:nowrap}.shiftOverviewCount.o{color:#13a42b}.shiftOverviewCount.tri{color:#df8d00}.shiftOverviewCount.x{color:#d23a48}
+.shiftDetailSummary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.shiftDetailMetric{background:#f8f5f8;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}.shiftDetailMetric small{display:block;color:var(--muted)}.shiftDetailMetric b{font-size:22px}
+.shiftDetailGroup{margin-top:14px}.shiftDetailGroup h3{margin:0 0 8px}.shiftDetailName{padding:10px 12px;background:#f8f5f8;border:1px solid var(--line);border-radius:11px;margin-bottom:7px;font-weight:800}
+@media(max-width:560px){.shiftOverviewRow{grid-template-columns:minmax(90px,1fr) auto auto auto;gap:8px;padding:14px 10px}.shiftOverviewCount{font-size:16px}.shiftDetailSummary{grid-template-columns:repeat(2,1fr)}}
 
 </style>
 </head>
@@ -146,14 +152,8 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 <main>
 <section id="home">
   <div class="summary">
-    <button class="card summaryButton" data-action="today-shift-detail">
-      <small>今日の出勤予定</small><strong id="homeShiftCount">0</strong>人
-      <span class="summaryHint">タップして出勤者を確認</span>
-    </button>
-    <button class="card summaryButton" data-action="today-schedule-detail">
-      <small>今日の予定</small><strong id="homeScheduleCount">0</strong>件
-      <span class="summaryHint">タップして予約・同伴を確認</span>
-    </button>
+    <div class="card"><small>今日の出勤予定</small><strong id="homeShiftCount">0</strong>人</div>
+    <div class="card"><small>今日の予定</small><strong id="homeScheduleCount">0</strong>件</div>
   </div>
   <div class="card"><div class="sectionHead"><h2 style="font-size:18px">🎂 今月の誕生日</h2></div><div id="homeBirthdays" class="list"></div></div>
   <div class="menu">
@@ -198,6 +198,10 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
   </div>
 
   <div id="shiftCheckPane" class="hidden">
+    <div class="card">
+      <div class="rowTitle">全体の回答状況</div>
+      <div class="meta">日付をタップすると、誰が〇・△・×・未回答か確認できます</div>
+    </div>
     <div id="shiftCheck"></div>
   </div>
 </section>
@@ -278,6 +282,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
+const APP_VERSION='line-v35-shift-overview';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -297,7 +302,7 @@ function load(){
           role:s.role==='floor'?'floor':'cast'
         })),
         shifts:Array.isArray(d.shifts)?d.shifts:[],
-        schedules:(Array.isArray(d.schedules)?d.schedules:[]).map(s=>({...s,companions:Array.isArray(s.companions)?s.companions:[]})),
+        schedules:Array.isArray(d.schedules)?d.schedules:[],
         customers:Array.isArray(d.customers)?d.customers:[],
         bottles:(Array.isArray(d.bottles)?d.bottles:[]).map(b=>({...b,category:b.category||'other'}))
       };
@@ -348,55 +353,6 @@ function route(){
   if(r==='schedule'){show('schedules',false);openScheduleForm();return}
   if(r==='admin'){show('home',false);$('adminDialog').showModal();return}
   show({shift:'shift',today:'schedules',customers:'customers',bottles:'bottles'}[r]||'home',false);
-}
-
-
-function showTodayShiftDetail(){
-  const todayStr=today();
-  const working=db.shifts.filter(x=>x.date===todayStr&&x.mark==='o');
-  const consulting=db.shifts.filter(x=>x.date===todayStr&&x.mark==='tri');
-
-  $('detailTitle').textContent='今日の出勤予定';
-  $('detailBody').innerHTML=`
-    <div class="card">
-      <div class="rowTitle">〇 出勤予定（${working.length}人）</div>
-      <div class="list" style="margin-top:9px">
-        ${working.length?working.map(x=>{
-          const s=db.staff.find(v=>v.name===x.staff);
-          const role=s?.role==='floor'?'黒服':'キャスト';
-          return `<div class="row"><div class="rowTitle">${x.staff}</div><div class="meta">${role}</div></div>`;
-        }).join(''):'<div class="meta">出勤予定者はいません</div>'}
-      </div>
-    </div>
-    <div class="card">
-      <div class="rowTitle">△ 相談（${consulting.length}人）</div>
-      <div class="list" style="margin-top:9px">
-        ${consulting.length?consulting.map(x=>{
-          const s=db.staff.find(v=>v.name===x.staff);
-          const role=s?.role==='floor'?'黒服':'キャスト';
-          return `<div class="row"><div class="rowTitle">${x.staff}</div><div class="meta">${role}</div></div>`;
-        }).join(''):'<div class="meta">相談中のスタッフはいません</div>'}
-      </div>
-    </div>`;
-  $('detailDialog').showModal();
-}
-
-function showTodayScheduleDetail(){
-  const todayStr=today();
-  const list=db.schedules
-    .filter(x=>x.date===todayStr)
-    .sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')));
-
-  $('detailTitle').textContent='今日の予約・同伴';
-  $('detailBody').innerHTML=list.length?list.map(x=>`
-    <button class="row full" data-schedule="${x.id}">
-      <div class="rowTitle">${x.time||''}　${x.customer}</div>
-      <div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.cast}</div>
-      ${x.type==='companion'&&x.companions?.length?`<div class="meta">付き添い:${x.companions.join('・')}</div>`:''}
-      <div class="meta">人数:${x.people||1}名</div>
-      <div class="meta">備考:${x.memo||'なし'}</div>
-    </button>`).join(''):'<div class="card">今日の予約・同伴はありません</div>';
-  $('detailDialog').showModal();
 }
 
 function renderHome(){
@@ -452,19 +408,64 @@ function renderShiftCheck(){
     $('shiftCheck').innerHTML='<div class="card">開始日と終了日を確認してください</div>';
     return;
   }
-  const head=`<div class="posShiftCell head corner">名前</div>`+
-    ds.map(d=>`<div class="posShiftCell head">${d.getMonth()+1}/${d.getDate()}<br>${'日月火水木金土'[d.getDay()]}</div>`).join('');
-  const rows=names().map(st=>{
-    const cells=ds.map(d=>{
-      const m=db.shifts.find(x=>x.staff===st&&x.date===fmt(d))?.mark||'';
-      return `<div class="posShiftCell"><span class="status ${m||'none'}">${m==='o'?'〇':m==='tri'?'△':m==='x'?'×':'－'}</span></div>`;
-    }).join('');
-    const staffData=db.staff.find(s=>s.name===st);
-    const roleClass=staffData?.role==='floor'?'floor':'cast';
-    return `<div class="posShiftCell name ${roleClass}" title="${st}">${st}</div>${cells}`;
-  }).join('');
-  $('shiftCheck').innerHTML=`<div class="posShiftWrap" style="max-height:66vh"><div class="posShiftTable" style="--day-count:${ds.length}">${head}${rows}</div></div>`;
+
+  const weekday='日月火水木金土';
+  $('shiftCheck').innerHTML=`<div class="shiftOverview">${ds.map(d=>{
+    const date=fmt(d);
+    const counts={o:0,tri:0,x:0};
+    names().forEach(st=>{
+      const mark=db.shifts.find(s=>s.staff===st&&s.date===date)?.mark||'';
+      if(mark==='o')counts.o++;
+      else if(mark==='tri')counts.tri++;
+      else if(mark==='x')counts.x++;
+    });
+    const dayClass=d.getDay()===0?'sun':d.getDay()===6?'sat':'';
+    return `<button type="button" class="shiftOverviewRow" data-shift-detail-date="${date}">
+      <span class="shiftOverviewDate ${dayClass}">${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}(${weekday[d.getDay()]})</span>
+      <span class="shiftOverviewCount o">〇 ${counts.o}</span>
+      <span class="shiftOverviewCount tri">△ ${counts.tri}</span>
+      <span class="shiftOverviewCount x">× ${counts.x}</span>
+    </button>`;
+  }).join('')}</div>`;
 }
+
+function openShiftDateDetail(date){
+  const d=new Date(date+'T00:00:00');
+  const weekday='日月火水木金土';
+  const groups={o:[],tri:[],x:[],none:[]};
+
+  names().forEach(st=>{
+    const mark=db.shifts.find(s=>s.staff===st&&s.date===date)?.mark||'';
+    if(mark==='o')groups.o.push(st);
+    else if(mark==='tri')groups.tri.push(st);
+    else if(mark==='x')groups.x.push(st);
+    else groups.none.push(st);
+  });
+
+  $('detailTitle').textContent=`${d.getMonth()+1}月${d.getDate()}日（${weekday[d.getDay()]}）のシフト`;
+  $('detailBody').innerHTML=`
+    <div class="shiftDetailSummary">
+      <div class="shiftDetailMetric"><small>〇 出勤可</small><b style="color:#13a42b">${groups.o.length}</b></div>
+      <div class="shiftDetailMetric"><small>△ 相談</small><b style="color:#df8d00">${groups.tri.length}</b></div>
+      <div class="shiftDetailMetric"><small>× 休み</small><b style="color:#d23a48">${groups.x.length}</b></div>
+      <div class="shiftDetailMetric"><small>未回答</small><b>${groups.none.length}</b></div>
+    </div>
+    ${[
+      ['o','〇 出勤できる','#13a42b'],
+      ['tri','△ 遅れる・相談','#df8d00'],
+      ['x','× 休み','#d23a48'],
+      ['none','未回答','#777']
+    ].map(([key,label,color])=>`
+      <div class="shiftDetailGroup">
+        <h3 style="color:${color}">${label}</h3>
+        ${groups[key].length
+          ? groups[key].map(name=>`<div class="shiftDetailName">${name}</div>`).join('')
+          : '<div class="meta">該当者なし</div>'}
+      </div>`).join('')}
+  `;
+  $('detailDialog').showModal();
+}
+
 function saveShift(){
   const st=$('shiftStaff').value;
   document.querySelectorAll('#shiftInputTable [data-date]').forEach(cell=>{
@@ -479,120 +480,27 @@ function saveShift(){
 
 function openScheduleForm(existing=null){
   $('formTitle').textContent=existing?'予定編集':'予定登録';
-  const companions=Array.isArray(existing?.companions)?[...existing.companions]:[];
-
-  $('formBody').innerHTML=`
-    <label><span>日付</span><input id="fDate" type="date" value="${existing?.date||today()}"></label>
-    <label><span>種別</span>
-      <select id="fType">
-        <option value="companion" ${existing?.type==='companion'?'selected':''}>同伴</option>
-        <option value="visit" ${existing?.type==='visit'?'selected':''}>来店予定</option>
-      </select>
-    </label>
-    <label><span>時間</span><input id="fTime" type="time" value="${existing?.time||'21:00'}"></label>
-    <label><span>お客様名</span><input id="fCustomer" value="${existing?.customer||''}"></label>
-    <label><span>担当キャスト</span>
-      <select id="fCast">${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select>
-    </label>
-
-    <div id="companionStaffBox" class="card">
-      <div class="rowTitle">付き添いキャスト</div>
-      <div class="meta">同伴に一緒に付くキャストを追加できます</div>
-      <div id="companionStaffRows" class="list" style="margin-top:9px"></div>
-      <button type="button" class="btn ghost full" id="addCompanionStaff">＋付き添いを追加</button>
-    </div>
-
-    <label><span>人数</span><input id="fPeople" type="number" min="1" value="${existing?.people||1}"></label>
-    <label><span>備考</span><textarea id="fMemo">${existing?.memo||''}</textarea></label>
-    <button class="btn gold full" id="saveForm">保存</button>`;
-
+  $('formBody').innerHTML=`<label><span>日付</span><input id="fDate" type="date" value="${existing?.date||today()}"></label><label><span>種別</span><select id="fType"><option value="companion" ${existing?.type==='companion'?'selected':''}>同伴</option><option value="visit" ${existing?.type==='visit'?'selected':''}>来店予定</option></select></label><label><span>時間</span><input id="fTime" type="time" value="${existing?.time||'21:00'}"></label><label><span>お客様名</span><input id="fCustomer" value="${existing?.customer||''}"></label><label><span>担当</span><select id="fCast">${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>人数</span><input id="fPeople" type="number" min="1" value="${existing?.people||1}"></label><label><span>備考</span><textarea id="fMemo">${existing?.memo||''}</textarea></label><button class="btn gold full" id="saveForm">保存</button>`;
   $('formDialog').showModal();
-
-  function renderCompanionRows(){
-    $('companionStaffRows').innerHTML=companions.length
-      ? companions.map((name,i)=>`<div class="row">
-          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
-            <label style="margin:0"><span>付き添い ${i+1}</span>
-              <select data-companion-index="${i}">
-                <option value="">選択してください</option>
-                ${names().map(n=>`<option ${n===name?'selected':''}>${n}</option>`).join('')}
-              </select>
-            </label>
-            <button type="button" class="btn red" data-remove-companion="${i}">削除</button>
-          </div>
-        </div>`).join('')
-      : '<div class="meta">付き添いは登録されていません</div>';
-  }
-
-  renderCompanionRows();
-
-  $('addCompanionStaff').onclick=()=>{
-    companions.push('');
-    renderCompanionRows();
-  };
-
-  $('companionStaffRows').onclick=e=>{
-    const btn=e.target.closest('[data-remove-companion]');
-    if(!btn)return;
-    companions.splice(Number(btn.dataset.removeCompanion),1);
-    renderCompanionRows();
-  };
-
-  $('companionStaffRows').onchange=e=>{
-    const sel=e.target.closest('[data-companion-index]');
-    if(!sel)return;
-    companions[Number(sel.dataset.companionIndex)]=sel.value;
-  };
-
-  function syncType(){
-    $('companionStaffBox').classList.toggle('hidden',$('fType').value!=='companion');
-  }
-
-  $('fType').onchange=syncType;
-  syncType();
-
   $('saveForm').onclick=()=>{
-    const type=$('fType').value;
-    const cleanCompanions=[...new Set(companions.filter(Boolean))]
-      .filter(n=>n!==$('fCast').value);
-
-    const obj={
-      id:existing?.id||uid(),
-      date:$('fDate').value,
-      type,
-      time:$('fTime').value,
-      customer:$('fCustomer').value.trim(),
-      cast:$('fCast').value,
-      companions:type==='companion'?cleanCompanions:[],
-      people:+$('fPeople').value||1,
-      memo:$('fMemo').value.trim()
-    };
-
+    const obj={id:existing?.id||uid(),date:$('fDate').value,type:$('fType').value,time:$('fTime').value,customer:$('fCustomer').value.trim(),cast:$('fCast').value,people:+$('fPeople').value||1,memo:$('fMemo').value.trim()};
     if(!obj.customer)return toast('お客様名を入力');
-
-    if(existing)Object.assign(existing,obj);
-    else db.schedules.push(obj);
-
-    save();
-    $('formDialog').close();
-    renderSchedules();
-    renderHome();
-    toast('予定を保存しました');
+    if(existing)Object.assign(existing,obj);else db.schedules.push(obj);
+    save();$('formDialog').close();renderSchedules();renderHome();toast('予定を保存しました');
   };
 }
-
 function renderSchedules(){
   let list=[...db.schedules];
   if(state.scheduleMode==='today')list=list.filter(x=>x.date===today());
   if(state.scheduleMode==='upcoming')list=list.filter(x=>x.date>=today());
   if(state.scheduleMode==='date')list=list.filter(x=>x.date===$('scheduleViewDate').value);
   list.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.cast}${x.type==='companion'&&x.companions?.length?`／付き添い:${x.companions.join('・')}`:''}</div><div class="meta">タップで備考確認</div></button>`).join(''):'<div class="card">予定はありません</div>';
+  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'来店予定'}／担当:${x.cast}</div><div class="meta">タップで備考確認</div></button>`).join(''):'<div class="card">予定はありません</div>';
 }
 function showSchedule(id){
   const x=db.schedules.find(v=>v.id===id);if(!x)return;
   $('detailTitle').textContent='予定詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'来店予定'}</div><div class="meta">担当:${x.cast}</div>${x.type==='companion'?`<div class="meta">付き添い:${x.companions?.length?x.companions.join('・'):'なし'}</div>`:''}<div class="meta">人数:${x.people}名</div><div class="meta">備考:${x.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${x.customer}</div><div class="meta">日付:${x.date} ${x.time}</div><div class="meta">種別:${x.type==='companion'?'同伴':'来店予定'}</div><div class="meta">担当:${x.cast}</div><div class="meta">人数:${x.people}名</div><div class="meta">備考:${x.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-schedule="${x.id}">編集</button><button class="btn red" data-delete-schedule="${x.id}">削除</button></div></div>`;
   $('detailDialog').showModal();
 }
 
@@ -816,8 +724,6 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
   if(t.dataset.nav)return show(t.dataset.nav);
   if(t.dataset.close)return $(t.dataset.close).close();
-  if(t.dataset.action==='today-shift-detail')return showTodayShiftDetail();
-  if(t.dataset.action==='today-schedule-detail')return showTodayScheduleDetail();
   if(t.dataset.action==='new-schedule')return openScheduleForm();
   if(t.dataset.action==='new-customer')return openCustomerForm();
   if(t.dataset.action==='new-bottle')return openBottleForm();
@@ -837,6 +743,7 @@ document.addEventListener('click',e=>{
     const staff=db.staff.find(s=>s.id===t.dataset.editStaff);
     return openStaffForm(staff);
   }
+  if(t.dataset.shiftDetailDate){openShiftDateDetail(t.dataset.shiftDetailDate);return}
   if(t.dataset.shiftTab){document.querySelectorAll('[data-shift-tab]').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('shiftRegisterPane').classList.toggle('hidden',t.dataset.shiftTab!=='register');$('shiftCheckPane').classList.toggle('hidden',t.dataset.shiftTab!=='check');if(t.dataset.shiftTab==='check')renderShiftCheck();return}
   if(t.dataset.scheduleTab){document.querySelectorAll('[data-schedule-tab]').forEach(x=>x.classList.remove('active'));t.classList.add('active');state.scheduleMode=t.dataset.scheduleTab;$('scheduleDateBox').classList.toggle('hidden',state.scheduleMode!=='date');renderSchedules();return}
   if(t.hasAttribute('data-cycle-mark')){
