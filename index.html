@@ -106,6 +106,21 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .personal-attendance-times{display:flex;align-items:center;gap:10px;font-size:22px;margin-top:8px}
 .personal-attendance-hours{font-size:18px;font-weight:900;color:#8d5d13;margin-top:7px}
 .personal-extra{margin-top:7px;padding:8px 10px;background:#fff3d4;border-radius:10px;font-weight:800}
+.admin-attendance-calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-bottom:14px}
+.admin-calendar-week{text-align:center;font-weight:900;color:#72511d;padding:7px}
+.admin-calendar-cell{min-height:72px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px;text-align:left}
+.admin-calendar-cell b{display:block;font-size:18px}
+.admin-calendar-cell small{display:block;margin-top:8px;color:#76656f;font-weight:800}
+.admin-calendar-cell.has-records{border:2px solid #c79b43;background:#fff8e8}
+.admin-calendar-cell.selected{background:#ffe8a9;box-shadow:0 0 0 3px #d2a64e inset}
+.admin-calendar-cell.blank{visibility:hidden}
+.admin-attendance-person{border:2px solid #e0d1a8;border-radius:14px;padding:13px;margin-bottom:10px;background:#fff}
+.admin-attendance-time{font-size:21px;font-weight:900;margin-top:8px}
+.admin-attendance-extra{margin-top:7px;padding:7px 9px;background:#fff3d4;border-radius:9px;font-weight:800}
+.admin-month-person{border:1px solid var(--line);border-radius:14px;margin-bottom:9px;background:#fff;overflow:hidden}
+.admin-month-person summary{display:flex;justify-content:space-between;gap:10px;padding:13px;font-weight:900;cursor:pointer}
+.admin-month-row{display:grid;grid-template-columns:90px 1fr 1.4fr;gap:10px;padding:10px 13px;border-top:1px solid var(--line)}
+@media(max-width:560px){.admin-calendar-cell{min-height:58px;padding:6px}.admin-calendar-cell b{font-size:16px}.admin-month-row{grid-template-columns:1fr}}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -139,6 +154,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
   <button class="tile" data-go="notices"><span>🔔</span><b>お知らせ</b><small>店舗からの連絡</small></button>
   </div><h2 class="management-heading">管理</h2><div class="grid management-grid"><button class="tile manager manager-tile" data-go="staff"><span>👥</span><b>従業員管理</b><small>時給・手当・権限</small></button>
   <button class="tile manager manager-tile" data-go="menu"><span>📖</span><b>メニュー管理</b><small>料金・バック設定</small></button>
+  <button class="tile manager manager-tile" data-go="adminAttendance"><span>🗓️</span><b>全員の勤怠</b><small>月・日別の出退勤</small></button>
   <button class="tile manager manager-tile" data-go="reports"><span>📊</span><b>売上・勤怠集計</b><small>日別集計</small></button>
   <button class="tile manager manager-tile" data-go="settings"><span>⚙️</span><b>設定</b><small>データ保存・初期化</small></button>
  </div>
@@ -279,6 +295,29 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
   <div class="meta">商品はFirebaseとリアルタイム同期します。「編集」で金額やバックを変更でき、↑↓で注文画面の並び順を変更できます。</div>
 </div>
 <div id="menuList" class="list"></div>
+</section>
+
+
+<section id="adminAttendance" class="screen manager">
+  <h2>全員の勤怠</h2>
+
+  <div class="card">
+    <label>月
+      <input id="adminAttendanceMonth" type="month">
+    </label>
+  </div>
+
+  <div id="adminAttendanceCalendar" class="admin-attendance-calendar"></div>
+
+  <div class="card">
+    <h2 id="adminAttendanceDayTitle">日付を選択</h2>
+    <div id="adminAttendanceDayList"></div>
+  </div>
+
+  <div class="card">
+    <h2>月間一覧</h2>
+    <div id="adminAttendanceMonthList"></div>
+  </div>
 </section>
 
 <section id="reports" class="screen manager">
@@ -424,7 +463,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v31-personal-attendance';
+const APP_VERSION='v32-personal-and-admin-attendance';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -568,7 +607,7 @@ function lockManager(){
  toast('管理モードを終了しました');
 }
 
-const MANAGER_SCREENS=new Set(['staff','menu','reports','settings']);
+const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance']);
 
 function show(idn){
  if(MANAGER_SCREENS.has(idn)&&!managerUnlocked){
@@ -1708,6 +1747,136 @@ window.delMenu=async idn=>{
  }
 };
 
+
+let selectedAdminAttendanceDate='';
+
+function adminAttendanceRecordsForDate(date){
+ return db.attendance
+  .filter(r=>String(r.in||'').slice(0,10)===date)
+  .sort((a,b)=>String(a.in).localeCompare(String(b.in)));
+}
+
+function renderAdminAttendance(){
+ const monthInput=$('adminAttendanceMonth');
+ if(!monthInput.value)monthInput.value=today().slice(0,7);
+ const month=monthInput.value;
+
+ const [year,monthNum]=month.split('-').map(Number);
+ const firstDay=new Date(year,monthNum-1,1);
+ const lastDay=new Date(year,monthNum,0);
+ const firstWeekday=firstDay.getDay();
+
+ const cells=[];
+ for(let i=0;i<firstWeekday;i++)cells.push('<div class="admin-calendar-cell blank"></div>');
+
+ for(let day=1;day<=lastDay.getDate();day++){
+  const date=`${month}-${String(day).padStart(2,'0')}`;
+  const records=adminAttendanceRecordsForDate(date);
+  const isSelected=selectedAdminAttendanceDate===date;
+
+  cells.push(`
+   <button class="admin-calendar-cell ${records.length?'has-records':''} ${isSelected?'selected':''}"
+           onclick="selectAdminAttendanceDate('${date}')">
+    <b>${day}</b>
+    <small>${records.length?`${records.length}人`:'-'}</small>
+   </button>`);
+ }
+
+ $('adminAttendanceCalendar').innerHTML=`
+  <div class="admin-calendar-week">日</div>
+  <div class="admin-calendar-week">月</div>
+  <div class="admin-calendar-week">火</div>
+  <div class="admin-calendar-week">水</div>
+  <div class="admin-calendar-week">木</div>
+  <div class="admin-calendar-week">金</div>
+  <div class="admin-calendar-week">土</div>
+  ${cells.join('')}`;
+
+ const monthRecords=db.attendance
+  .filter(r=>String(r.in||'').slice(0,7)===month)
+  .sort((a,b)=>String(a.in).localeCompare(String(b.in)));
+
+ const grouped=db.staff.map(staff=>{
+  const records=monthRecords.filter(r=>r.staffId===staff.id);
+  const total=records.reduce((sum,r)=>sum+personalAttendanceHours(r),0);
+
+  return `<details class="admin-month-person">
+    <summary>
+      <b>${esc(staff.name)}</b>
+      <span>${records.length}日／${total.toFixed(1)}時間</span>
+    </summary>
+    <div>
+      ${records.length?records.map(r=>{
+        const inTime=new Date(r.in);
+        const outTime=r.out?new Date(r.out):null;
+        const companion=r.companionStatus==='yes'?`／同伴 ${esc(r.companionCustomer||'あり')}`:'';
+        const transport=r.transportStatus==='yes'?`／送迎 ${esc(r.transportWho||'あり')}`:'';
+        return `<div class="admin-month-row">
+          <b>${inTime.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric',weekday:'short'})}</b>
+          <span>${inTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}〜${outTime?outTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}):'未退勤'}</span>
+          <span>${personalAttendanceHours(r).toFixed(1)}時間${companion}${transport}</span>
+        </div>`;
+      }).join(''):'<div class="empty">記録なし</div>'}
+    </div>
+  </details>`;
+ }).join('');
+
+ $('adminAttendanceMonthList').innerHTML=grouped||'<div class="empty">この月の勤怠はありません</div>';
+
+ if(selectedAdminAttendanceDate && selectedAdminAttendanceDate.startsWith(month)){
+  renderAdminAttendanceDay(selectedAdminAttendanceDate);
+ }else{
+  $('adminAttendanceDayTitle').textContent='日付を選択';
+  $('adminAttendanceDayList').innerHTML='<div class="empty">カレンダーの日付をタップしてください</div>';
+ }
+}
+
+window.selectAdminAttendanceDate=date=>{
+ selectedAdminAttendanceDate=date;
+ renderAdminAttendance();
+ renderAdminAttendanceDay(date);
+};
+
+function renderAdminAttendanceDay(date){
+ const records=adminAttendanceRecordsForDate(date);
+ const d=new Date(date+'T00:00:00');
+
+ $('adminAttendanceDayTitle').textContent=d.toLocaleDateString('ja-JP',{
+  year:'numeric',month:'long',day:'numeric',weekday:'short'
+ });
+
+ $('adminAttendanceDayList').innerHTML=records.length?records.map(r=>{
+  const staff=staffById(r.staffId);
+  const inTime=new Date(r.in);
+  const outTime=r.out?new Date(r.out):null;
+  const companion=r.companionStatus
+    ?`<div class="admin-attendance-extra">同伴：${r.companionStatus==='yes'?`あり${r.companionCustomer?`（${esc(r.companionCustomer)}）`:''}`:'なし'}</div>`
+    :'';
+  const transport=r.transportStatus
+    ?`<div class="admin-attendance-extra">送迎：${r.transportStatus==='yes'?`あり${r.transportWho?`（${esc(r.transportWho)}）`:''}`:'なし'}</div>`
+    :'';
+
+  return `<div class="admin-attendance-person">
+    <div>
+      <b>${esc(staff?.name||'不明')}</b>
+      <span class="tag">${staff?.role==='cast'?'キャスト':staff?.role==='staff'?'黒服':'幹部'}</span>
+    </div>
+    <div class="admin-attendance-time">
+      ${inTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}
+      〜
+      ${outTime?outTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}):'未退勤'}
+    </div>
+    <div class="meta">${personalAttendanceHours(r).toFixed(1)}時間</div>
+    ${companion}${transport}
+  </div>`;
+ }).join(''):'<div class="empty">この日の勤怠はありません</div>';
+}
+
+$('adminAttendanceMonth').onchange=()=>{
+ selectedAdminAttendanceDate='';
+ renderAdminAttendance();
+};
+
 function attendanceHours(record){
  if(!record?.in||!record?.out)return 0;
  return Math.max(0,(new Date(record.out)-new Date(record.in))/36e5);
@@ -1868,7 +2037,7 @@ function renderBackupStatus(){
    : 'まだバックアップを作成していません';
  }
 }
-function renderAll(){renderAttendance();renderMyAttendance();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderBackupStatus()}
+function renderAll(){renderAttendance();renderMyAttendance();renderAdminAttendance();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderBackupStatus()}
 
 $('changeAdminPasscode').onclick=async()=>{
  const currentCode=$('currentAdminPasscode').value.trim();
@@ -1897,6 +2066,7 @@ $('changeAdminPasscode').onclick=async()=>{
 
 $('visitDate').value=today();
 $('myAttendanceMonth').value=today().slice(0,7);
+$('adminAttendanceMonth').value=today().slice(0,7);
 refreshSelects();
 current=db.staff[0]||null;
 renderAll();
