@@ -313,7 +313,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
-const APP_VERSION='line-v41-companion-extra-casts';
+const APP_VERSION='line-v42-customer-search-only';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -536,7 +536,7 @@ function openScheduleForm(existing=null){
 
     <div class="card" style="background:#fffaf0">
       <div class="rowTitle">登録済みのお客様から選択</div>
-      <label><span>名前・ふりがなで検索</span><input id="fCustomerSearch" placeholder="例：田中、たなか"></label>
+      <label><span>名前・ふりがなで検索</span><input id="fCustomerSearch" placeholder="2文字以上入力　例：田中、たなか"></label>
       <div id="fCustomerChoices" class="scheduleCustomerChoices"></div>
       <button type="button" class="btn ghost full" id="useManualCustomer">登録されていないお客様を手入力</button>
     </div>
@@ -603,13 +603,23 @@ function openScheduleForm(existing=null){
   };
 
   const renderCustomerChoices=()=>{
-    const q=normalizeKana($('fCustomerSearch').value);
-    let customers=[...db.customers];
-    if(q){
-      customers=customers.filter(c=>normalizeKana(`${c.name||''}${c.kana||''}`).includes(q));
+    const raw=$('fCustomerSearch').value.trim();
+    const q=normalizeKana(raw);
+
+    if(q.length<2){
+      $('fCustomerChoices').innerHTML='<div class="meta">名前またはふりがなを2文字以上入力してください</div>';
+      return;
     }
-    customers.sort((a,b)=>normalizeKana(a.kana||a.name).localeCompare(normalizeKana(b.kana||b.name),'ja'));
-    customers=customers.slice(0,50);
+
+    let customers=db.customers.filter(c=>
+      normalizeKana(`${c.name||''}${c.kana||''}`).includes(q)
+    );
+
+    customers.sort((a,b)=>
+      normalizeKana(a.kana||a.name).localeCompare(normalizeKana(b.kana||b.name),'ja')
+    );
+
+    customers=customers.slice(0,30);
 
     $('fCustomerChoices').innerHTML=customers.length
       ?customers.map(c=>`<button type="button" class="scheduleCustomerChoice" data-select-schedule-customer="${c.id}">
@@ -638,7 +648,7 @@ function openScheduleForm(existing=null){
     renderCastOptions();
   };
 
-  renderCustomerChoices();
+  $('fCustomerChoices').innerHTML='<div class="meta">名前またはふりがなを2文字以上入力してください</div>';
   renderCastOptions();
 
   if(linkedCustomer)applySelectedCustomer(linkedCustomer.id);
