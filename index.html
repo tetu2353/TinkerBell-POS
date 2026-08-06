@@ -81,6 +81,14 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .qty-button{width:38px;height:38px;padding:0;border-radius:10px;font-size:22px;font-weight:900}
 .qty-number{min-width:24px;text-align:center;font-size:18px}
 @media(max-width:560px){.order-line-right{flex-wrap:wrap;justify-content:flex-end}.qty-controls{width:100%;justify-content:flex-end}}
+.attendance-person-card{border:1px solid var(--line);border-radius:14px;background:#fff;margin-bottom:10px;overflow:hidden}
+.attendance-person-card summary{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px;cursor:pointer;font-size:17px;font-weight:900}
+.attendance-person-total{color:#8d5d13;white-space:nowrap}
+.attendance-person-summary{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 12px}
+.attendance-person-summary span{background:#fff3d4;border-radius:999px;padding:7px 10px;font-weight:800}
+.attendance-month-list{border-top:1px solid var(--line)}
+.attendance-day-row{display:grid;grid-template-columns:90px 1fr 1.3fr;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);align-items:center}
+@media(max-width:560px){.attendance-day-row{grid-template-columns:1fr}.attendance-person-card summary{align-items:flex-start}}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -237,7 +245,18 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <div id="menuList" class="list"></div>
 </section>
 
-<section id="reports" class="screen manager"><h2>売上・勤怠集計</h2><div id="metrics" class="summary"></div><div class="card"><h3>会計履歴</h3><div id="checkoutHistory"></div></div><div class="card"><h3>従業員別勤怠</h3><div id="attendanceReport"></div></div></section>
+<section id="reports" class="screen manager">
+<h2>売上・勤怠集計</h2>
+<div id="metrics" class="summary"></div>
+<div class="card"><h3>会計履歴</h3><div id="checkoutHistory"></div></div>
+<div class="card">
+  <div class="sectionHead">
+    <h3>従業員別勤怠</h3>
+    <input id="attendanceReportMonth" type="month">
+  </div>
+  <div id="attendanceReport"></div>
+</div>
+</section>
 
 <section id="settings" class="screen manager">
 <h2>設定・バックアップ</h2>
@@ -315,6 +334,19 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
         <input id="transportWho" placeholder="例：あや、田中様">
       </label>
     </div>
+    <div id="companionCheckBox" class="card hidden" style="margin-top:12px">
+      <h3 style="margin-top:0">同伴確認</h3>
+      <label>今日は同伴がありましたか？
+        <select id="companionStatus">
+          <option value="">選択してください</option>
+          <option value="no">同伴なし</option>
+          <option value="yes">同伴あり</option>
+        </select>
+      </label>
+      <label id="companionCustomerWrap" class="hidden">同伴したお客様
+        <input id="companionCustomer" placeholder="例：田中様">
+      </label>
+    </div>
     <div class="row" style="margin-top:14px">
       <button id="attendanceModalCancel" class="secondary">キャンセル</button>
       <button id="attendanceModalSave" class="primary">確認して登録</button>
@@ -347,7 +379,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v28-menu-category-cast-charge';
+const APP_VERSION='v29-monthly-attendance-checkout-fields';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -564,16 +596,26 @@ function openAttendanceConfirm(action){
   ${action==='out'?`<div class="card"><h3 style="margin-top:0">本日の同伴・来店予定</h3>${visitHtml}</div>`:''}`;
 
  const needsTransport=action==='out'&&(staff.role==='staff'||staff.role==='manager');
+ const needsCompanion=action==='out'&&staff.role==='cast';
+
  $('transportCheckBox').classList.toggle('hidden',!needsTransport);
  $('transportStatus').value='';
  $('transportWho').value='';
  $('transportWhoWrap').classList.add('hidden');
+
+ $('companionCheckBox').classList.toggle('hidden',!needsCompanion);
+ $('companionStatus').value='';
+ $('companionCustomer').value='';
+ $('companionCustomerWrap').classList.add('hidden');
 
  $('attendanceModal').classList.remove('hidden');
 }
 
 $('transportStatus').onchange=()=>{
  $('transportWhoWrap').classList.toggle('hidden',$('transportStatus').value!=='yes');
+};
+$('companionStatus').onchange=()=>{
+ $('companionCustomerWrap').classList.toggle('hidden',$('companionStatus').value!=='yes');
 };
 
 $('attendanceModalCancel').onclick=()=>$('attendanceModal').classList.add('hidden');
@@ -585,8 +627,13 @@ $('attendanceModalSave').onclick=()=>{
 
  const staff=staffById(attendanceTargetId);
  const needsTransport=attendanceAction==='out'&&(staff.role==='staff'||staff.role==='manager');
+ const needsCompanion=attendanceAction==='out'&&staff.role==='cast';
+
  if(needsTransport&&!$('transportStatus').value)return toast('送迎状況を選択してください');
  if(needsTransport&&$('transportStatus').value==='yes'&&!$('transportWho').value.trim())return toast('送迎している相手を入力してください');
+
+ if(needsCompanion&&!$('companionStatus').value)return toast('同伴の有無を選択してください');
+ if(needsCompanion&&$('companionStatus').value==='yes'&&!$('companionCustomer').value.trim())return toast('同伴したお客様を入力してください');
 
  if(attendanceAction==='in'){
   db.attendance.push({
@@ -604,6 +651,10 @@ $('attendanceModalSave').onclick=()=>{
    r.transportStatus=$('transportStatus').value;
    r.transportWho=$('transportStatus').value==='yes' ? $('transportWho').value.trim() : '';
   }
+  if(needsCompanion){
+   r.companionStatus=$('companionStatus').value;
+   r.companionCustomer=$('companionStatus').value==='yes' ? $('companionCustomer').value.trim() : '';
+  }
   toast('退勤を登録しました');
  }
 
@@ -620,11 +671,12 @@ function renderAttendance(){
  $('attendanceList').innerHTML=a.length?a.map(x=>{
   const staff=staffById(x.staffId);
   const transport=x.transportStatus?`<br>送迎：${x.transportStatus==='yes'?`あり（${esc(x.transportWho||'相手未入力')}）`:'なし'}`:'';
+  const companion=x.companionStatus?`<br>同伴：${x.companionStatus==='yes'?`あり（${esc(x.companionCustomer||'お客様未入力')}）`:'なし'}`:'';
   return `<div class="item">
    <h3>${esc(staff?.name||'不明')}</h3>
    <div class="meta">
     出勤 ${new Date(x.in).toLocaleString('ja-JP')} ${x.inConfirmedTwice?'✓本人確認2回':''}<br>
-    退勤 ${x.out?new Date(x.out).toLocaleString('ja-JP'):'未退勤'} ${x.outConfirmedTwice?'✓本人確認2回':''}${transport}
+    退勤 ${x.out?new Date(x.out).toLocaleString('ja-JP'):'未退勤'} ${x.outConfirmedTwice?'✓本人確認2回':''}${transport}${companion}
    </div>
   </div>`;
  }).join(''):'<div class="empty">勤怠記録なし</div>';
@@ -1495,7 +1547,72 @@ window.delMenu=async idn=>{
  }
 };
 
-function renderReports(){const sales=db.checkouts.reduce((a,x)=>a+x.total,0),open=db.seats.reduce((a,x)=>a+seatTotal(x),0),orders=db.checkouts.reduce((a,x)=>a+x.orders.length,0)+db.seats.reduce((a,x)=>a+x.orders.length,0);$('metrics').innerHTML=`<div class="metric"><small>確定売上</small><b>${yen(sales)}</b></div><div class="metric"><small>未会計</small><b>${yen(open)}</b></div><div class="metric"><small>会計件数</small><b>${db.checkouts.length}</b></div><div class="metric"><small>注文数</small><b>${orders}</b></div>`;$('checkoutHistory').innerHTML=db.checkouts.length?`<table><tr><th>日時</th><th>席</th><th>お客様</th><th>金額</th></tr>${db.checkouts.slice().reverse().map(x=>`<tr><td>${new Date(x.closedAt).toLocaleString('ja-JP')}</td><td>${esc(x.seat)}</td><td>${esc(x.customerName)}</td><td>${yen(x.total)}</td></tr>`).join('')}</table>`:'会計履歴なし';$('attendanceReport').innerHTML=db.staff.map(s=>{const rs=db.attendance.filter(a=>a.staffId===s.id),hours=rs.reduce((sum,r)=>sum+(r.out?(new Date(r.out)-new Date(r.in))/36e5:0),0);return `<div class="item"><b>${esc(s.name)}</b><div class="meta">${hours.toFixed(1)}時間 / 概算 ${yen(Math.round(hours*s.wage))}</div></div>`}).join('')}
+function attendanceHours(record){
+ if(!record?.in||!record?.out)return 0;
+ return Math.max(0,(new Date(record.out)-new Date(record.in))/36e5);
+}
+
+function renderReports(){
+ const sales=db.checkouts.reduce((a,x)=>a+x.total,0);
+ const open=db.seats.reduce((a,x)=>a+seatTotal(x),0);
+ const orders=db.checkouts.reduce((a,x)=>a+x.orders.length,0)+db.seats.reduce((a,x)=>a+x.orders.length,0);
+
+ $('metrics').innerHTML=`
+  <div class="metric"><small>確定売上</small><b>${yen(sales)}</b></div>
+  <div class="metric"><small>未会計</small><b>${yen(open)}</b></div>
+  <div class="metric"><small>会計件数</small><b>${db.checkouts.length}</b></div>
+  <div class="metric"><small>注文数</small><b>${orders}</b></div>`;
+
+ $('checkoutHistory').innerHTML=db.checkouts.length
+  ?`<table><tr><th>日時</th><th>席</th><th>お客様</th><th>金額</th></tr>${db.checkouts.slice().reverse().map(x=>`<tr><td>${new Date(x.closedAt).toLocaleString('ja-JP')}</td><td>${esc(x.seat)}</td><td>${esc(x.customerName)}</td><td>${yen(x.total)}</td></tr>`).join('')}</table>`
+  :'会計履歴なし';
+
+ const monthInput=$('attendanceReportMonth');
+ if(!monthInput.value)monthInput.value=today().slice(0,7);
+ const month=monthInput.value;
+
+ $('attendanceReport').innerHTML=db.staff.map(s=>{
+  const records=db.attendance
+   .filter(a=>a.staffId===s.id&&String(a.in||'').slice(0,7)===month)
+   .sort((a,b)=>String(a.in).localeCompare(String(b.in)));
+
+  const totalHours=records.reduce((sum,r)=>sum+attendanceHours(r),0);
+  const days=records.filter(r=>r.in).length;
+  const companions=records.filter(r=>r.companionStatus==='yes').length;
+  const transports=records.filter(r=>r.transportStatus==='yes').length;
+
+  return `<details class="attendance-person-card">
+   <summary>
+    <div>
+     <b>${esc(s.name)}</b>
+     <span class="tag">${s.role==='cast'?'キャスト':s.role==='staff'?'黒服':'幹部'}</span>
+    </div>
+    <div class="attendance-person-total">${days}日／${totalHours.toFixed(1)}時間</div>
+   </summary>
+   <div class="attendance-person-summary">
+    <span>概算 ${yen(Math.round(totalHours*Number(s.wage||0)))}</span>
+    ${s.role==='cast'?`<span>同伴 ${companions}回</span>`:''}
+    ${(s.role==='staff'||s.role==='manager')?`<span>送迎 ${transports}回</span>`:''}
+   </div>
+   <div class="attendance-month-list">
+    ${records.length?records.map(r=>{
+      const inTime=new Date(r.in);
+      const outTime=r.out?new Date(r.out):null;
+      const hours=attendanceHours(r);
+      const companion=r.companionStatus?`／同伴 ${r.companionStatus==='yes'?`あり ${esc(r.companionCustomer||'')}`:'なし'}`:'';
+      const transport=r.transportStatus?`／送迎 ${r.transportStatus==='yes'?`あり ${esc(r.transportWho||'')}`:'なし'}`:'';
+      return `<div class="attendance-day-row">
+       <b>${inTime.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric',weekday:'short'})}</b>
+       <span>${inTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}〜${outTime?outTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}):'未退勤'}</span>
+       <span>${hours.toFixed(1)}時間${companion}${transport}</span>
+      </div>`;
+    }).join(''):'<div class="empty">この月の勤怠はありません</div>'}
+   </div>
+  </details>`;
+ }).join('');
+}
+
+$('attendanceReportMonth').onchange=renderReports;
 
 const BACKUP_VERSION='tinkerbell-backup-v1';
 let pendingRestoreData=null;
