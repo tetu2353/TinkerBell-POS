@@ -46,10 +46,11 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .shift-detail-group{margin-bottom:12px}.shift-detail-group h3{margin:0 0 8px}.shift-detail-name{padding:10px 12px;border-radius:11px;background:#f7f3f8;margin-bottom:7px;font-weight:850}
 @media(max-width:560px){.shift-overall-row{grid-template-columns:minmax(90px,1fr) auto auto auto;gap:9px;padding:14px 10px}.shift-count{font-size:16px}}
 
+.manager.locked::after{content:'🔒';margin-left:4px;font-size:12px}.manager-unlocked{background:#fff4d8!important;color:#7c5710!important;border-color:#d3a84f!important}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
-<section id="login" class="login">
+<section id="login" class="login hidden">
  <div class="loginbox">
   <div class="logo">✦</div><h1>TINKER BELL</h1><p>店舗管理システム</p>
   <label>スタッフ<select id="loginStaff"></select></label>
@@ -59,8 +60,8 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
  </div>
 </section>
 
-<div id="app" class="hidden">
-<header><div class="brand"><small>TINKER BELL</small><b>店舗管理</b></div><div class="header-actions"><button id="userBadge" class="pill"></button><button id="logoutBtn" class="pill">退出</button></div></header>
+<div id="app">
+<header><div class="brand"><small>TINKER BELL</small><b>店舗管理</b></div><div class="header-actions"><button id="userBadge" class="pill">通常モード</button><button id="logoutBtn" class="pill">管理解除</button></div></header>
 <main>
 <section id="home" class="screen active">
  <div class="hero"><div style="font-size:25px;color:#f0cf75">✦</div><h1>Tinker Bell POS</h1><p id="welcome"></p></div>
@@ -265,7 +266,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v17-staff-edit-delete';
+const APP_VERSION='v18-manager-only-login';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -353,8 +354,15 @@ window.tinkerbellApplyCloudMenu=menu=>{
   renderTapOrders();
 };
 window.tinkerbellGetLocalMenu=()=>Array.isArray(db.menu)?db.menu:[];
-function isManager(){return current?.role==='manager'}
-function fillSelect(el,arr,label='name',value='id',allowBlank=false){el.innerHTML=(allowBlank?'<option value="">未選択</option>':'')+arr.map(x=>`<option value="${esc(x[value])}">${esc(x[label])}</option>`).join('')}
+let managerUnlocked=sessionStorage.getItem('tb_manager_unlocked')==='1';
+
+function isManager(){return managerUnlocked}
+
+function fillSelect(el,arr,label='name',value='id',allowBlank=false){
+ if(!el)return;
+ el.innerHTML=(allowBlank?'<option value="">未選択</option>':'')+arr.map(x=>`<option value="${esc(x[value])}">${esc(x[label])}</option>`).join('');
+}
+
 function refreshSelects(){
  fillSelect($('loginStaff'),db.staff);
  fillSelect($('attendanceStaff'),db.staff);
@@ -363,11 +371,75 @@ function refreshSelects(){
  fillSelect($('bottleCustomer'),db.customers);
  $('customerNames').innerHTML=db.customers.map(c=>`<option value="${esc(c.name)}"></option>`).join('');
 }
-function applyRole(){qsa('.manager').forEach(x=>x.classList.toggle('hidden',!isManager()))}
-function show(idn){qsa('.screen').forEach(x=>x.classList.remove('active'));$(idn).classList.add('active');qsa('nav button').forEach(x=>x.classList.toggle('active',x.dataset.go===idn));renderAll();scrollTo(0,0)}
+
+function applyRole(){
+ qsa('.manager').forEach(x=>{
+  x.classList.remove('hidden');
+  x.classList.toggle('locked',!managerUnlocked);
+ });
+ $('userBadge').textContent=managerUnlocked?'管理モード':'通常モード';
+ $('userBadge').classList.toggle('manager-unlocked',managerUnlocked);
+ $('welcome').textContent=managerUnlocked?'管理モードで使用中':'通常業務はログインなしで使用できます';
+}
+
+function unlockManager(){
+ const managers=db.staff.filter(s=>s.role==='manager');
+ if(!managers.length){
+  toast('幹部が登録されていません');
+  return false;
+ }
+ const pin=prompt('管理者PINを入力してください');
+ if(pin===null)return false;
+ const matched=managers.find(s=>String(s.pin||'0000')===String(pin));
+ if(!matched){
+  toast('管理者PINが違います');
+  return false;
+ }
+ managerUnlocked=true;
+ current=matched;
+ sessionStorage.setItem('tb_manager_unlocked','1');
+ applyRole();
+ toast('管理モードを解除しました');
+ return true;
+}
+
+function lockManager(){
+ managerUnlocked=false;
+ sessionStorage.removeItem('tb_manager_unlocked');
+ current=db.staff[0]||null;
+ applyRole();
+ show('home');
+ toast('管理モードを終了しました');
+}
+
+const MANAGER_SCREENS=new Set(['staff','menu','reports','settings']);
+
+function show(idn){
+ if(MANAGER_SCREENS.has(idn)&&!managerUnlocked){
+  if(!unlockManager())return;
+ }
+ qsa('.screen').forEach(x=>x.classList.remove('active'));
+ $(idn).classList.add('active');
+ qsa('nav button').forEach(x=>x.classList.toggle('active',x.dataset.go===idn));
+ renderAll();
+ scrollTo(0,0);
+}
+
 qsa('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
-$('loginBtn').onclick=()=>{const s=staffById($('loginStaff').value);if(!s||s.pin!==$('loginPin').value)return toast('暗証番号が違います');current=s;$('login').classList.add('hidden');$('app').classList.remove('hidden');$('userBadge').textContent=s.name;$('welcome').textContent=`${s.name}でログイン中`;applyRole();show('home')};
-$('logoutBtn').onclick=()=>location.reload();$('userBadge').onclick=()=>show('home');
+
+$('loginBtn').onclick=()=>{
+ if(unlockManager()){
+  $('login').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  show('home');
+ }
+};
+
+$('logoutBtn').onclick=lockManager;
+$('userBadge').onclick=()=>{
+ if(managerUnlocked)lockManager();
+ else unlockManager();
+};
 
 let attendanceAction='';
 let attendanceTargetId='';
@@ -1088,7 +1160,13 @@ function renderBackupStatus(){
  }
 }
 function renderAll(){renderAttendance();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderBackupStatus()}
-$('visitDate').value=today();refreshSelects();renderAll();if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+$('visitDate').value=today();
+refreshSelects();
+current=db.staff[0]||null;
+renderAll();
+applyRole();
+show('home');
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 
 <script type="module">
