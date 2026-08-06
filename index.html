@@ -143,7 +143,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 
 <section id="notices" class="screen"><h2>お知らせ</h2><div class="card manager"><label>タイトル<input id="noticeTitle"></label><label>本文<textarea id="noticeBody" rows="4"></textarea></label><button id="saveNotice" class="primary">投稿</button></div><div id="noticeList" class="list"></div></section>
 
-<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><input id="staffEditId" type="hidden"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>暗証番号<input id="staffPin" value="0000"></label></div><div class="row"><button id="saveStaff" class="primary">従業員登録</button><button id="cancelStaffEdit" class="secondary hidden">編集をやめる</button></div></div><div id="staffList" class="list"></div></section>
+<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><input id="staffEditId" type="hidden"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><div class="meta">従業員ごとの暗証番号は使用しません。</div></div><div class="row"><button id="saveStaff" class="primary">従業員登録</button><button id="cancelStaffEdit" class="secondary hidden">編集をやめる</button></div></div><div id="staffList" class="list"></div></section>
 
 <section id="menu" class="screen manager">
 <h2>商品管理</h2>
@@ -221,6 +221,23 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
   <h3 style="margin-top:0;color:#b52d3a">危険な操作</h3>
   <button id="resetData" class="danger" style="width:100%">全データを初期化</button>
 </div>
+
+<div class="card">
+  <h2>セキュリティ</h2>
+  <div class="row3">
+    <label>現在の管理パスコード
+      <input id="currentAdminPasscode" type="password" inputmode="numeric">
+    </label>
+    <label>新しい管理パスコード
+      <input id="newAdminPasscode" type="password" inputmode="numeric" maxlength="8">
+    </label>
+    <label>新しい管理パスコード（確認）
+      <input id="confirmAdminPasscode" type="password" inputmode="numeric" maxlength="8">
+    </label>
+  </div>
+  <button id="changeAdminPasscode" class="primary">管理パスコードを変更</button>
+  <div class="meta" style="margin-top:8px">4〜8桁の数字で設定してください。</div>
+</div>
 </section>
 </main>
 <nav><button data-go="home" class="active">⌂<small>ホーム</small></button><button data-go="seats">🛋️<small>席</small></button><button data-go="orders">🥂<small>注文</small></button><button data-go="customers">👤<small>顧客</small></button><button data-go="reports" class="manager">📊<small>集計</small></button></nav>
@@ -266,7 +283,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v19-fixed-admin-passcode';
+const APP_VERSION='v20-admin-passcode-settings';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -382,13 +399,14 @@ function applyRole(){
  $('welcome').textContent=managerUnlocked?'管理モードで使用中':'通常業務はログインなしで使用できます';
 }
 
-const ADMIN_PASSCODE='1234';
+const ADMIN_PASSCODE_KEY='tinkerbell_admin_passcode';
+function getAdminPasscode(){return localStorage.getItem(ADMIN_PASSCODE_KEY)||'1234'}
 
 function unlockManager(){
  const pin=prompt('管理者パスコードを入力してください');
  if(pin===null)return false;
 
- if(String(pin)!==ADMIN_PASSCODE){
+ if(String(pin)!==getAdminPasscode()){
   toast('管理者パスコードが違います');
   return false;
  }
@@ -769,7 +787,6 @@ function clearStaffForm(){
  $('staffWage').value='1500';
  $('staffDrinkBack').value='200';
  $('staffBottleBack').value='1000';
- $('staffPin').value='0000';
  $('saveStaff').textContent='従業員登録';
  $('cancelStaffEdit').classList.add('hidden');
 }
@@ -793,7 +810,6 @@ $('saveStaff').onclick=async()=>{
   wage:Number($('staffWage').value||0),
   drinkBack:Number($('staffDrinkBack').value||0),
   bottleBack:Number($('staffBottleBack').value||0),
-  pin:$('staffPin').value.trim()||'0000'
  };
 
  try{
@@ -838,7 +854,6 @@ window.editStaff=idn=>{
  $('staffWage').value=Number(s.wage||0);
  $('staffDrinkBack').value=Number(s.drinkBack||0);
  $('staffBottleBack').value=Number(s.bottleBack||0);
- $('staffPin').value=s.pin||'0000';
  $('saveStaff').textContent='変更を保存';
  $('cancelStaffEdit').classList.remove('hidden');
  window.scrollTo({top:0,behavior:'smooth'});
@@ -1156,6 +1171,32 @@ function renderBackupStatus(){
  }
 }
 function renderAll(){renderAttendance();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderBackupStatus()}
+
+$('changeAdminPasscode').onclick=async()=>{
+ const currentCode=$('currentAdminPasscode').value.trim();
+ const newCode=$('newAdminPasscode').value.trim();
+ const confirmCode=$('confirmAdminPasscode').value.trim();
+
+ if(currentCode!==getAdminPasscode())return toast('現在の管理パスコードが違います');
+ if(!/^\d{4,8}$/.test(newCode))return toast('新しいパスコードは4〜8桁の数字');
+ if(newCode!==confirmCode)return toast('新しいパスコードが一致しません');
+
+ localStorage.setItem(ADMIN_PASSCODE_KEY,newCode);
+
+ try{
+  if(window.tinkerbellFirebase?.saveAdminPasscode){
+   await window.tinkerbellFirebase.saveAdminPasscode(newCode);
+  }
+ }catch(error){
+  console.error('Admin passcode cloud save failed:',error);
+ }
+
+ $('currentAdminPasscode').value='';
+ $('newAdminPasscode').value='';
+ $('confirmAdminPasscode').value='';
+ toast('管理パスコードを変更しました');
+};
+
 $('visitDate').value=today();
 refreshSelects();
 current=db.staff[0]||null;
@@ -1235,6 +1276,36 @@ async function loadCustomersFromFirebase() {
   return Array.isArray(customers) ? customers : null;
 }
 
+
+
+async function saveAdminPasscodeToFirebase(passcode) {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  await setDoc(
+    doc(firestoreDb, "app", "data"),
+    {
+      adminPasscode: passcode,
+      adminPasscodeUpdatedAt: new Date().toISOString()
+    },
+    { merge: true }
+  );
+}
+
+function startAdminPasscodeSync() {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+
+  return onSnapshot(
+    doc(firestoreDb, "app", "data"),
+    snap => {
+      const passcode = snap.data()?.adminPasscode;
+      if (typeof passcode === "string" && /^\d{4,8}$/.test(passcode)) {
+        localStorage.setItem("tinkerbell_admin_passcode", passcode);
+      }
+    },
+    error => console.error("Admin passcode sync failed:", error)
+  );
+}
 
 async function saveStaffToFirebase(staff) {
   firebaseApp ||= initializeApp(firebaseConfig);
@@ -1391,12 +1462,14 @@ window.tinkerbellFirebase = {
   saveCustomers: saveCustomersToFirebase,
   loadCustomers: loadCustomersFromFirebase,
   saveStaff: saveStaffToFirebase,
-  saveMenu: saveMenuToFirebase
+  saveMenu: saveMenuToFirebase,
+  saveAdminPasscode: saveAdminPasscodeToFirebase
 };
 
 startCustomerRealtimeSync();
 startStaffRealtimeSync();
 startMenuRealtimeSync();
+startAdminPasscodeSync();
 </script>
 
 </body></html>
