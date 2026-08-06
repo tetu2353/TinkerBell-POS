@@ -207,6 +207,8 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
       <select id="menuType">
         <option>セット</option>
         <option>ドリンク</option>
+        <option>キャストドリンク</option>
+        <option>チャージ</option>
         <option>ボトル</option>
         <option>備品・割物</option>
         <option>単品酒</option>
@@ -345,7 +347,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v27-menu-back-zero-fix';
+const APP_VERSION='v28-menu-category-cast-charge';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -360,7 +362,7 @@ const seed=()=>({
  ],
  menu:[
   {id:'mn1',name:'生ビール',price:1000,type:'ドリンク',back:0,tax:10},
-  {id:'mn2',name:'キャストドリンク',price:1500,type:'ドリンク',back:200,tax:10},
+  {id:'mn2',name:'キャストドリンク',price:1500,type:'キャストドリンク',back:200,tax:10},
   {id:'mn3',name:'吉四六',price:10000,type:'ボトル',back:1000,tax:10},
   {id:'mn4',name:'セット料金',price:5000,type:'セット',back:0,tax:10},
   {id:'mn5',name:'アイス大',price:0,type:'備品・割物',back:0,tax:10},
@@ -397,6 +399,7 @@ REQUIRED_MENU_ITEMS.forEach(item=>{
 });
 db.menu=db.menu.map((item,index)=>({
   ...item,
+  type:item.name==='キャストドリンク'&&item.type==='ドリンク'?'キャストドリンク':item.type,
   visible:item.visible!==false,
   sortOrder:Number.isFinite(Number(item.sortOrder))?Number(item.sortOrder):index
 }));
