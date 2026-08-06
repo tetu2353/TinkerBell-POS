@@ -77,6 +77,10 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .cast-order-choice{min-height:58px;font-size:18px;font-weight:900}
 @media(min-width:760px){.order-menu-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:560px){.order-seat-header{align-items:flex-start}.order-menu-grid{grid-template-columns:repeat(2,1fr)}}
+.qty-controls{display:flex;align-items:center;gap:6px}
+.qty-button{width:38px;height:38px;padding:0;border-radius:10px;font-size:22px;font-weight:900}
+.qty-number{min-width:24px;text-align:center;font-size:18px}
+@media(max-width:560px){.order-line-right{flex-wrap:wrap;justify-content:flex-end}.qty-controls{width:100%;justify-content:flex-end}}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -341,7 +345,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v24-single-seat-fast-order';
+const APP_VERSION='v25-order-quantity-merge';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -871,8 +875,34 @@ window.setCategory=c=>{
  renderTapOrders();
 };
 
+function consolidateOrders(s){
+ if(!s||!Array.isArray(s.orders))return;
+
+ const merged=[];
+ const map=new Map();
+
+ s.orders.forEach(o=>{
+  const key=`${o.menuId||o.name}|${o.castId||''}|${Number(o.price||0)}`;
+
+  if(map.has(key)){
+   map.get(key).qty=Number(map.get(key).qty||1)+Number(o.qty||1);
+  }else{
+   const copy={...o,qty:Number(o.qty||1)};
+   map.set(key,copy);
+   merged.push(copy);
+  }
+ });
+
+ if(merged.length!==s.orders.length){
+  s.orders=merged;
+  persist();
+ }
+}
+
 function selectedSeat(){
- return db.seats.find(s=>s.id===selectedOrderSeat&&s.customerName);
+ const s=db.seats.find(s=>s.id===selectedOrderSeat&&s.customerName);
+ consolidateOrders(s);
+ return s;
 }
 
 function renderTapOrders(){
@@ -948,18 +978,30 @@ window.commitTapOrder=(mid,castId)=>{
  const m=db.menu.find(x=>x.id===mid);
  if(!s||!m)return;
 
- s.orders.push({
-  id:id(),
-  menuId:m.id,
-  name:m.name,
-  price:m.price,
-  qty:1,
-  castId,
-  back:m.back,
-  memo:''
- });
+ const existing=s.orders.find(o=>
+  o.menuId===m.id &&
+  String(o.castId||'')===String(castId||'') &&
+  Number(o.price||0)===Number(m.price||0)
+ );
 
- lastOrder={sid:s.id,oid:s.orders.at(-1).id};
+ if(existing){
+  existing.qty=Number(existing.qty||1)+1;
+  lastOrder={sid:s.id,oid:existing.id,incremented:true};
+ }else{
+  const order={
+   id:id(),
+   menuId:m.id,
+   name:m.name,
+   price:m.price,
+   qty:1,
+   castId,
+   back:m.back,
+   memo:''
+  };
+  s.orders.push(order);
+  lastOrder={sid:s.id,oid:order.id,incremented:false};
+ }
+
  persist();
  renderOrders();
  showUndo(`${m.name}を追加`);
@@ -976,7 +1018,16 @@ function showUndo(text){
 $('undoBtn').onclick=()=>{
  if(lastOrder){
   const s=db.seats.find(x=>x.id===lastOrder.sid);
-  if(s)s.orders=s.orders.filter(x=>x.id!==lastOrder.oid);
+  const order=s?.orders.find(x=>x.id===lastOrder.oid);
+
+  if(s&&order){
+   if(lastOrder.incremented&&Number(order.qty||1)>1){
+    order.qty=Number(order.qty||1)-1;
+   }else{
+    s.orders=s.orders.filter(x=>x.id!==lastOrder.oid);
+   }
+  }
+
   persist();
   renderOrders();
  }
@@ -1006,6 +1057,11 @@ function renderOrders(){
       <div class="meta">${esc(staffById(o.castId)?.name||'')}</div>
      </div>
      <div class="order-line-right">
+      <div class="qty-controls">
+       <button class="secondary qty-button" onclick="changeOrderQty('${s.id}','${o.id}',-1)">−</button>
+       <b class="qty-number">${o.qty}</b>
+       <button class="primary qty-button" onclick="changeOrderQty('${s.id}','${o.id}',1)">＋</button>
+      </div>
       <b>${yen(o.price*o.qty)}</b>
       <button class="danger small-order-delete" onclick="delOrder('${s.id}','${o.id}')">削除</button>
      </div>
@@ -1013,6 +1069,21 @@ function renderOrders(){
    <button class="primary checkout-large" onclick="checkoutSeat('${s.id}')">この席を会計する　${yen(seatTotal(s))}</button>
   </div>`;
 }
+
+window.changeOrderQty=(sid,oid,delta)=>{
+ const s=db.seats.find(x=>x.id===sid);
+ const o=s?.orders.find(x=>x.id===oid);
+ if(!s||!o)return;
+
+ o.qty=Number(o.qty||1)+Number(delta||0);
+
+ if(o.qty<=0){
+  s.orders=s.orders.filter(x=>x.id!==oid);
+ }
+
+ persist();
+ renderOrders();
+};
 
 window.delOrder=(sid,oid)=>{
  const s=db.seats.find(x=>x.id===sid);
