@@ -345,7 +345,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v26-menu-edit-fix';
+const APP_VERSION='v27-menu-back-zero-fix';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1318,56 +1318,68 @@ $('saveMenu').onclick=async()=>{
  const name=$('menuName').value.trim();
  if(!name)return toast('商品名を入力してください');
 
- const editId=$('menuEditId').value;
+ const editId=String($('menuEditId').value||'');
  if(!editId){
   const duplicate=db.menu.find(x=>String(x.name||'').trim()===name);
   if(duplicate)return toast('同じ商品名が登録されています');
  }
 
- button.disabled=true;
- button.textContent='保存中...';
+ const backRaw=String($('menuBack').value??'').trim();
+ const backValue=backRaw===''?0:Number(backRaw);
+ if(!Number.isFinite(backValue)||backValue<0)return toast('キャストバックを確認してください');
+
+ const priceRaw=String($('menuPrice').value??'').trim();
+ const priceValue=priceRaw===''?0:Number(priceRaw);
+ if(!Number.isFinite(priceValue)||priceValue<0)return toast('価格を確認してください');
 
  const beforeMenu=JSON.parse(JSON.stringify(db.menu));
  const data={
   name,
-  price:Number($('menuPrice').value||0),
+  price:priceValue,
   type:$('menuType').value,
-  back:Number($('menuBack').value||0),
-  tax:Number($('menuTax').value||0),
+  back:backValue,
+  tax:Number($('menuTax').value),
   visible:$('menuVisible').value==='true'
  };
 
+ button.disabled=true;
+ button.textContent='保存中...';
+
  try{
   if(editId){
-   const item=db.menu.find(x=>x.id===editId);
+   const item=db.menu.find(x=>String(x.id)===editId);
    if(!item)throw new Error('商品が見つかりません');
-   Object.assign(item,data);
+   item.name=data.name;
+   item.price=data.price;
+   item.type=data.type;
+   item.back=data.back;
+   item.tax=data.tax;
+   item.visible=data.visible;
   }else{
    const maxOrder=db.menu.reduce((m,x)=>Math.max(m,Number(x.sortOrder||0)),0);
    db.menu.push({id:id(),...data,sortOrder:maxOrder+1});
   }
 
-  persist();
-  clearMenuForm();
-  renderMenu();
-  renderTapOrders();
-
   if(!window.tinkerbellFirebase?.saveMenu){
    throw new Error('Firebase準備中');
   }
+
   await window.tinkerbellFirebase.saveMenu(db.menu);
-  toast(editId?'商品をクラウド更新しました':'商品をクラウド保存しました');
- }catch(error){
-  console.error('Menu cloud save failed:',error);
-  db.menu=beforeMenu;
+
   persist();
-  clearMenuForm();
   renderMenu();
   renderTapOrders();
-  toast('商品のクラウド保存に失敗しました');
+  clearMenuForm();
+ }catch(error){
+  console.error('Menu save failed:',error);
+  db.menu=beforeMenu;
+  persist();
+  renderMenu();
+  renderTapOrders();
+  toast('商品の保存に失敗しました');
  }finally{
   button.disabled=false;
-  if(!$('menuEditId').value)$('saveMenu').textContent='商品を追加';
+  if(!$('menuEditId').value)button.textContent='商品を追加';
  }
 };
 
@@ -1395,7 +1407,7 @@ window.editMenu=idn=>{
  $('menuName').value=m.name;
  $('menuPrice').value=m.price;
  $('menuType').value=m.type;
- $('menuBack').value=m.back||0;
+ $('menuBack').value=Number(m.back??0);
  $('menuTax').value=String(m.tax??10);
  $('menuVisible').value=m.visible===false?'false':'true';
  $('saveMenu').textContent='変更を保存';
