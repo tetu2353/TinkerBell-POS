@@ -59,6 +59,24 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .manager-tile span{font-size:30px}
 .manager-tile b{color:#6f4b14}
 @media(max-width:560px){.seat-cast-grid{grid-template-columns:1fr}}
+.order-seat-header{position:sticky;top:0;z-index:12;display:flex;align-items:center;gap:12px;background:#f7f3f7;padding:10px 0 12px}
+.order-seat-header h2{margin:0;font-size:22px;color:#6d4210}
+.order-step-card{border:3px solid #c79b43}
+.order-step-title{font-size:21px;color:#6d4210}
+.order-menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.order-menu-button{min-height:88px;border:2px solid #c79b43;background:#fffaf0;border-radius:16px;padding:13px;text-align:left;color:#30242f}
+.order-menu-button b{display:block;font-size:19px;line-height:1.3}
+.order-menu-button small{display:block;font-size:17px;font-weight:900;color:#9b6920;margin-top:7px}
+.order-menu-button:active{transform:scale(.97);background:#ffe8a9}
+.selected-order-summary{border:3px solid #7f5a1c}
+.order-total{font-size:26px;color:#8d5d13}
+.order-line{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
+.order-line-right{text-align:right;display:flex;align-items:center;gap:10px}
+.small-order-delete{padding:8px 11px}
+.checkout-large{width:100%;min-height:62px;margin-top:15px;font-size:19px}
+.cast-order-choice{min-height:58px;font-size:18px;font-weight:900}
+@media(min-width:760px){.order-menu-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.order-seat-header{align-items:flex-start}.order-menu-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -141,11 +159,28 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 
 <section id="seats" class="screen"><h2>席管理</h2><div id="seatGrid" class="seat-grid"></div></section>
 
-<section id="orders" class="screen"><h2>注文・会計</h2>
-<div class="order-head"><div class="card"><b>① 席をタップ</b><div id="tapSeatGrid" class="tap-grid" style="margin-top:8px"></div></div>
-<div class="card"><b>② 商品をタップ</b><div id="orderCategories" class="category-row" style="margin-top:8px"></div><div id="tapMenuGrid" class="tap-grid" style="margin-top:10px"></div></div>
-<div id="castPicker" class="card hidden"><b>③ キャストをタップ</b><div id="tapCastGrid" class="choice-grid" style="margin-top:8px"></div></div></div>
-<div id="orderSummary"></div></section>
+<section id="orders" class="screen">
+<div class="order-seat-header">
+  <button class="secondary" onclick="show('seats')">← 席一覧</button>
+  <div>
+    <h2 id="selectedOrderSeatName">席を選んでください</h2>
+    <div id="selectedOrderSeatInfo" class="meta"></div>
+  </div>
+</div>
+<div id="noOrderSeat" class="card hidden">席管理から注文する席をタップしてください。</div>
+<div id="orderWorkspace">
+  <div class="card order-step-card">
+    <b class="order-step-title">商品をタップ</b>
+    <div id="orderCategories" class="category-row" style="margin-top:10px"></div>
+    <div id="tapMenuGrid" class="order-menu-grid" style="margin-top:12px"></div>
+  </div>
+  <div id="castPicker" class="card hidden">
+    <b class="order-step-title">女の子をタップ</b>
+    <div id="tapCastGrid" class="choice-grid" style="margin-top:10px"></div>
+  </div>
+  <div id="orderSummary"></div>
+</div>
+</section>
 
 <section id="customers" class="screen"><h2>お客様管理</h2><div class="card"><div class="meta">お客様データはFirebaseとリアルタイム同期します。</div></div><div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・メモ"></label></div><div class="card"><div class="row3"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label><label>電話番号<input id="customerPhone" inputmode="tel"></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><button id="saveCustomer" class="primary">お客様登録</button></div><div id="customerList" class="list"></div></section>
 
@@ -306,7 +341,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v23-seat-cast-admin-ui';
+const APP_VERSION='v24-single-seat-fast-order';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -703,19 +738,26 @@ function seatCastNames(s){
 function renderSeats(){
  $('seatGrid').innerHTML=db.seats.map(s=>{
   const castNames=seatCastNames(s);
-  return `<div class="seat ${s.customerName?'occupied':''}" onclick="${s.customerName?`openSeatDetail('${s.id}')`:`openSeat('${s.id}')`}">
+  return `<div class="seat ${s.customerName?'occupied':''}" onclick="${s.customerName?`openSeatOrder('${s.id}')`:`openSeat('${s.id}')`}">
    <h3>${esc(s.name)}</h3>
    <div class="guest">${esc(s.customerName||'空席')}</div>
    <div class="cast">${castNames.length?`ついている女の子：${castNames.map(esc).join('・')}`:'ついている女の子：なし'}</div>
    <div class="meta">注文 ${s.orders.length}件 / ${yen(seatTotal(s))}</div>
    <div class="item-actions">
     ${s.customerName
-      ?`<button class="secondary" onclick="event.stopPropagation();openSeatDetail('${s.id}')">詳細</button><button class="primary" onclick="event.stopPropagation();checkoutSeat('${s.id}')">会計</button>`
+      ?`<button class="secondary" onclick="event.stopPropagation();openSeatDetail('${s.id}')">詳細</button><button class="primary" onclick="event.stopPropagation();openSeatOrder('${s.id}')">注文</button><button class="danger" onclick="event.stopPropagation();checkoutSeat('${s.id}')">会計</button>`
       :`<button class="primary">入店登録</button>`}
    </div>
   </div>`;
  }).join('');
 }
+
+window.openSeatOrder=sid=>{
+ selectedOrderSeat=sid;
+ selectedCategory='すべて';
+ pendingMenu='';
+ show('orders');
+};
 
 let seatDetailId='';
 
@@ -750,8 +792,7 @@ $('seatDetailEdit').onclick=()=>{
 $('seatDetailOrder').onclick=()=>{
  const sid=seatDetailId;
  $('seatDetailModal').classList.add('hidden');
- selectOrderSeat(sid);
- show('orders');
+ openSeatOrder(sid);
 };
 
 function renderSeatCastChoices(){
@@ -817,21 +858,169 @@ $('seatModalSave').onclick=()=>{
 window.checkoutSeat=sid=>{const s=db.seats.find(x=>x.id===sid);if(!confirm(`${s.name} ${s.customerName}\n合計 ${yen(seatTotal(s))}\n会計を確定しますか？`))return;db.checkouts.push({id:id(),seat:s.name,customerName:s.customerName,openedAt:s.openedAt,closedAt:nowISO(),orders:s.orders,total:seatTotal(s)});s.customerId='';s.customerName='';s.casts=[];s.openedAt='';s.orders=[];if(selectedOrderSeat===sid)selectedOrderSeat='';persist();renderAll();toast('会計を確定しました')}
 
 let selectedOrderSeat='',selectedCategory='すべて',pendingMenu='',lastOrder=null,undoTimer=null;
-window.selectOrderSeat=sid=>{selectedOrderSeat=sid;pendingMenu='';renderTapOrders()}
-window.setCategory=c=>{selectedCategory=c;renderTapOrders()}
-function renderTapOrders(){const occupied=db.seats.filter(s=>s.customerName);if(!occupied.some(s=>s.id===selectedOrderSeat))selectedOrderSeat=occupied[0]?.id||'';$('tapSeatGrid').innerHTML=occupied.length?occupied.map(s=>{
+
+window.selectOrderSeat=sid=>{
+ selectedOrderSeat=sid;
+ selectedCategory='すべて';
+ pendingMenu='';
+ renderOrders();
+};
+
+window.setCategory=c=>{
+ selectedCategory=c;
+ renderTapOrders();
+};
+
+function selectedSeat(){
+ return db.seats.find(s=>s.id===selectedOrderSeat&&s.customerName);
+}
+
+function renderTapOrders(){
+ const s=selectedSeat();
+ const hasSeat=Boolean(s);
+
+ $('noOrderSeat').classList.toggle('hidden',hasSeat);
+ $('orderWorkspace').classList.toggle('hidden',!hasSeat);
+
+ if(!hasSeat){
+  $('selectedOrderSeatName').textContent='席を選んでください';
+  $('selectedOrderSeatInfo').textContent='';
+  $('orderCategories').innerHTML='';
+  $('tapMenuGrid').innerHTML='';
+  $('castPicker').classList.add('hidden');
+  return;
+ }
+
  const castNames=seatCastNames(s);
- return `<button class="tap-btn ${s.id===selectedOrderSeat?'selected':''}" onclick="selectOrderSeat('${s.id}')">
-  <b>${esc(s.name)}</b>
-  <small>${esc(s.customerName)}・${castNames.length?castNames.map(esc).join('・'):'担当なし'}・${yen(seatTotal(s))}</small>
- </button>`;
-}).join(''):'<div class="empty">先に席管理で入店登録してください</div>';const visibleMenu=db.menu.filter(m=>m.visible!==false).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));const cats=['すべて',...new Set(visibleMenu.map(m=>m.type))];$('orderCategories').innerHTML=cats.map(c=>`<button class="${c===selectedCategory?'primary':'secondary'}" onclick="setCategory('${esc(c)}')">${esc(c)}</button>`).join('');const items=db.menu.filter(m=>selectedCategory==='すべて'||m.type===selectedCategory);$('tapMenuGrid').innerHTML=items.map(m=>`<button class="tap-btn" onclick="tapMenu('${m.id}')"><b>${esc(m.name)}</b><small>${yen(m.price)}・${esc(m.type)}</small></button>`).join('');$('castPicker').classList.add('hidden')}
-window.tapMenu=mid=>{if(!selectedOrderSeat)return toast('先に席をタップ');const m=db.menu.find(x=>x.id===mid);if(!m||m.visible===false)return toast('この商品は非表示です');pendingMenu=mid;if(m.back>0||m.name.includes('キャスト')){const casts=db.staff.filter(x=>x.role==='cast');$('tapCastGrid').innerHTML=casts.map(c=>`<button class="choice" onclick="commitTapOrder('${mid}','${c.id}')">${esc(c.name)}</button>`).join('');$('castPicker').classList.remove('hidden');$('castPicker').scrollIntoView({behavior:'smooth',block:'center'})}else commitTapOrder(mid,'')}
-window.commitTapOrder=(mid,castId)=>{const s=db.seats.find(x=>x.id===selectedOrderSeat),m=db.menu.find(x=>x.id===mid);if(!s||!m)return;if(Number(m.price||0)<=0)return toast('価格未設定です。メニュー管理で金額を設定してください');s.orders.push({id:id(),menuId:m.id,name:m.name,price:m.price,qty:1,castId,back:m.back,memo:''});lastOrder={sid:s.id,oid:s.orders.at(-1).id};persist();renderAll();showUndo(`${m.name}を追加`);toast('注文を追加しました')}
-function showUndo(text){$('undoText').textContent=text;$('undoBar').classList.remove('hidden');clearTimeout(undoTimer);undoTimer=setTimeout(()=>$('undoBar').classList.add('hidden'),5000)}
-$('undoBtn').onclick=()=>{if(lastOrder){const s=db.seats.find(x=>x.id===lastOrder.sid);if(s)s.orders=s.orders.filter(x=>x.id!==lastOrder.oid);persist();renderAll();toast('注文を取り消しました')}lastOrder=null;$('undoBar').classList.add('hidden')}
-function renderOrders(){renderTapOrders();$('orderSummary').innerHTML=db.seats.filter(s=>s.customerName).map(s=>`<div class="card"><h3>${esc(s.name)}　${esc(s.customerName)}</h3>${s.orders.length?s.orders.map(o=>`<div class="item"><b>${esc(o.name)} × ${o.qty}</b><div class="meta">${yen(o.price*o.qty)} / ${esc(staffById(o.castId)?.name||'担当なし')}</div><div class="item-actions"><button class="danger" onclick="delOrder('${s.id}','${o.id}')">削除</button></div></div>`).join(''):'<div class="empty">注文なし</div>'}<p><b>合計 ${yen(seatTotal(s))}</b></p><button class="primary" onclick="checkoutSeat('${s.id}')">この席を会計</button></div>`).join('')||'<div class="empty">入店中の席がありません</div>'}
-window.delOrder=(sid,oid)=>{const s=db.seats.find(x=>x.id===sid);s.orders=s.orders.filter(x=>x.id!==oid);persist();renderAll()}
+ $('selectedOrderSeatName').textContent=`${s.name}　${s.customerName}`;
+ $('selectedOrderSeatInfo').textContent=`ついている女の子：${castNames.length?castNames.join('・'):'なし'}　／　合計 ${yen(seatTotal(s))}`;
+
+ const visibleMenu=db.menu
+  .filter(m=>m.visible!==false)
+  .sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+
+ const cats=['すべて',...new Set(visibleMenu.map(m=>m.type))];
+
+ $('orderCategories').innerHTML=cats.map(c=>`
+  <button class="${c===selectedCategory?'primary':'secondary'}" onclick="setCategory('${esc(c)}')">
+   ${esc(c)}
+  </button>`).join('');
+
+ const items=visibleMenu.filter(m=>selectedCategory==='すべて'||m.type===selectedCategory);
+
+ $('tapMenuGrid').innerHTML=items.length?items.map(m=>`
+  <button class="order-menu-button" onclick="tapMenu('${m.id}')">
+   <b>${esc(m.name)}</b>
+   <small>${yen(m.price)}</small>
+  </button>`).join(''):'<div class="empty">この分類の商品はありません</div>';
+
+ $('castPicker').classList.add('hidden');
+}
+
+window.tapMenu=mid=>{
+ const s=selectedSeat();
+ if(!s)return toast('席管理から席を選んでください');
+
+ const m=db.menu.find(x=>x.id===mid);
+ if(!m||m.visible===false)return;
+ if(Number(m.price||0)<=0)return toast('価格が設定されていません');
+
+ pendingMenu=mid;
+
+ if(m.back>0||m.name.includes('キャスト')){
+  const casts=seatCastNames(s);
+  const candidates=db.staff.filter(x=>x.role==='cast'&&(s.casts||[]).includes(x.id));
+
+  $('tapCastGrid').innerHTML=(candidates.length?candidates:db.staff.filter(x=>x.role==='cast')).map(c=>`
+   <button class="choice cast-order-choice" onclick="commitTapOrder('${mid}','${c.id}')">
+    ${esc(c.name)}
+   </button>`).join('');
+
+  $('castPicker').classList.remove('hidden');
+  $('castPicker').scrollIntoView({behavior:'smooth',block:'center'});
+ }else{
+  commitTapOrder(mid,'');
+ }
+};
+
+window.commitTapOrder=(mid,castId)=>{
+ const s=selectedSeat();
+ const m=db.menu.find(x=>x.id===mid);
+ if(!s||!m)return;
+
+ s.orders.push({
+  id:id(),
+  menuId:m.id,
+  name:m.name,
+  price:m.price,
+  qty:1,
+  castId,
+  back:m.back,
+  memo:''
+ });
+
+ lastOrder={sid:s.id,oid:s.orders.at(-1).id};
+ persist();
+ renderOrders();
+ showUndo(`${m.name}を追加`);
+ toast(`${m.name}を追加`);
+};
+
+function showUndo(text){
+ $('undoText').textContent=text;
+ $('undoBar').classList.remove('hidden');
+ clearTimeout(undoTimer);
+ undoTimer=setTimeout(()=>$('undoBar').classList.add('hidden'),5000);
+}
+
+$('undoBtn').onclick=()=>{
+ if(lastOrder){
+  const s=db.seats.find(x=>x.id===lastOrder.sid);
+  if(s)s.orders=s.orders.filter(x=>x.id!==lastOrder.oid);
+  persist();
+  renderOrders();
+ }
+ lastOrder=null;
+ $('undoBar').classList.add('hidden');
+};
+
+function renderOrders(){
+ renderTapOrders();
+
+ const s=selectedSeat();
+ if(!s){
+  $('orderSummary').innerHTML='';
+  return;
+ }
+
+ $('orderSummary').innerHTML=`
+  <div class="card selected-order-summary">
+   <div class="sectionHead">
+    <h2>この席の注文</h2>
+    <b class="order-total">${yen(seatTotal(s))}</b>
+   </div>
+   ${s.orders.length?s.orders.map(o=>`
+    <div class="order-line">
+     <div>
+      <b>${esc(o.name)} × ${o.qty}</b>
+      <div class="meta">${esc(staffById(o.castId)?.name||'')}</div>
+     </div>
+     <div class="order-line-right">
+      <b>${yen(o.price*o.qty)}</b>
+      <button class="danger small-order-delete" onclick="delOrder('${s.id}','${o.id}')">削除</button>
+     </div>
+    </div>`).join(''):'<div class="empty">まだ注文はありません</div>'}
+   <button class="primary checkout-large" onclick="checkoutSeat('${s.id}')">この席を会計する　${yen(seatTotal(s))}</button>
+  </div>`;
+}
+
+window.delOrder=(sid,oid)=>{
+ const s=db.seats.find(x=>x.id===sid);
+ if(!s)return;
+ s.orders=s.orders.filter(x=>x.id!==oid);
+ persist();
+ renderOrders();
+};
 
 $('saveCustomer').onclick=async()=>{
  const button=$('saveCustomer');
