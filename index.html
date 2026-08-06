@@ -266,7 +266,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v18-manager-only-login';
+const APP_VERSION='v19-fixed-admin-passcode';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -382,21 +382,18 @@ function applyRole(){
  $('welcome').textContent=managerUnlocked?'管理モードで使用中':'通常業務はログインなしで使用できます';
 }
 
+const ADMIN_PASSCODE='1234';
+
 function unlockManager(){
- const managers=db.staff.filter(s=>s.role==='manager');
- if(!managers.length){
-  toast('幹部が登録されていません');
-  return false;
- }
- const pin=prompt('管理者PINを入力してください');
+ const pin=prompt('管理者パスコードを入力してください');
  if(pin===null)return false;
- const matched=managers.find(s=>String(s.pin||'0000')===String(pin));
- if(!matched){
-  toast('管理者PINが違います');
+
+ if(String(pin)!==ADMIN_PASSCODE){
+  toast('管理者パスコードが違います');
   return false;
  }
+
  managerUnlocked=true;
- current=matched;
  sessionStorage.setItem('tb_manager_unlocked','1');
  applyRole();
  toast('管理モードを解除しました');
@@ -851,7 +848,6 @@ window.delStaff=async idn=>{
  const s=db.staff.find(x=>x.id===idn);
  if(!s)return;
  if(db.staff.length<=1)return toast('従業員を0人にはできません');
- if(current?.id===idn)return toast('現在ログイン中の従業員は削除できません');
  if(!confirm(`${s.name}を削除しますか？`))return;
 
  const before=JSON.parse(JSON.stringify(db.staff));
