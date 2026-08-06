@@ -49,6 +49,16 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .manager.locked::after{content:'🔒';margin-left:4px;font-size:12px}.manager-unlocked{background:#fff4d8!important;color:#7c5710!important;border-color:#d3a84f!important}
 .seat .cast{font-weight:850;color:#6d3f75;line-height:1.45;margin-top:5px}
 #seatDetailBody .card{border:2px solid #d6ad55}
+.seat-cast-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.seat-cast-option{display:flex;align-items:center;gap:10px;border:2px solid var(--line);background:#fff;border-radius:14px;padding:14px;font-weight:900;cursor:pointer}
+.seat-cast-option input{width:22px;height:22px;margin:0;accent-color:#a77b2b}
+.seat-cast-option.selected{border-color:#b98c35;background:#fff3d4;box-shadow:0 0 0 2px #ecd79e inset}
+.management-heading{margin:22px 0 10px;padding-top:16px;border-top:3px solid #d8bc78;color:#76531c}
+.management-grid{padding:12px;background:#fff8e8;border:2px solid #d8bc78;border-radius:18px}
+.manager-tile{border:2px solid #c79b43!important;background:linear-gradient(145deg,#fffaf0,#fff)!important}
+.manager-tile span{font-size:30px}
+.manager-tile b{color:#6f4b14}
+@media(max-width:560px){.seat-cast-grid{grid-template-columns:1fr}}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -71,7 +81,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
   <button class="tile" data-go="seats" style="border:2px solid #b88a35"><span>🛋️</span><b>席管理</b><small>入店・担当キャスト</small></button>
   <button class="tile" data-go="orders" style="border:2px solid #b88a35"><span>💰</span><b>注文・会計</b><small>商品追加・会計確定</small></button>
  </div></div>
- <h2 style="margin-top:18px">スタッフ管理</h2>
+ <h2 style="margin-top:18px">通常業務</h2>
  <div class="grid">
   <button class="tile" data-go="attendance"><span>🕒</span><b>出勤・退勤</b><small>勤怠を記録</small></button>
   <button class="tile" data-go="shifts"><span>📅</span><b>シフト</b><small>予定を確認・登録</small></button>
@@ -79,10 +89,10 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
   <button class="tile" data-go="bottles"><span>🍾</span><b>ボトル</b><small>残量・保管場所</small></button>
   <button class="tile" data-go="visits"><span>🤝</span><b>同伴・来店予定</b><small>予約を共有</small></button>
   <button class="tile" data-go="notices"><span>🔔</span><b>お知らせ</b><small>店舗からの連絡</small></button>
-  <button class="tile manager" data-go="staff"><span>👥</span><b>従業員管理</b><small>時給・手当・権限</small></button>
-  <button class="tile manager" data-go="menu"><span>📖</span><b>メニュー管理</b><small>料金・バック設定</small></button>
-  <button class="tile manager" data-go="reports"><span>📊</span><b>売上・勤怠集計</b><small>日別集計</small></button>
-  <button class="tile manager" data-go="settings"><span>⚙️</span><b>設定</b><small>データ保存・初期化</small></button>
+  </div><h2 class="management-heading">管理</h2><div class="grid management-grid"><button class="tile manager manager-tile" data-go="staff"><span>👥</span><b>従業員管理</b><small>時給・手当・権限</small></button>
+  <button class="tile manager manager-tile" data-go="menu"><span>📖</span><b>メニュー管理</b><small>料金・バック設定</small></button>
+  <button class="tile manager manager-tile" data-go="reports"><span>📊</span><b>売上・勤怠集計</b><small>日別集計</small></button>
+  <button class="tile manager manager-tile" data-go="settings"><span>⚙️</span><b>設定</b><small>データ保存・初期化</small></button>
  </div>
 </section>
 
@@ -281,7 +291,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
     </div>
   </div>
 </div>
-<div id="seatModal" class="modal hidden"><div class="modal-card"><h2 id="seatModalTitle">入店登録</h2><label>お客様名<input id="seatCustomerName" list="customerNames" placeholder="名前を入力"></label><datalist id="customerNames"></datalist><p><b>担当キャスト</b></p><div id="seatCastChoices" class="choice-grid"></div><div class="row" style="margin-top:14px"><button id="seatModalCancel" class="secondary">閉じる</button><button id="seatModalSave" class="primary">保存</button></div></div></div>
+<div id="seatModal" class="modal hidden"><div class="modal-card"><h2 id="seatModalTitle">入店登録</h2><label>お客様名<input id="seatCustomerName" list="customerNames" placeholder="名前を入力"></label><datalist id="customerNames"></datalist><p><b>ついている女の子</b></p><div id="seatCastChoices" class="seat-cast-grid"></div><div class="row" style="margin-top:14px"><button id="seatModalCancel" class="secondary">閉じる</button><button id="seatModalSave" class="primary">保存</button></div></div></div>
 <div id="undoBar" class="undo hidden"><span id="undoText">注文を追加しました</span><button id="undoBtn" class="secondary">取り消す</button></div>
 <div id="shiftDayModal" class="modal hidden">
  <div class="modal-card">
@@ -296,7 +306,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v22-seat-name-preserve';
+const APP_VERSION='v23-seat-cast-admin-ui';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -745,10 +755,27 @@ $('seatDetailOrder').onclick=()=>{
 };
 
 function renderSeatCastChoices(){
- $('seatCastChoices').innerHTML=db.staff.filter(x=>x.role==='cast').map(c=>`
-  <button class="choice ${seatCastSelected.includes(c.id)?'selected':''}" onclick="chooseSeatCast('${c.id}')">
-   ${esc(c.name)}
-  </button>`).join('');
+ const casts=db.staff.filter(x=>x.role==='cast');
+
+ $('seatCastChoices').innerHTML=casts.length
+  ?casts.map(c=>`
+   <label class="seat-cast-option ${seatCastSelected.includes(c.id)?'selected':''}">
+    <input type="checkbox" value="${c.id}" ${seatCastSelected.includes(c.id)?'checked':''}>
+    <span>${esc(c.name)}</span>
+   </label>`).join('')
+  :'<div class="empty">キャストが登録されていません</div>';
+
+ $('seatCastChoices').querySelectorAll('input[type="checkbox"]').forEach(input=>{
+  input.onchange=()=>{
+   const idn=input.value;
+   if(input.checked){
+    if(!seatCastSelected.includes(idn))seatCastSelected.push(idn);
+   }else{
+    seatCastSelected=seatCastSelected.filter(id=>id!==idn);
+   }
+   input.closest('.seat-cast-option')?.classList.toggle('selected',input.checked);
+  };
+ });
 }
 
 function openSeatModal(sid){
@@ -765,14 +792,6 @@ function openSeatModal(sid){
 window.openSeat=openSeatModal;
 window.editSeat=openSeatModal;
 
-window.chooseSeatCast=x=>{
- if(seatCastSelected.includes(x)){
-  seatCastSelected=seatCastSelected.filter(id=>id!==x);
- }else{
-  seatCastSelected.push(x);
- }
- renderSeatCastChoices();
-};
 
 $('seatModalCancel').onclick=()=>$('seatModal').classList.add('hidden');
 
