@@ -291,9 +291,9 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
     <button class="btn gold full" data-action="admin-login">ログイン</button>
   </div>
   <div id="adminPanel" class="hidden">
-    <div class="card" style="margin-bottom:12px;background:#fff8e8">
-      <div class="rowTitle">LINEデータ復旧版</div>
-      <div class="meta">クラウド同期を停止し、この端末に保存されたLINEデータを使用しています。</div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="rowTitle">従業員クラウド同期</div>
+      <div id="staffSyncStatus" class="meta">接続確認中...</div>
     </div>
     <div class="adminMenuGrid">
       <button class="adminMenuCard" data-action="staff-management">
@@ -317,7 +317,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
-const APP_VERSION='line-v45-emergency-local-restore';
+const APP_VERSION='line-v46-staff-only-shared';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -331,10 +331,10 @@ function load(){
       return {
         staff:(Array.isArray(d.staff)&&d.staff.length?d.staff:[...DEFAULT_STAFF]).map(s=>({
           ...s,
-          hourlyWage:Number(s.hourlyWage||0),
+          hourlyWage:Number(s.hourlyWage??s.wage??0),
           drinkBack:Number(s.drinkBack||0),
           bottleBack:Number(s.bottleBack||0),
-          role:s.role==='floor'?'floor':'cast'
+          role:s.role==='manager'?'manager':(s.role==='staff'||s.role==='floor'?'staff':'cast')
         })),
         shifts:Array.isArray(d.shifts)?d.shifts:[],
         schedules:Array.isArray(d.schedules)?d.schedules:[],
@@ -346,6 +346,50 @@ function load(){
   return {staff:[...DEFAULT_STAFF],shifts:[],schedules:[],customers:[],bottles:[]};
 }
 let db=load();
+
+const LINE_STAFF_BACKUP_KEY='tinkerbell_line_staff_backup_before_cloud';
+if(!localStorage.getItem(LINE_STAFF_BACKUP_KEY)){
+  localStorage.setItem(LINE_STAFF_BACKUP_KEY,JSON.stringify(db.staff||[]));
+}
+
+window.tinkerbellApplyCloudStaff=staff=>{
+  if(!Array.isArray(staff))return;
+  db.staff=staff.map((s,index)=>({
+    ...s,
+    id:s.id||`cloud-staff-${index}`,
+    role:s.role==='manager'?'manager':(s.role==='staff'||s.role==='floor'?'staff':'cast'),
+    hourlyWage:Number(s.hourlyWage??s.wage??0),
+    drinkBack:Number(s.drinkBack||0),
+    bottleBack:Number(s.bottleBack||0)
+  }));
+  save();
+  populateStaff();
+  renderStaff();
+  renderShiftRegister();
+  renderShiftCheck();
+};
+
+window.tinkerbellGetLineStaff=()=>Array.isArray(db.staff)?db.staff:[];
+
+async function saveStaffToFirebase(){
+  try{
+    if(!window.tinkerbellLineFirebase?.saveStaff)throw new Error('Firebase準備中');
+    await window.tinkerbellLineFirebase.saveStaff(db.staff.map(s=>({
+      id:s.id,
+      name:s.name,
+      role:s.role==='floor'?'staff':s.role,
+      wage:Number(s.hourlyWage??s.wage??0),
+      hourlyWage:Number(s.hourlyWage??s.wage??0),
+      drinkBack:Number(s.drinkBack||0),
+      bottleBack:Number(s.bottleBack||0),
+      pin:s.pin||'0000'
+    })));
+  }catch(error){
+    console.error('LINE staff Firebase save failed:',error);
+    toast('従業員のクラウド保存に失敗しました');
+  }
+}
+
 const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),1500)}
 function names(){return db.staff.map(s=>s.name)}
@@ -957,8 +1001,9 @@ function openStaffForm(existing=null){
     <label><span>名前・源氏名</span><input id="sName" value="${existing?.name||''}"></label>
     <label><span>区分</span>
       <select id="sRole">
-        <option value="cast" ${existing?.role!=='floor'?'selected':''}>キャスト</option>
-        <option value="floor" ${existing?.role==='floor'?'selected':''}>黒服</option>
+        <option value="cast" ${existing?.role==='cast'?'selected':''}>キャスト</option>
+        <option value="staff" ${existing?.role==='staff'||existing?.role==='floor'?'selected':''}>黒服</option>
+        <option value="manager" ${existing?.role==='manager'?'selected':''}>幹部</option>
       </select>
     </label>
     <label><span>時給</span><input id="sHourlyWage" type="number" min="0" step="10" inputmode="numeric" value="${existing?.hourlyWage||''}" placeholder="例：2000"></label>
@@ -995,6 +1040,7 @@ function openStaffForm(existing=null){
     renderStaff();
     renderShiftRegister();
     renderShiftCheck();
+    saveStaffToFirebase();
     $('formDialog').close();
     toast(existing?'従業員情報を更新しました':'従業員を追加しました');
   };
@@ -1019,7 +1065,10 @@ document.addEventListener('click',e=>{
     renderStaff();
     return;
   }
-  if(t.dataset.action==='open-pos'){window.open('https://tetu2353.github.io/TinkerBell-POS/','_blank');return}
+  if(t.dataset.action==='open-pos'){
+    window.open('https://tetu2353.github.io/TinkerBell-POS/','_blank','noopener');
+    return;
+  }
   if(t.dataset.action==='new-staff')return openStaffForm();
   if(t.dataset.editStaff){
     const staff=db.staff.find(s=>s.id===t.dataset.editStaff);
@@ -1102,7 +1151,7 @@ document.addEventListener('click',e=>{
     if(!confirm(`${staff.name} を削除しますか？`))return;
     db.staff=db.staff.filter(s=>s.id!==staff.id);
     db.shifts=db.shifts.filter(x=>x.staff!==staff.name);
-    save();populateStaff();renderStaff();renderShiftRegister();renderShiftCheck();toast('従業員を削除しました');return;
+    save();populateStaff();renderStaff();renderShiftRegister();renderShiftCheck();saveStaffToFirebase();toast('従業員を削除しました');return;
   }
 });
 $('saveShiftBtn').onclick=saveShift;
@@ -1136,5 +1185,58 @@ document.addEventListener('input',e=>{
   }
 });
 </script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCUGu1dEan0D0-kfXXiiag7eKKwdmkg_TQ",
+  authDomain: "tinkerbell-pos.firebaseapp.com",
+  projectId: "tinkerbell-pos",
+  storageBucket: "tinkerbell-pos.firebasestorage.app",
+  messagingSenderId: "475881462705",
+  appId: "1:475881462705:web:2715d0514e7ef21730fb90"
+};
+
+const app=initializeApp(firebaseConfig);
+const firestore=getFirestore(app);
+const dataRef=doc(firestore,"app","data");
+const status=document.getElementById("staffSyncStatus");
+
+function setStatus(message,ok=false){
+  if(!status)return;
+  status.textContent=message;
+  status.style.color=ok?"#21823a":"#a04433";
+  status.style.fontWeight="800";
+}
+
+onSnapshot(dataRef,snap=>{
+  if(!snap.exists()){
+    setStatus("Firebaseに従業員データがありません");
+    return;
+  }
+  const staff=snap.data()?.staff;
+  if(Array.isArray(staff)){
+    window.tinkerbellApplyCloudStaff?.(staff);
+    setStatus(`POSと同期中：従業員${staff.length}人`,true);
+  }else{
+    setStatus("Firebaseに従業員データがありません");
+  }
+},error=>{
+  console.error("LINE staff sync failed:",error);
+  setStatus(`同期エラー：${error.code||error.message||"不明"}`);
+});
+
+window.tinkerbellLineFirebase={
+  async saveStaff(staff){
+    await setDoc(dataRef,{
+      staff,
+      staffUpdatedAt:new Date().toISOString()
+    },{merge:true});
+  }
+};
+</script>
+
 </body>
 </html>
