@@ -101,6 +101,11 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .attendance-confirm-buttons{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .attendance-confirm-buttons button{min-height:72px;font-size:25px;font-weight:1000}
 @media(max-width:560px){.attendance-staff-grid{grid-template-columns:1fr}.attendance-confirm-name{font-size:36px}.attendance-confirm-question{font-size:21px}}
+.personal-attendance-day{background:#fff;border:2px solid #e0d1a8;border-radius:16px;padding:14px;margin-bottom:10px}
+.personal-attendance-date{font-size:18px;font-weight:900;color:#6d4210}
+.personal-attendance-times{display:flex;align-items:center;gap:10px;font-size:22px;margin-top:8px}
+.personal-attendance-hours{font-size:18px;font-weight:900;color:#8d5d13;margin-top:7px}
+.personal-extra{margin-top:7px;padding:8px 10px;background:#fff3d4;border-radius:10px;font-weight:800}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -126,6 +131,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
  <h2 style="margin-top:18px">通常業務</h2>
  <div class="grid">
   <button class="tile" data-go="attendance"><span>🕒</span><b>出勤・退勤</b><small>勤怠を記録</small></button>
+  <button class="tile" data-go="myAttendance"><span>📋</span><b>自分の実績</b><small>勤務時間・同伴・送迎</small></button>
   <button class="tile" data-go="shifts"><span>📅</span><b>シフト</b><small>予定を確認・登録</small></button>
   <button class="tile" data-go="customers"><span>👤</span><b>お客様</b><small>担当・履歴・メモ</small></button>
   <button class="tile" data-go="bottles"><span>🍾</span><b>ボトル</b><small>残量・保管場所</small></button>
@@ -152,6 +158,24 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 </div>
 <div id="attendanceList" class="list"></div>
 </section>
+<section id="myAttendance" class="screen">
+  <h2>自分の実績</h2>
+
+  <div class="card">
+    <div class="row">
+      <label>名前
+        <select id="myAttendanceStaff"></select>
+      </label>
+      <label>月
+        <input id="myAttendanceMonth" type="month">
+      </label>
+    </div>
+  </div>
+
+  <div id="myAttendanceSummary" class="summary"></div>
+  <div id="myAttendanceDays" class="list"></div>
+</section>
+
 
 <section id="shifts" class="screen">
  <div class="shift-page-head"><h2 id="shiftScreenTitle">シフト入力</h2><p>全体一覧の日付をタップすると回答詳細を確認できます</p></div>
@@ -400,7 +424,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v30-attendance-confirm-flow';
+const APP_VERSION='v31-personal-attendance';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -501,6 +525,7 @@ function fillSelect(el,arr,label='name',value='id',allowBlank=false){
 function refreshSelects(){
  fillSelect($('loginStaff'),db.staff);
  ['customerCast','visitCast'].forEach(x=>fillSelect($(x),db.staff.filter(s=>s.role==='cast')));
+ fillSelect($('myAttendanceStaff'),db.staff);
  fillSelect($('bottleCustomer'),db.customers);
  $('customerNames').innerHTML=db.customers.map(c=>`<option value="${esc(c.name)}"></option>`).join('');
 }
@@ -740,6 +765,83 @@ function renderAttendance(){
   </div>`;
  }).join(''):'<div class="empty">勤怠記録なし</div>';
 }
+
+
+function personalAttendanceHours(record){
+ if(!record?.in||!record?.out)return 0;
+ return Math.max(0,(new Date(record.out)-new Date(record.in))/36e5);
+}
+
+function renderMyAttendance(){
+ const staffId=$('myAttendanceStaff')?.value;
+ const month=$('myAttendanceMonth')?.value||today().slice(0,7);
+ const staff=staffById(staffId);
+
+ if(!staff){
+  $('myAttendanceSummary').innerHTML='';
+  $('myAttendanceDays').innerHTML='<div class="empty">名前を選択してください</div>';
+  return;
+ }
+
+ const records=db.attendance
+  .filter(r=>r.staffId===staffId&&String(r.in||'').slice(0,7)===month)
+  .sort((a,b)=>String(a.in).localeCompare(String(b.in)));
+
+ const totalHours=records.reduce((sum,r)=>sum+personalAttendanceHours(r),0);
+ const workDays=records.filter(r=>r.in).length;
+ const companionCount=records.filter(r=>r.companionStatus==='yes').length;
+ const transportCount=records.filter(r=>r.transportStatus==='yes').length;
+
+ $('myAttendanceSummary').innerHTML=`
+  <div class="metric">
+   <small>出勤日数</small>
+   <b>${workDays}日</b>
+  </div>
+  <div class="metric">
+   <small>勤務時間</small>
+   <b>${totalHours.toFixed(1)}時間</b>
+  </div>
+  ${staff.role==='cast'
+   ?`<div class="metric"><small>同伴</small><b>${companionCount}回</b></div>`
+   :`<div class="metric"><small>送迎</small><b>${transportCount}回</b></div>`}
+ `;
+
+ $('myAttendanceDays').innerHTML=records.length
+  ?records.map(r=>{
+    const inTime=new Date(r.in);
+    const outTime=r.out?new Date(r.out):null;
+    const hours=personalAttendanceHours(r);
+
+    const companion=r.companionStatus
+      ?`<div class="personal-extra">同伴：${r.companionStatus==='yes'
+        ?`あり${r.companionCustomer?`（${esc(r.companionCustomer)}）`:''}`
+        :'なし'}</div>`
+      :'';
+
+    const transport=r.transportStatus
+      ?`<div class="personal-extra">送迎：${r.transportStatus==='yes'
+        ?`あり${r.transportWho?`（${esc(r.transportWho)}）`:''}`
+        :'なし'}</div>`
+      :'';
+
+    return `<div class="personal-attendance-day">
+      <div class="personal-attendance-date">
+        ${inTime.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric',weekday:'short'})}
+      </div>
+      <div class="personal-attendance-times">
+        <b>${inTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</b>
+        <span>〜</span>
+        <b>${outTime?outTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}):'未退勤'}</b>
+      </div>
+      <div class="personal-attendance-hours">${hours.toFixed(1)}時間</div>
+      ${companion}${transport}
+    </div>`;
+  }).join('')
+  :'<div class="empty">この月の勤怠はありません</div>';
+}
+
+$('myAttendanceStaff').onchange=renderMyAttendance;
+$('myAttendanceMonth').onchange=renderMyAttendance;
 
 let shiftViewMonth=new Date();shiftViewMonth.setDate(1);
 let selectedShiftStaffId='';
@@ -1766,7 +1868,7 @@ function renderBackupStatus(){
    : 'まだバックアップを作成していません';
  }
 }
-function renderAll(){renderAttendance();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderBackupStatus()}
+function renderAll(){renderAttendance();renderMyAttendance();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderBackupStatus()}
 
 $('changeAdminPasscode').onclick=async()=>{
  const currentCode=$('currentAdminPasscode').value.trim();
@@ -1794,6 +1896,7 @@ $('changeAdminPasscode').onclick=async()=>{
 };
 
 $('visitDate').value=today();
+$('myAttendanceMonth').value=today().slice(0,7);
 refreshSelects();
 current=db.staff[0]||null;
 renderAll();
