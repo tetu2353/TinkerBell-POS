@@ -149,6 +149,10 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 .customerKanaFilters{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:8px}
 .customerKanaFilters .filterBtn{min-width:0;padding:10px 5px}
 @media(max-width:420px){.customerKanaFilters{grid-template-columns:repeat(3,1fr)}}
+.scheduleCustomerChoices{display:grid;gap:7px;max-height:320px;overflow:auto;margin:9px 0}
+.scheduleCustomerChoice{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px;text-align:left;color:var(--ink)}
+.scheduleCustomerChoice b{display:block;font-size:16px}.scheduleCustomerChoice small{display:block;color:var(--muted);margin-top:4px;line-height:1.45}
+.scheduleCustomerChoice:active{background:#fff6db}
 </style>
 </head>
 <body>
@@ -305,7 +309,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
-const APP_VERSION='line-v39-people-1to20-and-today-shift';
+const APP_VERSION='line-v40-schedule-customer-link';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -511,52 +515,157 @@ function peopleText(value){
 }
 function openScheduleForm(existing=null){
   const existingType=existing?.type==='visit'?'reservation':(existing?.type||'companion');
+  const linkedCustomer=existing?.customerId?db.customers.find(c=>c.id===existing.customerId):null;
+
   $('formTitle').textContent=existing?'予定編集':'予定登録';
   $('formBody').innerHTML=`
     <label><span>日付</span><input id="fDate" type="date" value="${existing?.date||today()}"></label>
+
     <label><span>種別</span>
       <select id="fType">
         <option value="companion" ${existingType==='companion'?'selected':''}>同伴</option>
         <option value="reservation" ${existingType==='reservation'?'selected':''}>予約</option>
       </select>
     </label>
+
     <label><span>時間</span><input id="fTime" type="time" value="${existing?.time||'21:00'}"></label>
-    <label><span>お客様名</span><input id="fCustomer" value="${existing?.customer||''}"></label>
+
+    <div class="card" style="background:#fffaf0">
+      <div class="rowTitle">登録済みのお客様から選択</div>
+      <label><span>名前・ふりがなで検索</span><input id="fCustomerSearch" placeholder="例：田中、たなか"></label>
+      <div id="fCustomerChoices" class="scheduleCustomerChoices"></div>
+      <button type="button" class="btn ghost full" id="useManualCustomer">登録されていないお客様を手入力</button>
+    </div>
+
+    <input id="fCustomerId" type="hidden" value="${linkedCustomer?.id||existing?.customerId||''}">
+
+    <div id="manualCustomerBox" class="${linkedCustomer||existing?.customerId?'hidden':''}">
+      <label><span>お客様名</span><input id="fCustomer" value="${linkedCustomer?.name||existing?.customer||''}" placeholder="新規のお客様名"></label>
+    </div>
+
+    <div id="selectedCustomerBox" class="${linkedCustomer||existing?.customerId?'card':'hidden'}">
+      <div class="rowTitle" id="selectedCustomerName">${linkedCustomer?.name||existing?.customer||''}</div>
+      <div class="meta" id="selectedCustomerMeta">${linkedCustomer?`担当:${linkedCustomer.cast||'担当不明'}／ボトル:${db.bottles.filter(b=>b.customerId===linkedCustomer.id).length}本`:''}</div>
+      <button type="button" class="btn ghost" id="changeCustomer">選び直す</button>
+    </div>
+
     <label><span>人数</span>
       <select id="fPeople">
         ${Array.from({length:20},(_,i)=>i+1).map(n=>`<option value="${n}" ${String(existing?.people||1)===String(n)?'selected':''}>${n}名</option>`).join('')}
         <option value="数名" ${String(existing?.people||'')==='数名'?'selected':''}>数名</option>
       </select>
     </label>
+
     <label><span>担当</span><select id="fCast"></select></label>
+
+    <div id="selectedCustomerBottles" class="card hidden"></div>
+
     <label><span>備考</span><textarea id="fMemo">${existing?.memo||''}</textarea></label>
     <button class="btn gold full" id="saveForm">保存</button>`;
 
   const renderCastOptions=()=>{
     const isReservation=$('fType').value==='reservation';
-    const currentCast=existing?.cast||'';
+    const selectedCustomer=db.customers.find(c=>c.id===$('fCustomerId').value);
+    const preferred=selectedCustomer?.cast&&selectedCustomer.cast!=='担当不明'
+      ?selectedCustomer.cast
+      :(existing?.cast||'');
+
     $('fCast').innerHTML=
-      (isReservation?`<option value="担当なし" ${currentCast==='担当なし'?'selected':''}>担当なし</option>`:'')+
-      names().map(n=>`<option value="${n}" ${n===currentCast?'selected':''}>${n}</option>`).join('');
+      (isReservation?`<option value="担当なし" ${preferred==='担当なし'?'selected':''}>担当なし</option>`:'')+
+      names().map(n=>`<option value="${n}" ${n===preferred?'selected':''}>${n}</option>`).join('');
   };
 
+  const renderCustomerChoices=()=>{
+    const q=normalizeKana($('fCustomerSearch').value);
+    let customers=[...db.customers];
+    if(q){
+      customers=customers.filter(c=>normalizeKana(`${c.name||''}${c.kana||''}`).includes(q));
+    }
+    customers.sort((a,b)=>normalizeKana(a.kana||a.name).localeCompare(normalizeKana(b.kana||b.name),'ja'));
+    customers=customers.slice(0,50);
+
+    $('fCustomerChoices').innerHTML=customers.length
+      ?customers.map(c=>`<button type="button" class="scheduleCustomerChoice" data-select-schedule-customer="${c.id}">
+        <b>${c.name}</b>
+        <small>${c.kana||'ふりがな未登録'}／担当:${c.cast||'担当不明'}／ボトル:${db.bottles.filter(b=>b.customerId===c.id).length}本</small>
+      </button>`).join('')
+      :'<div class="meta">該当するお客様はいません</div>';
+  };
+
+  const applySelectedCustomer=id=>{
+    const c=db.customers.find(x=>x.id===id);
+    if(!c)return;
+    $('fCustomerId').value=c.id;
+    $('fCustomer').value=c.name;
+    $('selectedCustomerName').textContent=c.name;
+    $('selectedCustomerMeta').textContent=`担当:${c.cast||'担当不明'}／ボトル:${db.bottles.filter(b=>b.customerId===c.id).length}本`;
+    $('selectedCustomerBox').classList.remove('hidden');
+    $('manualCustomerBox').classList.add('hidden');
+
+    const bottles=db.bottles.filter(b=>b.customerId===c.id);
+    $('selectedCustomerBottles').classList.toggle('hidden',!bottles.length);
+    $('selectedCustomerBottles').innerHTML=bottles.length
+      ?`<div class="rowTitle">キープボトル</div>${bottles.map(b=>`<div class="meta">No.${b.number} ${b.name} × ${b.qty||1}</div>`).join('')}`
+      :'';
+
+    renderCastOptions();
+  };
+
+  renderCustomerChoices();
   renderCastOptions();
+
+  if(linkedCustomer)applySelectedCustomer(linkedCustomer.id);
+
+  $('fCustomerSearch').oninput=renderCustomerChoices;
+
+  $('fCustomerChoices').onclick=e=>{
+    const button=e.target.closest('[data-select-schedule-customer]');
+    if(!button)return;
+    applySelectedCustomer(button.dataset.selectScheduleCustomer);
+  };
+
+  $('useManualCustomer').onclick=()=>{
+    $('fCustomerId').value='';
+    $('fCustomer').value='';
+    $('selectedCustomerBox').classList.add('hidden');
+    $('selectedCustomerBottles').classList.add('hidden');
+    $('manualCustomerBox').classList.remove('hidden');
+    renderCastOptions();
+    $('fCustomer').focus();
+  };
+
+  $('changeCustomer').onclick=()=>{
+    $('fCustomerId').value='';
+    $('selectedCustomerBox').classList.add('hidden');
+    $('selectedCustomerBottles').classList.add('hidden');
+    $('manualCustomerBox').classList.remove('hidden');
+    $('fCustomerSearch').focus();
+    renderCastOptions();
+  };
+
   $('fType').onchange=renderCastOptions;
   $('formDialog').showModal();
 
   $('saveForm').onclick=()=>{
+    const customerId=$('fCustomerId').value;
+    const linked=db.customers.find(c=>c.id===customerId);
+    const customerName=linked?.name||$('fCustomer').value.trim();
+
     const obj={
       id:existing?.id||uid(),
       date:$('fDate').value,
       type:$('fType').value,
       time:$('fTime').value,
-      customer:$('fCustomer').value.trim(),
+      customerId:linked?.id||'',
+      customer:customerName,
       cast:$('fCast').value,
       people:$('fPeople').value==='数名'?'数名':Number($('fPeople').value||1),
       memo:$('fMemo').value.trim()
     };
-    if(!obj.customer)return toast('お客様名を入力');
+
+    if(!obj.customer)return toast('お客様を選択または入力してください');
     if(obj.type==='companion'&&obj.cast==='担当なし')return toast('同伴は担当を選択してください');
+
     if(existing)Object.assign(existing,obj);else db.schedules.push(obj);
     save();
     $('formDialog').close();
@@ -565,13 +674,14 @@ function openScheduleForm(existing=null){
     toast('予定を保存しました');
   };
 }
+
 function renderSchedules(){
   let list=[...db.schedules];
   if(state.scheduleMode==='today')list=list.filter(x=>x.date===today());
   if(state.scheduleMode==='upcoming')list=list.filter(x=>x.date>=today());
   if(state.scheduleMode==='date')list=list.filter(x=>x.date===$('scheduleViewDate').value);
   list.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'予約'}／${peopleText(x.people)}／担当:${x.cast||'担当なし'}</div><div class="meta">タップで備考確認</div></button>`).join(''):'<div class="card">予定はありません</div>';
+  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'予約'}／${peopleText(x.people)}／担当:${x.cast||'担当なし'}</div><div class="meta">${x.customerId?"登録済みのお客様":"手入力のお客様"}／タップで詳細</div></button>`).join(''):'<div class="card">予定はありません</div>';
 }
 function showSchedule(id){
   const x=db.schedules.find(v=>v.id===id);if(!x)return;
