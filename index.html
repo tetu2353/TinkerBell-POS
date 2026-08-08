@@ -160,6 +160,12 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .inventory-history-row{display:grid;grid-template-columns:1.5fr 1fr .5fr 1fr;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
 @media(max-width:560px){.inventory-history-row{grid-template-columns:1fr 1fr}.inventory-history-row span:first-child{grid-column:1/-1}}
 
+.checkout-history-row{width:100%;display:flex;justify-content:space-between;gap:12px;align-items:center;text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;margin-bottom:8px}
+.checkout-history-right{display:flex;align-items:center;gap:10px}
+.checkout-cancelled{opacity:.6;background:#f4eeee}
+.checkout-detail-line{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.checkout-detail-total{font-size:24px;font-weight:1000;text-align:right;margin-top:12px}
+.checkout-cancelled-box{background:#fff0f0;border:2px solid #d77}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -374,7 +380,10 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <section id="reports" class="screen manager">
 <h2>売上・勤怠集計</h2>
 <div id="metrics" class="summary"></div>
-<div class="card"><h3>会計履歴</h3><div id="checkoutHistory"></div></div>
+<div class="card">
+  <div class="sectionHead"><h3>会計履歴</h3><button id="syncCheckoutHistory" class="secondary">クラウド再読込</button></div>
+  <div id="checkoutHistory"></div>
+</div>
 <div class="card">
   <div class="sectionHead">
     <h3>従業員別勤怠</h3>
@@ -509,12 +518,28 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
   <button id="shiftDayModalClose" class="secondary" style="width:100%;margin-top:12px">閉じる</button>
  </div>
 </div>
+
+<div id="checkoutDetailModal" class="modal hidden">
+  <div class="modal-card">
+    <h2 id="checkoutDetailTitle">会計詳細</h2>
+    <div id="checkoutDetailBody"></div>
+    <div class="row" style="margin-top:14px">
+      <button id="checkoutDetailClose" class="secondary">閉じる</button>
+      <button id="printReceiptBtn" class="primary">レシート</button>
+      <button id="printReceiptAgainBtn" class="secondary">再発行</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="printInvoiceBtn" class="primary">領収書</button>
+      <button id="cancelCheckoutBtn" class="danger">会計取消</button>
+    </div>
+  </div>
+</div>
 <div id="toast" class="toast hidden"></div>
 
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v35-alcohol-inventory';
+const APP_VERSION='v36-checkout-cloud-receipts';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -545,7 +570,7 @@ const seed=()=>({
  ],
  seats:[...Array.from({length:6},(_,i)=>({id:'C'+(i+1),name:'カウンター'+(i+1),customerId:'',customerName:'',casts:[],openedAt:'',orders:[]})),
  ...Array.from({length:5},(_,i)=>({id:'B'+(i+1),name:'BOX '+(i+1),customerId:'',customerName:'',casts:[],openedAt:'',orders:[]}))],
- customers:[], bottles:[], attendance:[], shifts:[], shiftMeta:{submitted:{},published:{}}, visits:[], notices:[], checkouts:[]
+ customers:[], bottles:[], attendance:[], shifts:[], shiftMeta:{submitted:{},published:{}}, visits:[], notices:[], checkouts:[], checkoutEvents:[]
 });
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||seed(), current=null;
 const REQUIRED_MENU_ITEMS=[
@@ -565,6 +590,8 @@ REQUIRED_MENU_ITEMS.forEach(item=>{
   if(!db.menu.some(x=>x.name===item.name))db.menu.push({...item});
 });
 db.inventoryLog=Array.isArray(db.inventoryLog)?db.inventoryLog:[];
+db.checkouts=Array.isArray(db.checkouts)?db.checkouts:[];
+db.checkoutEvents=Array.isArray(db.checkoutEvents)?db.checkoutEvents:[];
 db.menu=db.menu.map((item,index)=>({
   ...item,
   stockEnabled:item.stockEnabled===true,
@@ -610,6 +637,20 @@ window.tinkerbellApplyCloudMenu=menu=>{
   renderTapOrders();
 };
 window.tinkerbellGetLocalMenu=()=>Array.isArray(db.menu)?db.menu:[];
+window.tinkerbellApplyCloudCheckouts=checkouts=>{
+  if(!Array.isArray(checkouts))return;
+  db.checkouts=checkouts;
+  persist();
+  renderReports();
+};
+window.tinkerbellGetLocalCheckouts=()=>Array.isArray(db.checkouts)?db.checkouts:[];
+window.tinkerbellApplyCloudCheckoutEvents=events=>{
+  if(!Array.isArray(events))return;
+  db.checkoutEvents=events;
+  persist();
+};
+window.tinkerbellGetLocalCheckoutEvents=()=>Array.isArray(db.checkoutEvents)?db.checkoutEvents:[];
+
 let managerUnlocked=sessionStorage.getItem('tb_manager_unlocked')==='1';
 
 function isManager(){return managerUnlocked}
@@ -1232,7 +1273,63 @@ $('seatModalSave').onclick=()=>{
  toast('席を登録しました');
 };
 
-window.checkoutSeat=sid=>{const s=db.seats.find(x=>x.id===sid);if(!confirm(`${s.name} ${s.customerName}\n合計 ${yen(seatTotal(s))}\n会計を確定しますか？`))return;db.checkouts.push({id:id(),seat:s.name,customerName:s.customerName,openedAt:s.openedAt,closedAt:nowISO(),orders:s.orders,total:seatTotal(s)});s.customerId='';s.customerName='';s.casts=[];s.openedAt='';s.orders=[];if(selectedOrderSeat===sid)selectedOrderSeat='';persist();renderAll();toast('会計を確定しました')}
+window.checkoutSeat=async sid=>{
+ const s=db.seats.find(x=>x.id===sid);
+ if(!s)return;
+ if(!confirm(`${s.name} ${s.customerName}\n合計 ${yen(seatTotal(s))}\n会計を確定しますか？`))return;
+
+ const checkout={
+  id:id(),
+  seat:s.name,
+  seatId:s.id,
+  customerId:s.customerId||'',
+  customerName:s.customerName,
+  openedAt:s.openedAt,
+  closedAt:nowISO(),
+  orders:JSON.parse(JSON.stringify(s.orders)),
+  total:seatTotal(s),
+  status:'completed',
+  receiptPrintCount:0,
+  invoicePrintCount:0,
+  cancelledAt:'',
+  cancelReason:''
+ };
+
+ const before=JSON.parse(JSON.stringify(db.checkouts));
+ db.checkouts.push(checkout);
+ db.checkoutEvents.unshift({
+  id:id(),
+  checkoutId:checkout.id,
+  type:'completed',
+  time:nowISO(),
+  amount:checkout.total,
+  customerName:checkout.customerName
+ });
+
+ persist();
+
+ try{
+  if(window.tinkerbellFirebase?.saveCheckouts){
+    await window.tinkerbellFirebase.saveCheckouts(db.checkouts,db.checkoutEvents);
+  }
+ }catch(error){
+  console.error('Checkout cloud save failed:',error);
+  db.checkouts=before;
+  persist();
+  toast('会計のクラウド保存に失敗しました');
+  return;
+ }
+
+ s.customerId='';
+ s.customerName='';
+ s.casts=[];
+ s.openedAt='';
+ s.orders=[];
+ if(selectedOrderSeat===sid)selectedOrderSeat='';
+ persist();
+ renderAll();
+ toast('会計を確定しました');
+};
 
 let selectedOrderSeat='',selectedCategory='すべて',pendingMenu='',lastOrder=null,undoTimer=null;
 
@@ -2057,20 +2154,39 @@ function attendanceHours(record){
  return Math.max(0,(new Date(record.out)-new Date(record.in))/36e5);
 }
 
+let selectedCheckoutId='';
+
+function checkoutStatusLabel(x){
+ if(x.status==='cancelled')return '取消済み';
+ return '確定';
+}
+
 function renderReports(){
- const sales=db.checkouts.reduce((a,x)=>a+x.total,0);
+ const activeCheckouts=db.checkouts.filter(x=>x.status!=='cancelled');
+ const sales=activeCheckouts.reduce((a,x)=>a+Number(x.total||0),0);
  const open=db.seats.reduce((a,x)=>a+seatTotal(x),0);
- const orders=db.checkouts.reduce((a,x)=>a+x.orders.length,0)+db.seats.reduce((a,x)=>a+x.orders.length,0);
+ const orders=activeCheckouts.reduce((a,x)=>a+(x.orders||[]).reduce((s,o)=>s+Number(o.qty||1),0),0)
+  +db.seats.reduce((a,x)=>a+(x.orders||[]).reduce((s,o)=>s+Number(o.qty||1),0),0);
 
  $('metrics').innerHTML=`
   <div class="metric"><small>確定売上</small><b>${yen(sales)}</b></div>
   <div class="metric"><small>未会計</small><b>${yen(open)}</b></div>
-  <div class="metric"><small>会計件数</small><b>${db.checkouts.length}</b></div>
+  <div class="metric"><small>会計件数</small><b>${activeCheckouts.length}</b></div>
   <div class="metric"><small>注文数</small><b>${orders}</b></div>`;
 
  $('checkoutHistory').innerHTML=db.checkouts.length
-  ?`<table><tr><th>日時</th><th>席</th><th>お客様</th><th>金額</th></tr>${db.checkouts.slice().reverse().map(x=>`<tr><td>${new Date(x.closedAt).toLocaleString('ja-JP')}</td><td>${esc(x.seat)}</td><td>${esc(x.customerName)}</td><td>${yen(x.total)}</td></tr>`).join('')}</table>`
-  :'会計履歴なし';
+  ?db.checkouts.slice().reverse().map(x=>`
+    <button class="checkout-history-row ${x.status==='cancelled'?'checkout-cancelled':''}" onclick="openCheckoutDetail('${x.id}')">
+      <div>
+        <b>${new Date(x.closedAt).toLocaleString('ja-JP')}</b>
+        <div class="meta">${esc(x.seat)} / ${esc(x.customerName||'')}</div>
+      </div>
+      <div class="checkout-history-right">
+        <span class="tag">${checkoutStatusLabel(x)}</span>
+        <b>${yen(x.total)}</b>
+      </div>
+    </button>`).join('')
+  :'<div class="empty">会計履歴なし</div>';
 
  const monthInput=$('attendanceReportMonth');
  if(!monthInput.value)monthInput.value=today().slice(0,7);
@@ -2116,6 +2232,130 @@ function renderReports(){
   </details>`;
  }).join('');
 }
+
+window.openCheckoutDetail=idn=>{
+ const x=db.checkouts.find(c=>c.id===idn);
+ if(!x)return;
+ selectedCheckoutId=idn;
+ $('checkoutDetailTitle').textContent=`会計詳細 ${checkoutStatusLabel(x)}`;
+ $('checkoutDetailBody').innerHTML=`
+  <div class="card">
+    <div class="meta">会計日時</div>
+    <h3>${new Date(x.closedAt).toLocaleString('ja-JP')}</h3>
+    <div class="meta">席：${esc(x.seat)} / お客様：${esc(x.customerName||'')}</div>
+  </div>
+  <div class="card">
+    <h3>注文明細</h3>
+    ${(x.orders||[]).map(o=>`
+      <div class="checkout-detail-line">
+        <span>${esc(o.name)} × ${Number(o.qty||1)}</span>
+        <b>${yen(Number(o.price||0)*Number(o.qty||1))}</b>
+      </div>`).join('')||'<div class="empty">明細なし</div>'}
+    <div class="checkout-detail-total">合計 ${yen(x.total)}</div>
+  </div>
+  ${x.status==='cancelled'?`<div class="card checkout-cancelled-box"><b>取消済み</b><div class="meta">${esc(x.cancelReason||'理由なし')} / ${x.cancelledAt?new Date(x.cancelledAt).toLocaleString('ja-JP'):''}</div></div>`:''}
+  <div class="meta">レシート発行 ${Number(x.receiptPrintCount||0)}回 / 領収書発行 ${Number(x.invoicePrintCount||0)}回</div>`;
+ $('cancelCheckoutBtn').classList.toggle('hidden',x.status==='cancelled');
+ $('checkoutDetailModal').classList.remove('hidden');
+};
+
+$('checkoutDetailClose').onclick=()=>$('checkoutDetailModal').classList.add('hidden');
+
+function printWindowHtml(title,body){
+ const w=window.open('','_blank','width=420,height=700');
+ if(!w)return toast('印刷画面を開けません');
+ w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
+ <style>
+ body{font-family:-apple-system,BlinkMacSystemFont,"Yu Gothic",sans-serif;padding:18px;color:#111}
+ h1,h2,h3{margin:0 0 12px}.center{text-align:center}.line{display:flex;justify-content:space-between;border-bottom:1px dashed #777;padding:6px 0}
+ .total{font-size:24px;font-weight:900;border-top:2px solid #111;margin-top:12px;padding-top:10px}
+ .receipt{max-width:320px;margin:auto}.invoice{max-width:700px;margin:auto;border:2px solid #111;padding:28px}
+ </style></head><body>${body}<script>window.onload=()=>{window.print()}<\/script></body></html>`);
+ w.document.close();
+}
+
+async function recordPrint(type){
+ const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
+ if(!x)return;
+ if(type==='receipt')x.receiptPrintCount=Number(x.receiptPrintCount||0)+1;
+ if(type==='invoice')x.invoicePrintCount=Number(x.invoicePrintCount||0)+1;
+ db.checkoutEvents.unshift({id:id(),checkoutId:x.id,type:`print-${type}`,time:nowISO()});
+ persist();
+ try{
+  if(window.tinkerbellFirebase?.saveCheckouts){
+   await window.tinkerbellFirebase.saveCheckouts(db.checkouts,db.checkoutEvents);
+  }
+ }catch(e){console.error(e)}
+ renderReports();
+}
+
+function receiptHtml(x){
+ return `<div class="receipt">
+   <h2 class="center">TINKER BELL</h2>
+   <div class="center">${new Date(x.closedAt).toLocaleString('ja-JP')}</div>
+   <div class="center">${esc(x.customerName||'')} ${esc(x.seat)}</div>
+   <hr>
+   ${(x.orders||[]).map(o=>`<div class="line"><span>${esc(o.name)} × ${Number(o.qty||1)}</span><span>${yen(Number(o.price||0)*Number(o.qty||1))}</span></div>`).join('')}
+   <div class="total">合計 ${yen(x.total)}</div>
+   <p class="center">ありがとうございました</p>
+  </div>`;
+}
+
+$('printReceiptBtn').onclick=async()=>{
+ const x=db.checkouts.find(c=>c.id===selectedCheckoutId);if(!x)return;
+ printWindowHtml('レシート',receiptHtml(x));
+ await recordPrint('receipt');
+};
+$('printReceiptAgainBtn').onclick=$('printReceiptBtn').onclick;
+
+$('printInvoiceBtn').onclick=async()=>{
+ const x=db.checkouts.find(c=>c.id===selectedCheckoutId);if(!x)return;
+ const name=prompt('領収書の宛名を入力してください',x.customerName||'');
+ if(name===null)return;
+ const proviso=prompt('但し書きを入力してください','飲食代として');
+ if(proviso===null)return;
+ printWindowHtml('領収書',`<div class="invoice">
+   <h1 class="center">領収書</h1>
+   <h2>${esc(name)} 様</h2>
+   <div class="total center">${yen(x.total)}</div>
+   <p>但し　${esc(proviso)}</p>
+   <p>${new Date(x.closedAt).toLocaleDateString('ja-JP')}</p>
+   <hr>
+   <p>TINKER BELL</p>
+  </div>`);
+ await recordPrint('invoice');
+};
+
+$('cancelCheckoutBtn').onclick=async()=>{
+ const x=db.checkouts.find(c=>c.id===selectedCheckoutId);if(!x||x.status==='cancelled')return;
+ const reason=prompt('取消理由を入力してください');
+ if(reason===null||!reason.trim())return toast('取消理由を入力してください');
+ if(!confirm('この会計を取消しますか？履歴は削除されません。'))return;
+
+ x.status='cancelled';
+ x.cancelledAt=nowISO();
+ x.cancelReason=reason.trim();
+ db.checkoutEvents.unshift({id:id(),checkoutId:x.id,type:'cancelled',time:nowISO(),reason:x.cancelReason,amount:x.total});
+ persist();
+
+ try{
+  if(window.tinkerbellFirebase?.saveCheckouts){
+   await window.tinkerbellFirebase.saveCheckouts(db.checkouts,db.checkoutEvents);
+  }
+ }catch(error){
+  console.error(error);
+  toast('取消のクラウド保存に失敗しました');
+  return;
+ }
+
+ $('checkoutDetailModal').classList.add('hidden');
+ renderReports();
+ toast('会計を取消しました');
+};
+
+$('syncCheckoutHistory').onclick=()=>{
+ if(window.tinkerbellFirebase?.reloadCheckouts)window.tinkerbellFirebase.reloadCheckouts();
+};
 
 $('attendanceReportMonth').onchange=renderReports;
 
@@ -2402,6 +2642,34 @@ function startStaffRealtimeSync() {
 }
 
 
+
+async function saveCheckoutsToFirebase(checkouts,checkoutEvents) {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  await setDoc(
+    doc(firestoreDb, "app", "data"),
+    {
+      checkouts,
+      checkoutEvents,
+      checkoutsUpdatedAt: new Date().toISOString()
+    },
+    { merge: true }
+  );
+}
+
+function startCheckoutRealtimeSync() {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  const ref=doc(firestoreDb,"app","data");
+
+  return onSnapshot(ref,snap=>{
+    if(!snap.exists())return;
+    const d=snap.data()||{};
+    if(Array.isArray(d.checkouts))window.tinkerbellApplyCloudCheckouts?.(d.checkouts);
+    if(Array.isArray(d.checkoutEvents))window.tinkerbellApplyCloudCheckoutEvents?.(d.checkoutEvents);
+  },error=>console.error("Checkout sync failed:",error));
+}
+
 async function saveMenuToFirebase(menu) {
   firebaseApp ||= initializeApp(firebaseConfig);
   firestoreDb ||= getFirestore(firebaseApp);
@@ -2507,13 +2775,16 @@ window.tinkerbellFirebase = {
   loadCustomers: loadCustomersFromFirebase,
   saveStaff: saveStaffToFirebase,
   saveMenu: saveMenuToFirebase,
-  saveAdminPasscode: saveAdminPasscodeToFirebase
+  saveAdminPasscode: saveAdminPasscodeToFirebase,
+  saveCheckouts: saveCheckoutsToFirebase,
+  reloadCheckouts: ()=>startCheckoutRealtimeSync()
 };
 
 startCustomerRealtimeSync();
 startStaffRealtimeSync();
 startMenuRealtimeSync();
 startAdminPasscodeSync();
+startCheckoutRealtimeSync();
 </script>
 
 </body></html>
