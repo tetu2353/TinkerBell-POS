@@ -203,6 +203,151 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .checkout-confirm-large{width:100%;min-height:64px;font-size:21px;font-weight:1000}
 .checkout-payment-line{margin-top:10px;padding:10px;border-radius:10px;background:#f4efe8;font-size:17px}
 
+
+/* 会社提出用・横長領収書 */
+.invoice-landscape{
+  width:100%;
+  box-sizing:border-box;
+  color:#111;
+  background:#fff;
+}
+.invoice-head-row{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:flex-start;
+  border-bottom:2px solid #111;
+  padding-bottom:8px;
+}
+.invoice-doc-title{
+  font-size:32px;
+  font-weight:1000;
+  letter-spacing:.22em;
+}
+.invoice-number{
+  font-size:11px;
+  color:#555;
+  margin-top:4px;
+}
+.invoice-head-right{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  font-size:13px;
+  text-align:right;
+}
+.invoice-customer-row{
+  margin-top:12px;
+}
+.invoice-customer-name{
+  font-size:22px;
+  font-weight:900;
+  border-bottom:1px solid #111;
+  padding:8px 4px 6px;
+}
+.invoice-main-row{
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:18px;
+  margin-top:14px;
+}
+.invoice-main-left{
+  min-width:0;
+}
+.invoice-amount-label{
+  font-size:13px;
+  color:#444;
+}
+.invoice-amount{
+  font-size:34px;
+  font-weight:1000;
+  border-bottom:3px double #111;
+  padding:6px 0 8px;
+  margin-bottom:10px;
+}
+.invoice-proviso,
+.invoice-payment{
+  font-size:14px;
+  margin-top:7px;
+}
+.invoice-tax-box{
+  border:1px solid #555;
+  padding:10px 12px;
+  margin:0;
+}
+.invoice-tax-heading{
+  font-size:13px;
+  font-weight:1000;
+  margin-bottom:5px;
+}
+.invoice-tax-row{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:4px 0;
+  border-bottom:1px dashed #aaa;
+  font-size:13px;
+}
+.invoice-tax-row:last-child{
+  border-bottom:0;
+}
+.invoice-footer-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:18px;
+  margin-top:16px;
+  border-top:1px solid #999;
+  padding-top:10px;
+}
+.invoice-note{
+  font-size:12px;
+}
+.invoice-shop{
+  text-align:right;
+  line-height:1.55;
+  font-size:13px;
+}
+.revenue-stamp-box{
+  width:86px;
+  height:56px;
+  border:1px dashed #555;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size:11px;
+  font-weight:900;
+}
+@media(max-width:640px){
+ .invoice-main-row{grid-template-columns:1fr}
+ .invoice-footer-row{align-items:flex-start}
+ .invoice-doc-title{font-size:27px}
+ .invoice-customer-name{font-size:19px}
+ .invoice-amount{font-size:30px}
+}
+@media print{
+ @page{size:A6 landscape;margin:7mm}
+ body.invoice-print-mode *{visibility:hidden!important}
+ body.invoice-print-mode #invoicePreviewPaper,
+ body.invoice-print-mode #invoicePreviewPaper *{visibility:visible!important}
+ body.invoice-print-mode #invoicePreviewPaper{
+   position:absolute!important;
+   left:0!important;
+   top:0!important;
+   width:100%!important;
+   max-width:none!important;
+   margin:0!important;
+   padding:0!important;
+   border:0!important;
+   background:#fff!important;
+ }
+ body.invoice-print-mode .invoice-main-row{
+   grid-template-columns:1.15fr .85fr!important;
+ }
+ body.invoice-print-mode{background:#fff!important}
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -630,7 +775,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v41-seat-checkout-payment-print';
+const APP_VERSION='v42-company-landscape-receipt';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2482,7 +2627,9 @@ $('printReceiptBtn').onclick=async()=>{
 $('printReceiptAgainBtn').onclick=$('printReceiptBtn').onclick;
 
 function buildInvoicePreview(){
- const x=db.checkouts.find(c=>c.id===selectedCheckoutId); if(!x)return;
+ const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
+ if(!x)return;
+
  const name=$('invoicePreviewName').value.trim();
  const suffix=$('invoicePreviewSuffix').value||'御中';
  const proviso=$('invoicePreviewProviso').value.trim()||'飲食代として';
@@ -2490,20 +2637,61 @@ function buildInvoicePreview(){
  const registration=$('invoicePreviewRegistration').value.trim();
  const issuer=$('invoiceIssuerName').value.trim()||'ティンカーベル';
  const taxSummary=checkoutTaxSummary(x);
- const taxRows=Object.entries(taxSummary).sort((a,b)=>Number(b[0])-Number(a[0])).map(([rate,obj])=>`
-  <div class="invoice-tax-row"><span>${rate}%対象（税込）</span><b>${yen(obj.gross)}</b></div>
-  <div class="invoice-tax-row"><span>うち消費税額（${rate}%）</span><b>${yen(obj.tax)}</b></div>`).join('');
- const no=`${new Date(x.closedAt).toLocaleDateString('sv-SE').replaceAll('-','')}-${String(x.id).slice(-6).toUpperCase()}`;
- const stamp=payment==='現金'?'<div class="revenue-stamp-box">収入印紙<br>貼付欄</div>':'';
+
+ const taxRows=Object.entries(taxSummary)
+  .sort((a,b)=>Number(b[0])-Number(a[0]))
+  .map(([rate,obj])=>`
+   <div class="invoice-tax-row">
+    <span>${rate}%対象（税込）</span>
+    <b>${yen(obj.gross)}</b>
+   </div>
+   <div class="invoice-tax-row">
+    <span>うち消費税額（${rate}%）</span>
+    <b>${yen(obj.tax)}</b>
+   </div>`).join('');
+
+ const invoiceNo=`${new Date(x.closedAt).toLocaleDateString('sv-SE').replaceAll('-','')}-${String(x.id).slice(-6).toUpperCase()}`;
+
  $('invoicePreviewPaper').innerHTML=`
-  <div class="invoice-top"><div class="invoice-date">発行日　${new Date(x.closedAt).toLocaleDateString('ja-JP')}</div>${stamp}</div>
-  <h1>領収書</h1>
-  <div class="invoice-name">${esc(name||'　　　　　　　　')} ${esc(suffix)}</div>
-  <div class="invoice-amount">${yen(x.total)}</div>
-  <div class="invoice-proviso">但し　${esc(proviso)}</div>
-  <div class="invoice-payment">支払方法　${esc(payment)}</div>
-  <div class="invoice-tax-box"><b>消費税内訳</b>${taxRows}</div>
-  <div class="invoice-shop"><b>${esc(issuer)}</b><br>TEL：${INVOICE_PHONE}<br>登録番号：${esc(registration||'未設定')}<br><small>管理番号 ${no}</small></div>`;
+  <div class="invoice-landscape">
+    <div class="invoice-head-row">
+      <div>
+        <div class="invoice-doc-title">領 収 書</div>
+        <div class="invoice-number">管理番号 ${invoiceNo}</div>
+      </div>
+      <div class="invoice-head-right">
+        <div>発行日 ${new Date(x.closedAt).toLocaleDateString('ja-JP')}</div>
+        ${payment==='現金'?'<div class="revenue-stamp-box">収入印紙<br>貼付欄</div>':''}
+      </div>
+    </div>
+
+    <div class="invoice-customer-row">
+      <div class="invoice-customer-name">${esc(name||'　　　　　　　　　　　　')} ${esc(suffix)}</div>
+    </div>
+
+    <div class="invoice-main-row">
+      <div class="invoice-main-left">
+        <div class="invoice-amount-label">領収金額</div>
+        <div class="invoice-amount">${yen(x.total)}</div>
+        <div class="invoice-proviso">但し　${esc(proviso)}</div>
+        <div class="invoice-payment">支払方法　<b>${esc(payment)}</b></div>
+      </div>
+
+      <div class="invoice-tax-box">
+        <div class="invoice-tax-heading">消費税内訳</div>
+        ${taxRows}
+      </div>
+    </div>
+
+    <div class="invoice-footer-row">
+      <div class="invoice-note">上記正に領収いたしました。</div>
+      <div class="invoice-shop">
+        <b>${esc(issuer)}</b><br>
+        TEL ${INVOICE_PHONE}<br>
+        登録番号 ${esc(registration||'未設定')}
+      </div>
+    </div>
+  </div>`;
 }
 
 $('printInvoiceBtn').onclick=()=>{
