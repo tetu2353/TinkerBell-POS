@@ -150,6 +150,16 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
  .seat-actions .danger{grid-column:1/-1}
 }
 
+.seat-cast-current{display:block;margin-top:4px;color:#b14d36;font-size:12px;font-weight:900}
+
+.inventory-item{border:2px solid #d9d2c5}
+.inventory-low{border-color:#e58b62!important;background:#fff3ed!important}
+.inventory-count{font-size:30px;color:#3c2d24}
+.inventory-alert{margin-top:9px;padding:10px;border-radius:10px;background:#ffd9c7;color:#8e2e13;font-weight:1000;font-size:17px}
+.inventory-ok{margin-top:9px;color:#27733a;font-weight:900}
+.inventory-history-row{display:grid;grid-template-columns:1.5fr 1fr .5fr 1fr;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+@media(max-width:560px){.inventory-history-row{grid-template-columns:1fr 1fr}.inventory-history-row span:first-child{grid-column:1/-1}}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -183,6 +193,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
   <button class="tile" data-go="notices"><span>🔔</span><b>お知らせ</b><small>店舗からの連絡</small></button>
   </div><h2 class="management-heading">管理</h2><div class="grid management-grid"><button class="tile manager manager-tile" data-go="staff"><span>👥</span><b>従業員管理</b><small>時給・手当・権限</small></button>
   <button class="tile manager manager-tile" data-go="menu"><span>📖</span><b>メニュー管理</b><small>料金・バック設定</small></button>
+  <button class="tile manager manager-tile" data-go="inventory"><span>📦</span><b>お酒在庫</b><small>入荷・在庫・発注</small></button>
   <button class="tile manager manager-tile" data-go="adminAttendance"><span>🗓️</span><b>全員の勤怠</b><small>月・日別の出退勤</small></button>
   <button class="tile manager manager-tile" data-go="reports"><span>📊</span><b>売上・勤怠集計</b><small>日別集計</small></button>
   <button class="tile manager manager-tile" data-go="settings"><span>⚙️</span><b>設定</b><small>データ保存・初期化</small></button>
@@ -285,6 +296,12 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 
 <section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><input id="staffEditId" type="hidden"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><div class="meta">従業員ごとの暗証番号は使用しません。</div></div><div class="row"><button id="saveStaff" class="primary">従業員登録</button><button id="cancelStaffEdit" class="secondary hidden">編集をやめる</button></div></div><div id="staffList" class="list"></div></section>
 
+<section id="inventory" class="screen manager">
+<h2>お酒在庫</h2>
+<div class="card"><div class="meta">在庫管理ONの商品だけ表示。席で注文すると減り、取消・数量減で戻ります。</div></div>
+<div id="inventoryList" class="list"></div>
+<div class="card"><h3>在庫履歴</h3><div id="inventoryHistory"></div></div>
+</section>
 <section id="menu" class="screen manager">
 <h2>商品管理</h2>
 <div class="card">
@@ -314,6 +331,11 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
     <label>注文画面への表示
       <select id="menuVisible"><option value="true">表示する</option><option value="false">非表示</option></select>
     </label>
+  </div>
+  <div class="row3">
+    <label>在庫管理<select id="menuStockEnabled"><option value="false">しない</option><option value="true">する</option></select></label>
+    <label>現在庫<input id="menuStock" type="number" min="0" step="1" value="0"></label>
+    <label>発注ライン<input id="menuReorderPoint" type="number" min="0" step="1" value="0"></label>
   </div>
   <div class="row">
     <button id="saveMenu" class="primary">商品を追加</button>
@@ -492,7 +514,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v33-seat-visual-refresh';
+const APP_VERSION='v35-alcohol-inventory';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -542,8 +564,12 @@ db.menu=Array.isArray(db.menu)?db.menu:[];
 REQUIRED_MENU_ITEMS.forEach(item=>{
   if(!db.menu.some(x=>x.name===item.name))db.menu.push({...item});
 });
+db.inventoryLog=Array.isArray(db.inventoryLog)?db.inventoryLog:[];
 db.menu=db.menu.map((item,index)=>({
   ...item,
+  stockEnabled:item.stockEnabled===true,
+  stock:Number.isFinite(Number(item.stock))?Number(item.stock):0,
+  reorderPoint:Number.isFinite(Number(item.reorderPoint))?Number(item.reorderPoint):0,
   type:item.name==='キャストドリンク'&&item.type==='ドリンク'?'キャストドリンク':item.type,
   visible:item.visible!==false,
   sortOrder:Number.isFinite(Number(item.sortOrder))?Number(item.sortOrder):index
@@ -573,6 +599,9 @@ window.tinkerbellApplyCloudMenu=menu=>{
   if(!Array.isArray(menu))return;
   db.menu=menu.map((item,index)=>({
     ...item,
+    stockEnabled:item.stockEnabled===true,
+    stock:Number.isFinite(Number(item.stock))?Number(item.stock):0,
+    reorderPoint:Number.isFinite(Number(item.reorderPoint))?Number(item.reorderPoint):0,
     visible:item.visible!==false,
     sortOrder:Number.isFinite(Number(item.sortOrder))?Number(item.sortOrder):index
   }));
@@ -636,7 +665,7 @@ function lockManager(){
  toast('管理モードを終了しました');
 }
 
-const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance']);
+const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance','inventory']);
 
 function show(idn){
  if(MANAGER_SCREENS.has(idn)&&!managerUnlocked){
@@ -1100,25 +1129,59 @@ $('seatDetailOrder').onclick=()=>{
  openSeatOrder(sid);
 };
 
+function findOtherSeatForCast(castId){
+ return db.seats.find(s=>
+  s.id!==seatEditId &&
+  s.customerName &&
+  Array.isArray(s.casts) &&
+  s.casts.includes(castId)
+ );
+}
+
 function renderSeatCastChoices(){
  const casts=db.staff.filter(x=>x.role==='cast');
 
  $('seatCastChoices').innerHTML=casts.length
-  ?casts.map(c=>`
-   <label class="seat-cast-option ${seatCastSelected.includes(c.id)?'selected':''}">
-    <input type="checkbox" value="${c.id}" ${seatCastSelected.includes(c.id)?'checked':''}>
-    <span>${esc(c.name)}</span>
-   </label>`).join('')
+  ?casts.map(c=>{
+    const otherSeat=findOtherSeatForCast(c.id);
+    return `
+     <label class="seat-cast-option ${seatCastSelected.includes(c.id)?'selected':''}">
+      <input type="checkbox" value="${c.id}" ${seatCastSelected.includes(c.id)?'checked':''}>
+      <span>
+       ${esc(c.name)}
+       ${otherSeat?`<small class="seat-cast-current">現在：${esc(otherSeat.name)} ${esc(otherSeat.customerName)}</small>`:''}
+      </span>
+     </label>`;
+   }).join('')
   :'<div class="empty">キャストが登録されていません</div>';
 
  $('seatCastChoices').querySelectorAll('input[type="checkbox"]').forEach(input=>{
   input.onchange=()=>{
    const idn=input.value;
+   const cast=staffById(idn);
+
    if(input.checked){
+    const otherSeat=findOtherSeatForCast(idn);
+
+    if(otherSeat){
+      const ok=confirm(
+       `${cast?.name||'このキャスト'}は\n\n`+
+       `【${otherSeat.name}　${otherSeat.customerName}】\n\n`+
+       `についています。\n\nこの席へ移動しますか？`
+      );
+
+      if(!ok){
+       input.checked=false;
+       input.closest('.seat-cast-option')?.classList.remove('selected');
+       return;
+      }
+    }
+
     if(!seatCastSelected.includes(idn))seatCastSelected.push(idn);
    }else{
     seatCastSelected=seatCastSelected.filter(id=>id!==idn);
    }
+
    input.closest('.seat-cast-option')?.classList.toggle('selected',input.checked);
   };
  });
@@ -1147,6 +1210,15 @@ $('seatModalSave').onclick=()=>{
 
  const s=db.seats.find(x=>x.id===seatEditId);
  const c=db.customers.find(x=>x.name===name);
+ if(!s)return toast('席が見つかりません');
+
+ // 選択されたキャストは、他の席から外してこの席へ移動する。
+ seatCastSelected.forEach(castId=>{
+  db.seats.forEach(other=>{
+   if(other.id===s.id || !Array.isArray(other.casts))return;
+   other.casts=other.casts.filter(idn=>idn!==castId);
+  });
+ });
 
  s.customerId=c?.id||'';
  s.customerName=name;
@@ -1279,6 +1351,8 @@ window.commitTapOrder=(mid,castId)=>{
  const m=db.menu.find(x=>x.id===mid);
  if(!s||!m)return;
 
+ if(m.stockEnabled&&!adjustInventory(m.id,-1,`${s.name} 注文`))return;
+
  const existing=s.orders.find(o=>
   o.menuId===m.id &&
   String(o.castId||'')===String(castId||'') &&
@@ -1322,6 +1396,7 @@ $('undoBtn').onclick=()=>{
   const order=s?.orders.find(x=>x.id===lastOrder.oid);
 
   if(s&&order){
+   adjustInventory(order.menuId,1,`${s.name} 注文取消`);
    if(lastOrder.incremented&&Number(order.qty||1)>1){
     order.qty=Number(order.qty||1)-1;
    }else{
@@ -1376,7 +1451,10 @@ window.changeOrderQty=(sid,oid,delta)=>{
  const o=s?.orders.find(x=>x.id===oid);
  if(!s||!o)return;
 
- o.qty=Number(o.qty||1)+Number(delta||0);
+ const change=Number(delta||0);
+ if(change>0&&!adjustInventory(o.menuId,-change,`${s.name} 数量追加`))return;
+ if(change<0)adjustInventory(o.menuId,-change,`${s.name} 数量減`);
+ o.qty=Number(o.qty||1)+change;
 
  if(o.qty<=0){
   s.orders=s.orders.filter(x=>x.id!==oid);
@@ -1389,6 +1467,8 @@ window.changeOrderQty=(sid,oid,delta)=>{
 window.delOrder=(sid,oid)=>{
  const s=db.seats.find(x=>x.id===sid);
  if(!s)return;
+ const o=s.orders.find(x=>x.id===oid);
+ if(o)adjustInventory(o.menuId,Number(o.qty||1),`${s.name} 注文削除`);
  s.orders=s.orders.filter(x=>x.id!==oid);
  persist();
  renderOrders();
@@ -1610,6 +1690,9 @@ function clearMenuForm(){
  $('menuBack').value='0';
  $('menuTax').value='10';
  $('menuVisible').value='true';
+ $('menuStockEnabled').value='false';
+ $('menuStock').value='0';
+ $('menuReorderPoint').value='0';
  $('saveMenu').textContent='商品を追加';
  $('cancelMenuEdit').classList.add('hidden');
 }
@@ -1640,7 +1723,10 @@ $('saveMenu').onclick=async()=>{
   type:$('menuType').value,
   back:backValue,
   tax:Number($('menuTax').value),
-  visible:$('menuVisible').value==='true'
+  visible:$('menuVisible').value==='true',
+  stockEnabled:$('menuStockEnabled').value==='true',
+  stock:Math.max(0,Number($('menuStock').value||0)),
+  reorderPoint:Math.max(0,Number($('menuReorderPoint').value||0))
  };
 
  button.disabled=true;
@@ -1656,6 +1742,9 @@ $('saveMenu').onclick=async()=>{
    item.back=data.back;
    item.tax=data.tax;
    item.visible=data.visible;
+   item.stockEnabled=data.stockEnabled;
+   item.stock=data.stock;
+   item.reorderPoint=data.reorderPoint;
   }else{
    const maxOrder=db.menu.reduce((m,x)=>Math.max(m,Number(x.sortOrder||0)),0);
    db.menu.push({id:id(),...data,sortOrder:maxOrder+1});
@@ -1686,11 +1775,48 @@ $('saveMenu').onclick=async()=>{
 
 $('cancelMenuEdit').onclick=clearMenuForm;
 
+
+function logInventory(menuId,delta,reason){
+ const m=db.menu.find(x=>x.id===menuId);
+ if(!m||!m.stockEnabled||!delta)return;
+ db.inventoryLog.unshift({id:id(),menuId,menuName:m.name,delta:Number(delta),reason,time:nowISO()});
+ db.inventoryLog=db.inventoryLog.slice(0,300);
+}
+function adjustInventory(menuId,delta,reason){
+ const m=db.menu.find(x=>x.id===menuId);
+ if(!m||!m.stockEnabled)return true;
+ const next=Number(m.stock||0)+Number(delta||0);
+ if(next<0){toast(`${m.name}の在庫がありません`);return false;}
+ m.stock=next; logInventory(menuId,delta,reason); return true;
+}
+window.receiveStock=mid=>{
+ const m=db.menu.find(x=>x.id===mid);if(!m)return;
+ const raw=prompt(`${m.name}の入荷数を入力`,'1'); if(raw===null)return;
+ const qty=Number(raw); if(!Number.isInteger(qty)||qty<=0)return toast('入荷数を確認してください');
+ adjustInventory(mid,qty,'入荷'); persist();renderInventory();renderMenu();renderTapOrders();
+ toast(`${m.name}を${qty}入荷しました`);
+};
+function renderInventory(){
+ if(!$('inventoryList'))return;
+ const items=db.menu.filter(m=>m.stockEnabled);
+ $('inventoryList').innerHTML=items.length?items.map(m=>{
+  const low=Number(m.stock||0)<=Number(m.reorderPoint||0);
+  return `<div class="item inventory-item ${low?'inventory-low':''}">
+   <div class="sectionHead"><h3>${esc(m.name)}</h3><b class="inventory-count">${Number(m.stock||0)}</b></div>
+   <div class="meta">発注ライン：${Number(m.reorderPoint||0)}以下</div>
+   ${low?'<div class="inventory-alert">⚠️ 在庫少なめ・入荷推奨</div>':'<div class="inventory-ok">在庫OK</div>'}
+   <div class="item-actions"><button class="primary" onclick="receiveStock('${m.id}')">＋ 入荷</button></div>
+  </div>`;
+ }).join(''):'<div class="empty">商品管理から「在庫管理する」を設定してください。</div>';
+ $('inventoryHistory').innerHTML=(db.inventoryLog||[]).length
+  ?db.inventoryLog.slice(0,50).map(x=>`<div class="inventory-history-row"><span>${new Date(x.time).toLocaleString('ja-JP')}</span><b>${esc(x.menuName)}</b><span>${x.delta>0?'+':''}${x.delta}</span><span>${esc(x.reason)}</span></div>`).join('')
+  :'<div class="empty">履歴なし</div>';
+}
 function renderMenu(){
  const list=[...db.menu].sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
  $('menuList').innerHTML=list.length?list.map((m,index)=>`<div class="item" style="${m.visible===false?'opacity:.55':''}">
   <h3>${esc(m.name)} <span class="tag">${esc(m.type)}</span> ${m.visible===false?'<span class="tag">非表示</span>':''}</h3>
-  <div class="meta">${yen(m.price)} / バック ${yen(m.back)} / 税 ${m.tax}%</div>
+  <div class="meta">${yen(m.price)} / バック ${yen(m.back)} / 税 ${m.tax}% ${m.stockEnabled?`/ 在庫 ${Number(m.stock||0)} / 発注 ${Number(m.reorderPoint||0)}以下`:''}</div>
   <div class="item-actions">
    <button class="secondary" onclick="moveMenu('${m.id}',-1)" ${index===0?'disabled':''}>↑</button>
    <button class="secondary" onclick="moveMenu('${m.id}',1)" ${index===list.length-1?'disabled':''}>↓</button>
@@ -1711,6 +1837,9 @@ window.editMenu=idn=>{
  $('menuBack').value=Number(m.back??0);
  $('menuTax').value=String(m.tax??10);
  $('menuVisible').value=m.visible===false?'false':'true';
+ $('menuStockEnabled').value=m.stockEnabled===true?'true':'false';
+ $('menuStock').value=Number(m.stock||0);
+ $('menuReorderPoint').value=Number(m.reorderPoint||0);
  $('saveMenu').textContent='変更を保存';
  $('cancelMenuEdit').classList.remove('hidden');
  document.getElementById('menu').scrollIntoView({behavior:'smooth',block:'start'});
@@ -2083,7 +2212,7 @@ function renderBackupStatus(){
    : 'まだバックアップを作成していません';
  }
 }
-function renderAll(){renderAttendance();renderMyAttendance();renderAdminAttendance();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderBackupStatus()}
+function renderAll(){renderAttendance();renderMyAttendance();renderAdminAttendance();renderInventory();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderBackupStatus()}
 
 $('changeAdminPasscode').onclick=async()=>{
  const currentCode=$('currentAdminPasscode').value.trim();
