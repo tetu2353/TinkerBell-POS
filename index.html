@@ -445,6 +445,14 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
   <button id="changeAdminPasscode" class="primary">管理パスコードを変更</button>
   <div class="meta" style="margin-top:8px">4〜8桁の数字で設定してください。</div>
 </div>
+
+<div class="card">
+  <h3 style="margin-top:0">インボイス設定</h3>
+  <label>適格請求書発行事業者 登録番号
+    <input id="invoiceRegistrationNumber" placeholder="例：T1234567890123">
+  </label>
+  <button id="saveInvoiceSettings" class="primary" style="width:100%">登録番号を保存</button>
+</div>
 </section>
 </main>
 <nav><button data-go="home" class="active">⌂<small>ホーム</small></button><button data-go="seats">🛋️<small>席</small></button><button data-go="orders">🥂<small>注文</small></button><button data-go="customers">👤<small>顧客</small></button><button data-go="reports" class="manager">📊<small>集計</small></button></nav>
@@ -539,7 +547,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v36-checkout-cloud-receipts';
+const APP_VERSION='v37-invoice-compliant-receipt';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1286,7 +1294,10 @@ window.checkoutSeat=async sid=>{
   customerName:s.customerName,
   openedAt:s.openedAt,
   closedAt:nowISO(),
-  orders:JSON.parse(JSON.stringify(s.orders)),
+  orders:JSON.parse(JSON.stringify(s.orders.map(o=>{
+   const menu=db.menu.find(m=>m.id===o.menuId);
+   return {...o,tax:Number(o.tax??menu?.tax??10)};
+  }))),
   total:seatTotal(s),
   status:'completed',
   receiptPrintCount:0,
@@ -1468,6 +1479,7 @@ window.commitTapOrder=(mid,castId)=>{
    qty:1,
    castId,
    back:m.back,
+   tax:Number(m.tax??10),
    memo:''
   };
   s.orders.push(order);
@@ -2154,6 +2166,35 @@ function attendanceHours(record){
  return Math.max(0,(new Date(record.out)-new Date(record.in))/36e5);
 }
 
+const INVOICE_REG_KEY='tinkerbell_invoice_registration_number';
+
+function getInvoiceRegistrationNumber(){
+ return localStorage.getItem(INVOICE_REG_KEY)||'';
+}
+
+function saveInvoiceRegistrationNumber(value){
+ localStorage.setItem(INVOICE_REG_KEY,String(value||'').trim());
+}
+
+function checkoutTaxSummary(checkout){
+ const rates={};
+ (checkout.orders||[]).forEach(o=>{
+  const qty=Number(o.qty||1);
+  const gross=Number(o.price||0)*qty;
+  const rate=Number(o.tax??10);
+  if(!rates[rate])rates[rate]={gross:0,tax:0};
+  rates[rate].gross+=gross;
+ });
+
+ Object.entries(rates).forEach(([rate,obj])=>{
+  const r=Number(rate);
+  obj.tax=r===0?0:Math.round(obj.gross*r/(100+r));
+  obj.net=obj.gross-obj.tax;
+ });
+
+ return rates;
+}
+
 let selectedCheckoutId='';
 
 function checkoutStatusLabel(x){
@@ -2310,19 +2351,39 @@ $('printReceiptAgainBtn').onclick=$('printReceiptBtn').onclick;
 
 $('printInvoiceBtn').onclick=async()=>{
  const x=db.checkouts.find(c=>c.id===selectedCheckoutId);if(!x)return;
+
  const name=prompt('領収書の宛名を入力してください',x.customerName||'');
  if(name===null)return;
+
  const proviso=prompt('但し書きを入力してください','飲食代として');
  if(proviso===null)return;
+
+ const registration=getInvoiceRegistrationNumber();
+ if(!registration){
+  return toast('設定でインボイス登録番号を入力してください');
+ }
+
+ const taxSummary=checkoutTaxSummary(x);
+ const taxRows=Object.entries(taxSummary)
+  .sort((a,b)=>Number(b[0])-Number(a[0]))
+  .map(([rate,obj])=>`
+   <div class="line"><span>${rate}%対象（税込）</span><span>${yen(obj.gross)}</span></div>
+   <div class="line"><span>${rate}%消費税額</span><span>${yen(obj.tax)}</span></div>
+  `).join('');
+
  printWindowHtml('領収書',`<div class="invoice">
    <h1 class="center">領収書</h1>
    <h2>${esc(name)} 様</h2>
    <div class="total center">${yen(x.total)}</div>
    <p>但し　${esc(proviso)}</p>
-   <p>${new Date(x.closedAt).toLocaleDateString('ja-JP')}</p>
+   <p>発行日　${new Date(x.closedAt).toLocaleDateString('ja-JP')}</p>
    <hr>
-   <p>TINKER BELL</p>
+   ${taxRows}
+   <hr>
+   <p><b>TINKER BELL</b></p>
+   <p>登録番号　${esc(registration)}</p>
   </div>`);
+
  await recordPrint('invoice');
 };
 
@@ -2479,9 +2540,20 @@ $('changeAdminPasscode').onclick=async()=>{
  toast('管理パスコードを変更しました');
 };
 
+
+$('saveInvoiceSettings').onclick=()=>{
+ const value=$('invoiceRegistrationNumber').value.trim();
+ if(value && !/^T\d{13}$/.test(value)){
+  return toast('登録番号は T＋13桁で入力してください');
+ }
+ saveInvoiceRegistrationNumber(value);
+ toast('インボイス登録番号を保存しました');
+};
+
 $('visitDate').value=today();
 $('myAttendanceMonth').value=today().slice(0,7);
 $('adminAttendanceMonth').value=today().slice(0,7);
+$('invoiceRegistrationNumber').value=getInvoiceRegistrationNumber();
 refreshSelects();
 current=db.staff[0]||null;
 renderAll();
