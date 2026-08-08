@@ -166,6 +166,26 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .checkout-detail-line{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
 .checkout-detail-total{font-size:24px;font-weight:1000;text-align:right;margin-top:12px}
 .checkout-cancelled-box{background:#fff0f0;border:2px solid #d77}
+
+.invoice-preview-card{max-width:860px!important;width:min(94vw,860px)!important}
+.invoice-print-large{width:100%;min-height:62px;margin-top:16px;font-size:20px;font-weight:1000}
+.invoice-paper{background:#fff;border:2px solid #111;border-radius:4px;padding:28px;margin-top:18px;color:#111}
+.invoice-paper h1{text-align:center;font-size:32px;letter-spacing:.15em;margin:0 0 26px}
+.invoice-date{text-align:right;font-size:14px}
+.invoice-name{font-size:24px;font-weight:800;border-bottom:1px solid #111;padding:0 4px 8px;margin-top:18px}
+.invoice-amount{text-align:center;font-size:34px;font-weight:1000;border-bottom:3px double #111;padding:20px 0;margin:18px 0}
+.invoice-proviso{font-size:17px;margin:18px 0}
+.invoice-tax-box{border:1px solid #555;padding:12px;margin-top:18px}
+.invoice-tax-row{display:flex;justify-content:space-between;gap:18px;padding:6px 0;border-bottom:1px dashed #aaa}
+.invoice-tax-row:last-child{border-bottom:0}
+.invoice-shop{margin-top:24px;text-align:right;line-height:1.8}
+@media(max-width:560px){
+ .invoice-paper{padding:18px}
+ .invoice-paper h1{font-size:26px}
+ .invoice-name{font-size:20px}
+ .invoice-amount{font-size:28px}
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -542,12 +562,37 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
     </div>
   </div>
 </div>
+
+<div id="invoicePreviewModal" class="modal hidden">
+  <div class="modal-card invoice-preview-card">
+    <div class="sectionHead">
+      <h2>領収書プレビュー</h2>
+      <button id="invoicePreviewClose" class="secondary">閉じる</button>
+    </div>
+
+    <div class="row3">
+      <label>宛名
+        <input id="invoicePreviewName" placeholder="例：株式会社〇〇">
+      </label>
+      <label>但し書き
+        <input id="invoicePreviewProviso" value="飲食代として">
+      </label>
+      <label>登録番号
+        <input id="invoicePreviewRegistration" placeholder="T1234567890123">
+      </label>
+    </div>
+
+    <div id="invoicePreviewPaper" class="invoice-paper"></div>
+
+    <button id="invoicePreviewPrint" class="primary invoice-print-large">この領収書を印刷</button>
+  </div>
+</div>
 <div id="toast" class="toast hidden"></div>
 
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v38-invoice-print-ios-fix';
+const APP_VERSION='v39-invoice-inapp-preview';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2349,102 +2394,104 @@ $('printReceiptBtn').onclick=async()=>{
 };
 $('printReceiptAgainBtn').onclick=$('printReceiptBtn').onclick;
 
-$('printInvoiceBtn').onclick=async()=>{
+function buildInvoicePreview(){
  const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
  if(!x)return;
 
- // iPhone/Safariのポップアップ制限対策。クリック直後に先に印刷画面を確保する。
- const printWin=window.open('','_blank');
- if(!printWin){
-  return toast('印刷画面を開けません。Safariのポップアップ許可を確認してください');
- }
-
- const closePrint=()=>{try{printWin.close()}catch(e){}};
-
- const name=prompt('領収書の宛名を入力してください',x.customerName||'');
- if(name===null){closePrint();return;}
-
- const proviso=prompt('但し書きを入力してください','飲食代として');
- if(proviso===null){closePrint();return;}
-
- let registration=getInvoiceRegistrationNumber();
- if(!registration){
-  const input=prompt('インボイス登録番号を入力してください（T＋13桁）','T');
-  if(input===null){closePrint();return;}
-  registration=String(input||'').trim();
-  if(!/^T\d{13}$/.test(registration)){
-   closePrint();
-   return toast('登録番号は T＋13桁で入力してください');
-  }
-  saveInvoiceRegistrationNumber(registration);
-  if($('invoiceRegistrationNumber'))$('invoiceRegistrationNumber').value=registration;
- }
-
+ const name=$('invoicePreviewName').value.trim();
+ const proviso=$('invoicePreviewProviso').value.trim()||'飲食代として';
+ const registration=$('invoicePreviewRegistration').value.trim();
  const taxSummary=checkoutTaxSummary(x);
+
  const taxRows=Object.entries(taxSummary)
   .sort((a,b)=>Number(b[0])-Number(a[0]))
   .map(([rate,obj])=>`
-   <div class="tax-row"><span>${rate}%対象（税込）</span><b>${yen(obj.gross)}</b></div>
-   <div class="tax-row"><span>うち消費税額（${rate}%）</span><b>${yen(obj.tax)}</b></div>
-  `).join('');
+   <div class="invoice-tax-row">
+    <span>${rate}%対象（税込）</span>
+    <b>${yen(obj.gross)}</b>
+   </div>
+   <div class="invoice-tax-row">
+    <span>うち消費税額（${rate}%）</span>
+    <b>${yen(obj.tax)}</b>
+   </div>`).join('');
 
  const invoiceNo=`${new Date(x.closedAt).toLocaleDateString('sv-SE').replaceAll('-','')}-${String(x.id).slice(-6).toUpperCase()}`;
 
- const html=`<!doctype html>
- <html lang="ja">
- <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>領収書</title>
-  <style>
-   @page{size:auto;margin:12mm}
-   body{font-family:-apple-system,BlinkMacSystemFont,"Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif;color:#111;margin:0;padding:18px}
-   .invoice{max-width:700px;margin:0 auto;border:2px solid #111;padding:28px;box-sizing:border-box}
-   h1{text-align:center;font-size:32px;letter-spacing:.15em;margin:0 0 26px}
-   .date{text-align:right;font-size:14px}
-   .name{font-size:24px;font-weight:800;border-bottom:1px solid #111;padding:0 4px 8px;margin-top:18px}
-   .amount{text-align:center;font-size:34px;font-weight:1000;border-bottom:3px double #111;padding:20px 0;margin:18px 0}
-   .proviso{font-size:17px;margin:18px 0}
-   .tax-box{border:1px solid #555;padding:12px;margin-top:18px}
-   .tax-row{display:flex;justify-content:space-between;gap:18px;padding:6px 0;border-bottom:1px dashed #aaa}
-   .tax-row:last-child{border-bottom:0}
-   .shop{margin-top:24px;text-align:right;line-height:1.8}
-   .invoice-no{font-size:12px;color:#555;margin-top:6px}
-   .print-note{margin:18px auto 0;max-width:700px;color:#555;font-size:13px;text-align:center}
-   @media print{.print-note{display:none}}
-  </style>
- </head>
- <body>
-  <div class="invoice">
-   <div class="date">発行日　${new Date(x.closedAt).toLocaleDateString('ja-JP')}</div>
-   <h1>領収書</h1>
-   <div class="name">${esc(name)} 様</div>
-   <div class="amount">${yen(x.total)}</div>
-   <div class="proviso">但し　${esc(proviso)}</div>
-
-   <div class="tax-box">
-    ${taxRows}
-   </div>
-
-   <div class="shop">
+ $('invoicePreviewPaper').innerHTML=`
+  <div class="invoice-date">発行日　${new Date(x.closedAt).toLocaleDateString('ja-JP')}</div>
+  <h1>領収書</h1>
+  <div class="invoice-name">${esc(name||'　　　　　　　　')} 様</div>
+  <div class="invoice-amount">${yen(x.total)}</div>
+  <div class="invoice-proviso">但し　${esc(proviso)}</div>
+  <div class="invoice-tax-box">${taxRows}</div>
+  <div class="invoice-shop">
     <b>TINKER BELL</b><br>
-    登録番号　${esc(registration)}
-    <div class="invoice-no">管理番号 ${invoiceNo}</div>
-   </div>
-  </div>
-  <div class="print-note">印刷画面が表示されたら「プリント」を選択してください。</div>
-  <script>
-   window.onload=()=>setTimeout(()=>window.print(),300);
-  <\/script>
- </body>
- </html>`;
+    登録番号　${esc(registration||'未設定')}<br>
+    <small>管理番号 ${invoiceNo}</small>
+  </div>`;
+}
 
- printWin.document.open();
- printWin.document.write(html);
- printWin.document.close();
+$('printInvoiceBtn').onclick=()=>{
+ const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
+ if(!x)return;
+
+ $('invoicePreviewName').value=x.customerName||'';
+ $('invoicePreviewProviso').value='飲食代として';
+ $('invoicePreviewRegistration').value=getInvoiceRegistrationNumber();
+
+ buildInvoicePreview();
+ $('invoicePreviewModal').classList.remove('hidden');
+};
+
+$('invoicePreviewName').oninput=buildInvoicePreview;
+$('invoicePreviewProviso').oninput=buildInvoicePreview;
+$('invoicePreviewRegistration').oninput=buildInvoicePreview;
+$('invoicePreviewClose').onclick=()=>$('invoicePreviewModal').classList.add('hidden');
+
+$('invoicePreviewPrint').onclick=async()=>{
+ const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
+ if(!x)return;
+
+ const registration=$('invoicePreviewRegistration').value.trim();
+ if(!/^T\d{13}$/.test(registration)){
+  return toast('登録番号は T＋13桁で入力してください');
+ }
+ saveInvoiceRegistrationNumber(registration);
+ if($('invoiceRegistrationNumber'))$('invoiceRegistrationNumber').value=registration;
+
+ const printable=$('invoicePreviewPaper').innerHTML;
+ const w=window.open('','_blank');
+ if(!w){
+  // ポップアップ不可でも内容自体は画面に表示済み。
+  return toast('領収書は表示中です。ブラウザの共有/印刷から印刷してください');
+ }
+
+ w.document.open();
+ w.document.write(`<!doctype html><html lang="ja"><head><meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+ <title>領収書</title>
+ <style>
+ @page{size:auto;margin:12mm}
+ body{font-family:-apple-system,BlinkMacSystemFont,"Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif;color:#111;margin:0;padding:18px}
+ .invoice-paper{max-width:700px;margin:auto;border:2px solid #111;padding:28px;box-sizing:border-box;background:#fff}
+ .invoice-paper h1{text-align:center;font-size:32px;letter-spacing:.15em;margin:0 0 26px}
+ .invoice-date{text-align:right;font-size:14px}
+ .invoice-name{font-size:24px;font-weight:800;border-bottom:1px solid #111;padding:0 4px 8px;margin-top:18px}
+ .invoice-amount{text-align:center;font-size:34px;font-weight:1000;border-bottom:3px double #111;padding:20px 0;margin:18px 0}
+ .invoice-proviso{font-size:17px;margin:18px 0}
+ .invoice-tax-box{border:1px solid #555;padding:12px;margin-top:18px}
+ .invoice-tax-row{display:flex;justify-content:space-between;gap:18px;padding:6px 0;border-bottom:1px dashed #aaa}
+ .invoice-tax-row:last-child{border-bottom:0}
+ .invoice-shop{margin-top:24px;text-align:right;line-height:1.8}
+ </style></head><body><div class="invoice-paper">${printable}</div>
+ <script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script>
+ </body></html>`);
+ w.document.close();
 
  await recordPrint('invoice');
 };
+
+
 
 $('cancelCheckoutBtn').onclick=async()=>{
  const x=db.checkouts.find(c=>c.id===selectedCheckoutId);if(!x||x.status==='cancelled')return;
