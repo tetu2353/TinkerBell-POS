@@ -375,6 +375,173 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .checkout-billing-box{margin-top:14px;border-top:2px solid #3b3029;padding-top:10px;display:grid;gap:7px}
 .checkout-billing-box>div{display:flex;justify-content:space-between;gap:12px;font-size:16px}
 .checkout-billing-total{border-top:2px solid #3b3029;padding-top:10px;margin-top:4px;font-size:22px!important;font-weight:1000}
+
+/* 写真風の領収証レイアウト */
+.receipt-photo-layout{
+  width:100%;
+  background:#fff;
+  color:#111;
+  border:2px solid #a8d0d1;
+  padding:18px 20px 16px;
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,"Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif;
+}
+.receipt-head{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+.receipt-spacer{height:1px}
+.receipt-title{
+  text-align:center;
+  font-size:28px;
+  font-weight:1000;
+  letter-spacing:.35em;
+}
+.receipt-no{
+  justify-self:end;
+  font-size:14px;
+  font-weight:800;
+}
+.receipt-date-row{
+  display:flex;
+  justify-content:flex-end;
+  margin-bottom:12px;
+}
+.receipt-date-line{
+  min-width:220px;
+  border-bottom:1px solid #333;
+  padding:2px 2px 4px;
+  text-align:right;
+  font-size:14px;
+}
+.receipt-name-row{
+  margin-bottom:10px;
+}
+.receipt-name-line{
+  border-bottom:1px solid #333;
+  padding:4px 2px 6px;
+  min-height:26px;
+  font-size:21px;
+  font-weight:900;
+}
+.receipt-amount-label{
+  text-align:center;
+  font-size:14px;
+  letter-spacing:.3em;
+  margin-top:4px;
+  margin-bottom:5px;
+}
+.receipt-amount-box{
+  border:2px solid #333;
+  text-align:center;
+  font-size:34px;
+  font-weight:1000;
+  padding:10px 8px;
+  margin-bottom:12px;
+}
+.receipt-proviso-row{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:10px;
+  align-items:end;
+  margin-bottom:8px;
+}
+.receipt-proviso-label{
+  font-size:15px;
+  font-weight:900;
+}
+.receipt-proviso-line{
+  border-bottom:1px solid #333;
+  min-height:22px;
+  padding:2px 2px 4px;
+  font-size:15px;
+}
+.receipt-payment-row{
+  font-size:14px;
+  margin-bottom:14px;
+}
+.receipt-bottom-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  align-items:start;
+}
+.receipt-left-block{
+  border:1px solid #89bfc1;
+  padding:10px 12px;
+}
+.receipt-block-title{
+  font-size:15px;
+  font-weight:1000;
+  margin-bottom:8px;
+  letter-spacing:.2em;
+}
+.receipt-breakdown-row{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:5px 0;
+  border-bottom:1px dashed #aaa;
+  font-size:14px;
+}
+.receipt-breakdown-row:last-child{
+  border-bottom:0;
+}
+.receipt-right-block{
+  text-align:right;
+  line-height:1.7;
+  font-size:13px;
+}
+.receipt-shop-name{
+  font-size:19px;
+  font-weight:1000;
+  margin-bottom:4px;
+}
+.receipt-shop-line{
+  word-break:break-word;
+}
+@media(max-width:640px){
+  .receipt-bottom-grid{grid-template-columns:1fr}
+  .receipt-title{font-size:24px}
+  .receipt-name-line{font-size:18px}
+  .receipt-amount-box{font-size:30px}
+}
+@media print{
+ @page{size:A6 landscape;margin:7mm}
+ body.invoice-print-mode *{visibility:hidden!important}
+ body.invoice-print-mode #invoicePreviewPaper,
+ body.invoice-print-mode #invoicePreviewPaper *{visibility:visible!important}
+ body.invoice-print-mode #invoicePreviewPaper{
+   position:absolute!important;
+   left:0!important;
+   top:0!important;
+   width:100%!important;
+   max-width:none!important;
+   margin:0!important;
+   padding:0!important;
+   border:0!important;
+   background:#fff!important;
+ }
+ body.invoice-print-mode{background:#fff!important}
+}
+
+
+.split-head-row{align-items:end}
+.split-checkout-summary{margin-top:10px;padding:10px 12px;border-radius:12px;background:#f7f1e8;display:grid;gap:6px}
+.split-checkout-summary>div{display:flex;justify-content:space-between;gap:12px;font-size:15px}
+.split-checkout-summary .ok{color:#0a7a37;font-weight:1000}
+.split-checkout-summary .warn{color:#b14300;font-weight:1000}
+.split-pay-card{margin-top:12px;border:1px solid #e1d7c9;border-radius:14px;padding:12px;background:#fffdf8}
+.split-pay-title{font-weight:1000;margin-bottom:8px}
+.split-pay-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.split-reference-card summary{cursor:pointer;font-weight:900}
+@media(max-width:640px){
+ .split-pay-grid{grid-template-columns:1fr}
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -658,7 +825,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <div class="card">
   <h3 style="margin-top:0">インボイス設定</h3>
   <label>適格請求書発行事業者 登録番号
-    <input id="invoiceRegistrationNumber" placeholder="例：T1234567890123">
+    <input id="invoiceRegistrationNumber" placeholder="T4810233251729">
   </label>
   <button id="saveInvoiceSettings" class="primary" style="width:100%">登録番号を保存</button>
 </div>
@@ -744,14 +911,13 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
       <button id="seatCheckoutClose" class="secondary">閉じる</button>
     </div>
     <div id="seatCheckoutBody"></div>
+
     <div class="card payment-card">
       <div class="row">
-        <label>支払方法
-          <select id="seatCheckoutPayment">
-            <option value="">選択してください</option>
-            <option value="現金">現金</option>
-            <option value="クレジットカード">クレジットカード</option>
-            <option value="その他">その他</option>
+        <label>会計方法
+          <select id="seatCheckoutMode">
+            <option value="single">一括会計</option>
+            <option value="split">分割会計</option>
           </select>
         </label>
         <label>同伴キャスト
@@ -760,7 +926,38 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
           </select>
         </label>
       </div>
+
+      <div id="singleCheckoutArea">
+        <div class="row">
+          <label>支払方法
+            <select id="seatCheckoutPayment">
+              <option value="">選択してください</option>
+              <option value="現金">現金</option>
+              <option value="クレジットカード">クレジットカード</option>
+              <option value="その他">その他</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div id="splitCheckoutArea" class="hidden">
+        <div class="row split-head-row">
+          <label>分割数
+            <select id="splitCheckoutCount">
+              <option value="2">2名</option>
+              <option value="3">3名</option>
+              <option value="4">4名</option>
+              <option value="5">5名</option>
+              <option value="6">6名</option>
+            </select>
+          </label>
+          <button id="splitCheckoutEven" type="button" class="secondary">均等に分ける</button>
+        </div>
+        <div id="splitCheckoutRows"></div>
+        <div id="splitCheckoutSummary" class="split-checkout-summary"></div>
+      </div>
     </div>
+
     <button id="seatCheckoutConfirm" class="primary checkout-confirm-large">会計を確定する</button>
   </div>
 </div>
@@ -795,7 +992,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
     </div>
     <div class="row3">
       <label>支払方法<select id="invoicePaymentMethod"><option>現金</option><option>クレジットカード</option><option>その他</option></select></label>
-      <label>登録番号<input id="invoicePreviewRegistration" placeholder="T1234567890123"></label>
+      <label>登録番号<input id="invoicePreviewRegistration" placeholder="T4810233251729"></label>
       <label>発行者<input id="invoiceIssuerName" value="ティンカーベル"></label>
     </div>
 
@@ -811,7 +1008,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v47-invoice-address';
+const APP_VERSION='v50-split-checkout';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1571,6 +1768,90 @@ function orderCastName(order){
  return order.castName || staffById(order.castId)?.name || '';
 }
 
+
+function calcBreakdownFromGross(gross){
+ const total=Math.max(0,Math.round(Number(gross||0)));
+ const net=Math.round(total/1.10);
+ const tax=total-net;
+ return {gross:total,net,tax};
+}
+let splitCheckoutDraft=[];
+function paymentMethodOptions(selected=''){
+ const items=['現金','クレジットカード','その他'];
+ return '<option value="">選択してください</option>'+items.map(v=>`<option value="${v}" ${selected===v?'selected':''}>${v}</option>`).join('');
+}
+function buildDefaultSplitDraft(total,count,baseName=''){
+ const safeCount=Math.max(2,Math.min(6,Number(count||2)));
+ const base=Math.floor(Number(total||0)/safeCount);
+ let remain=Number(total||0)-base*safeCount;
+ return Array.from({length:safeCount},(_,i)=>{
+  const plus=remain>0?1:0;
+  if(remain>0)remain-=1;
+  return {
+   label:`${i+1}人目`,
+   receiptName:baseName||'',
+   paymentMethod:'現金',
+   amount:base+plus
+  };
+ });
+}
+function splitDraftTotal(){
+ return splitCheckoutDraft.reduce((sum,row)=>sum+Math.max(0,Math.round(Number(row.amount||0))),0);
+}
+function renderSplitCheckoutUI(){
+ const mode=$('seatCheckoutMode').value;
+ const sid=pendingCheckoutSeatId;
+ const seat=db.seats.find(x=>x.id===sid);
+ if(!seat)return;
+ const total=seatBilling(seat).total;
+
+ $('singleCheckoutArea').classList.toggle('hidden',mode!=='single');
+ $('splitCheckoutArea').classList.toggle('hidden',mode!=='split');
+
+ if(mode!=='split')return;
+
+ const count=Math.max(2,Math.min(6,Number($('splitCheckoutCount').value||2)));
+ if(!Array.isArray(splitCheckoutDraft) || splitCheckoutDraft.length!==count){
+  splitCheckoutDraft=buildDefaultSplitDraft(total,count,seat.customerName||'');
+ }
+
+ $('splitCheckoutRows').innerHTML=splitCheckoutDraft.map((row,i)=>`
+  <div class="split-pay-card">
+    <div class="split-pay-title">分割 ${i+1}</div>
+    <div class="split-pay-grid">
+      <label>領収書名義
+        <input data-split-index="${i}" data-split-field="receiptName" value="${esc(row.receiptName||'')}" placeholder="空欄なら元のお客様名">
+      </label>
+      <label>支払方法
+        <select data-split-index="${i}" data-split-field="paymentMethod">
+          ${paymentMethodOptions(row.paymentMethod||'')}
+        </select>
+      </label>
+      <label>メモ
+        <input data-split-index="${i}" data-split-field="label" value="${esc(row.label||'')}" placeholder="例：1人目">
+      </label>
+      <label>会計金額
+        <input type="number" min="0" step="1" data-split-index="${i}" data-split-field="amount" value="${Math.max(0,Math.round(Number(row.amount||0)))}">
+      </label>
+    </div>
+  </div>
+ `).join('');
+
+ const current=splitDraftTotal();
+ const diff=total-current;
+ $('splitCheckoutSummary').innerHTML=`
+  <div><span>席の合計</span><b>${yen(total)}</b></div>
+  <div><span>分割入力合計</span><b>${yen(current)}</b></div>
+  <div class="${diff===0?'ok':'warn'}"><span>差額</span><b>${yen(diff)}</b></div>`;
+}
+function resetSplitCheckoutDraft(){
+ const sid=pendingCheckoutSeatId;
+ const seat=db.seats.find(x=>x.id===sid);
+ if(!seat)return;
+ splitCheckoutDraft=buildDefaultSplitDraft(seatBilling(seat).total,Number($('splitCheckoutCount').value||2),seat.customerName||'');
+ renderSplitCheckoutUI();
+}
+
 let pendingCheckoutSeatId='';
 
 window.checkoutSeat=sid=>{
@@ -1578,10 +1859,14 @@ window.checkoutSeat=sid=>{
  if(!s)return;
  pendingCheckoutSeatId=sid;
  $('seatCheckoutPayment').value='';
+ $('seatCheckoutMode').value='single';
+ $('splitCheckoutCount').value='2';
+ splitCheckoutDraft=buildDefaultSplitDraft(seatBilling(s).total,2,s.customerName||'');
 
  const casts=db.staff.filter(x=>x.role==='cast');
  $('seatCheckoutCompanion').innerHTML='<option value="">同伴なし</option>'+casts.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
  const companionVisit=findCompanionVisitForSeat(s);
+ $('seatCheckoutCompanion').value='';
  if(companionVisit?.castId)$('seatCheckoutCompanion').value=companionVisit.castId;
 
  $('seatCheckoutBody').innerHTML=`
@@ -1605,6 +1890,7 @@ window.checkoutSeat=sid=>{
   </div>`;
 
  $('seatCheckoutModal').classList.remove('hidden');
+ renderSplitCheckoutUI();
 };
 
 $('seatCheckoutClose').onclick=()=>{
@@ -1612,80 +1898,189 @@ $('seatCheckoutClose').onclick=()=>{
  $('seatCheckoutModal').classList.add('hidden');
 };
 
+$('seatCheckoutMode').onchange=renderSplitCheckoutUI;
+$('splitCheckoutCount').onchange=resetSplitCheckoutDraft;
+$('splitCheckoutEven').onclick=resetSplitCheckoutDraft;
+$('splitCheckoutRows').addEventListener('input',e=>{
+ const el=e.target;
+ const idx=Number(el.dataset.splitIndex);
+ const field=el.dataset.splitField;
+ if(Number.isNaN(idx)||!field||!splitCheckoutDraft[idx])return;
+ splitCheckoutDraft[idx][field]=field==='amount'?Math.max(0,Math.round(Number(el.value||0))):el.value;
+ renderSplitCheckoutUI();
+});
+$('splitCheckoutRows').addEventListener('change',e=>{
+ const el=e.target;
+ const idx=Number(el.dataset.splitIndex);
+ const field=el.dataset.splitField;
+ if(Number.isNaN(idx)||!field||!splitCheckoutDraft[idx])return;
+ splitCheckoutDraft[idx][field]=field==='amount'?Math.max(0,Math.round(Number(el.value||0))):el.value;
+ renderSplitCheckoutUI();
+});
+
 $('seatCheckoutConfirm').onclick=async()=>{
  const sid=pendingCheckoutSeatId;
  const s=db.seats.find(x=>x.id===sid);
  if(!s)return;
 
- const paymentMethod=$('seatCheckoutPayment').value;
- if(!paymentMethod)return toast('支払方法を選択してください');
-
+ const mode=$('seatCheckoutMode').value||'single';
  const companionCastId=$('seatCheckoutCompanion').value||'';
  const companionCastName=staffById(companionCastId)?.name||'';
  const seatCastIds=Array.isArray(s.casts)?[...s.casts]:[];
  const seatCastNamesSnapshot=seatCastIds.map(cid=>staffById(cid)?.name).filter(Boolean);
+ const billing=seatBilling(s);
+
+ const ordersSnapshot=JSON.parse(JSON.stringify(s.orders.map(o=>{
+  const menu=db.menu.find(m=>m.id===o.menuId);
+  return {...o,tax:Number(o.tax??menu?.tax??10),castName:staffById(o.castId)?.name||o.castName||''};
+ })));
 
  const button=$('seatCheckoutConfirm');
  button.disabled=true;
  button.textContent='会計保存中...';
 
- const billing=seatBilling(s);
-
- const checkout={
-  id:id(),
-  seat:s.name,
-  seatId:s.id,
-  customerId:s.customerId||'',
-  customerName:s.customerName,
-  openedAt:s.openedAt,
-  closedAt:nowISO(),
-  paymentMethod,
-  companionCastId,
-  companionCastName,
-  seatCastIds,
-  seatCastNames:seatCastNamesSnapshot,
-  orders:JSON.parse(JSON.stringify(s.orders.map(o=>{
-   const menu=db.menu.find(m=>m.id===o.menuId);
-   return {...o,tax:Number(o.tax??menu?.tax??10),castName:staffById(o.castId)?.name||o.castName||''};
-  }))),
-  subtotal:billing.subtotal,
-  taxRate:10,
-  taxAmount:billing.tax,
-  taxedAmount:billing.taxed,
-  roundUpAmount:billing.roundUp,
-  total:billing.total,
-  status:'completed',
-  receiptPrintCount:0,
-  invoicePrintCount:0,
-  cancelledAt:'',
-  cancelReason:''
- };
-
- db.checkouts.push(checkout);
- db.checkoutEvents.unshift({
-  id:id(),
-  checkoutId:checkout.id,
-  type:'completed',
-  time:nowISO(),
-  amount:checkout.total,
-  customerName:checkout.customerName,
-  paymentMethod
- });
- persist();
+ const createdCheckouts=[];
+ const createdEvents=[];
+ const groupId=id();
 
  try{
+  if(mode==='single'){
+   const paymentMethod=$('seatCheckoutPayment').value;
+   if(!paymentMethod){
+    button.disabled=false;
+    button.textContent='会計を確定する';
+    return toast('支払方法を選択してください');
+   }
+
+   const checkout={
+    id:id(),
+    seat:s.name,
+    seatId:s.id,
+    customerId:s.customerId||'',
+    customerName:s.customerName,
+    groupCustomerName:s.customerName,
+    openedAt:s.openedAt,
+    closedAt:nowISO(),
+    paymentMethod,
+    companionCastId,
+    companionCastName,
+    seatCastIds,
+    seatCastNames:seatCastNamesSnapshot,
+    orders:ordersSnapshot,
+    subtotal:billing.subtotal,
+    taxRate:10,
+    taxAmount:billing.tax,
+    taxedAmount:billing.taxed,
+    roundUpAmount:billing.roundUp,
+    total:billing.total,
+    status:'completed',
+    receiptPrintCount:0,
+    invoicePrintCount:0,
+    cancelledAt:'',
+    cancelReason:''
+   };
+   createdCheckouts.push(checkout);
+   createdEvents.push({
+    id:id(),checkoutId:checkout.id,type:'completed',time:nowISO(),amount:checkout.total,customerName:checkout.customerName,paymentMethod
+   });
+  }else{
+   const rows=splitCheckoutDraft.map((row,i)=>({
+    label:String(row.label||`${i+1}人目`).trim(),
+    receiptName:String(row.receiptName||'').trim(),
+    paymentMethod:String(row.paymentMethod||'').trim(),
+    amount:Math.max(0,Math.round(Number(row.amount||0)))
+   }));
+
+   if(rows.length<2){
+    button.disabled=false;
+    button.textContent='会計を確定する';
+    return toast('分割会計は2件以上必要です');
+   }
+   if(rows.some(r=>!r.paymentMethod)){
+    button.disabled=false;
+    button.textContent='会計を確定する';
+    return toast('分割会計の支払方法をすべて選択してください');
+   }
+   if(rows.some(r=>r.amount<=0)){
+    button.disabled=false;
+    button.textContent='会計を確定する';
+    return toast('分割会計の金額は1円以上で入力してください');
+   }
+   const splitTotal=rows.reduce((sum,r)=>sum+r.amount,0);
+   if(splitTotal!==billing.total){
+    button.disabled=false;
+    button.textContent='会計を確定する';
+    return toast(`分割合計を${yen(billing.total)}に合わせてください`);
+   }
+
+   rows.forEach((row,i)=>{
+    const part=calcBreakdownFromGross(row.amount);
+    const name=row.receiptName||s.customerName||`${i+1}人目`;
+    const checkout={
+     id:id(),
+     seat:s.name,
+     seatId:s.id,
+     customerId:s.customerId||'',
+     customerName:name,
+     groupCustomerName:s.customerName,
+     openedAt:s.openedAt,
+     closedAt:nowISO(),
+     paymentMethod:row.paymentMethod,
+     companionCastId,
+     companionCastName,
+     seatCastIds,
+     seatCastNames:seatCastNamesSnapshot,
+     orders:ordersSnapshot,
+     subtotal:part.net,
+     taxRate:10,
+     taxAmount:part.tax,
+     taxedAmount:part.gross,
+     roundUpAmount:0,
+     total:part.gross,
+     status:'completed',
+     receiptPrintCount:0,
+     invoicePrintCount:0,
+     cancelledAt:'',
+     cancelReason:'',
+     splitGroupId:groupId,
+     splitPartIndex:i+1,
+     splitPartCount:rows.length,
+     splitLabel:row.label||`${i+1}人目`,
+     sourceSeatTotal:billing.total,
+     sourceOrderSubtotal:billing.subtotal,
+     sourceTaxAmount:billing.tax,
+     sourceRoundUpAmount:billing.roundUp,
+     sourceSeatCustomerName:s.customerName
+    };
+    createdCheckouts.push(checkout);
+    createdEvents.push({
+     id:id(),
+     checkoutId:checkout.id,
+     type:'completed-split',
+     time:nowISO(),
+     amount:checkout.total,
+     customerName:checkout.customerName,
+     paymentMethod:checkout.paymentMethod
+    });
+   });
+  }
+
+  db.checkouts.push(...createdCheckouts);
+  db.checkoutEvents.unshift(...createdEvents);
+  persist();
+
   if(window.tinkerbellFirebase?.saveCheckouts){
    await window.tinkerbellFirebase.saveCheckouts(db.checkouts,db.checkoutEvents);
   }
  }catch(error){
   console.error('Checkout cloud save failed:',error);
-  db.checkouts=db.checkouts.filter(x=>x.id!==checkout.id);
-  db.checkoutEvents=db.checkoutEvents.filter(x=>x.checkoutId!==checkout.id);
+  const ids=new Set(createdCheckouts.map(x=>x.id));
+  db.checkouts=db.checkouts.filter(x=>!ids.has(x.id));
+  db.checkoutEvents=db.checkoutEvents.filter(x=>!ids.has(x.checkoutId));
   persist();
-  toast('会計のクラウド保存に失敗しました');
   button.disabled=false;
   button.textContent='会計を確定する';
-  return;
+  return toast('会計のクラウド保存に失敗しました');
  }
 
  s.customerId='';
@@ -1702,8 +2097,8 @@ $('seatCheckoutConfirm').onclick=async()=>{
  button.textContent='会計を確定する';
 
  renderAll();
- openCheckoutDetail(checkout.id);
- toast('会計を確定しました');
+ openCheckoutDetail(createdCheckouts[0].id);
+ toast(mode==='split'?`分割会計を${createdCheckouts.length}件保存しました`:'会計を確定しました');
 };
 
 let selectedOrderSeat='',selectedCategory='すべて',pendingMenu='',lastOrder=null,undoTimer=null;
@@ -2531,12 +2926,13 @@ function attendanceHours(record){
 }
 
 const INVOICE_REG_KEY='tinkerbell_invoice_registration_number';
+const DEFAULT_INVOICE_REG='T4810233251729';
 const INVOICE_ISSUER_KEY='tinkerbell_invoice_issuer_name';
-const INVOICE_PHONE='0242-29-3131';
-const INVOICE_ADDRESS='福島県会津若松市上町9-10 サンチュリー・ソアビル4F';
+const INVOICE_PHONE='0242-22-3140';
+const INVOICE_ADDRESS='福島県会津若松市上町9-10 センチュリーノアビル4F';
 
 function getInvoiceRegistrationNumber(){
- return localStorage.getItem(INVOICE_REG_KEY)||'';
+ return localStorage.getItem(INVOICE_REG_KEY)||DEFAULT_INVOICE_REG;
 }
 
 function saveInvoiceRegistrationNumber(value){
@@ -2575,7 +2971,7 @@ function renderReports(){
     <button class="checkout-history-row ${x.status==='cancelled'?'checkout-cancelled':''}" onclick="openCheckoutDetail('${x.id}')">
       <div>
         <b>${new Date(x.closedAt).toLocaleString('ja-JP')}</b>
-        <div class="meta">${esc(x.seat)} / ${esc(x.customerName||'')} / ${esc(x.paymentMethod||'未登録')}</div>
+        <div class="meta">${esc(x.seat)} / ${esc(x.customerName||'')} / ${esc(x.paymentMethod||'未登録')}${x.splitGroupId?` / 分割 ${x.splitPartIndex}/${x.splitPartCount}`:''}</div>
       </div>
       <div class="checkout-history-right">
         <span class="tag">${checkoutStatusLabel(x)}</span>
@@ -2632,35 +3028,72 @@ function renderReports(){
 window.openCheckoutDetail=idn=>{
  const x=db.checkouts.find(c=>c.id===idn);
  if(!x)return;
+ const isSplit=!!x.splitGroupId;
  selectedCheckoutId=idn;
  $('checkoutDetailTitle').textContent=`会計詳細 ${checkoutStatusLabel(x)}`;
+
+ const splitInfo=isSplit?`
+  <div class="checkout-payment-line">分割会計：<b>${x.splitPartIndex}/${x.splitPartCount}</b>　${esc(x.splitLabel||'')}</div>
+  <div class="checkout-payment-line">元のお客様：<b>${esc(x.sourceSeatCustomerName||x.groupCustomerName||'')}</b></div>
+ `:'';
+
+ const billingBlock=isSplit
+  ? `<div class="checkout-billing-box">
+      <div><span>元の席合計</span><b>${yen(x.sourceSeatTotal||0)}</b></div>
+      <div><span>今回会計額</span><b>${yen(x.total)}</b></div>
+      <div><span>税抜金額</span><b>${yen(x.subtotal??0)}</b></div>
+      <div><span>消費税 10%</span><b>${yen(x.taxAmount??0)}</b></div>
+    </div>`
+  : `<div class="checkout-billing-box">
+      <div><span>注文合計</span><b>${yen(x.subtotal??0)}</b></div>
+      <div><span>消費税 10%</span><b>${yen(x.taxAmount??0)}</b></div>
+      ${Number(x.roundUpAmount||0)>0?`<div><span>1,000円単位切り上げ</span><b>+${yen(x.roundUpAmount)}</b></div>`:''}
+      <div class="checkout-billing-total"><span>お会計</span><b>${yen(x.total)}</b></div>
+    </div>`;
+
+ const orderSection=isSplit
+  ? `
+    <div class="card">
+      <h3>分割会計内訳</h3>
+      <div class="meta">分けた会計ごとの詳細です</div>
+      ${billingBlock}
+    </div>
+    <details class="card split-reference-card">
+      <summary>元の注文内容（参考表示）</summary>
+      ${(x.orders||[]).map(o=>`
+        <div class="checkout-detail-line">
+          <span>${esc(o.name)} × ${Number(o.qty||1)}
+            ${orderCastName(o)?`<small class="checkout-order-cast">担当：${esc(orderCastName(o))}</small>`:''}
+          </span>
+          <b>${yen(Number(o.price||0)*Number(o.qty||1))}</b>
+        </div>`).join('')||'<div class="empty">明細なし</div>'}
+    </details>`
+  : `
+    <div class="card">
+      <h3>注文明細</h3>
+      ${(x.orders||[]).map(o=>`
+        <div class="checkout-detail-line">
+          <span>${esc(o.name)} × ${Number(o.qty||1)}
+            ${orderCastName(o)?`<small class="checkout-order-cast">担当：${esc(orderCastName(o))}</small>`:''}
+          </span>
+          <b>${yen(Number(o.price||0)*Number(o.qty||1))}</b>
+        </div>`).join('')||'<div class="empty">明細なし</div>'}
+      ${billingBlock}
+    </div>`;
+
  $('checkoutDetailBody').innerHTML=`
   <div class="card">
     <div class="meta">会計日時</div>
     <h3>${new Date(x.closedAt).toLocaleString('ja-JP')}</h3>
     <div class="meta">席：${esc(x.seat)} / お客様：${esc(x.customerName||'')}</div>
     <div class="checkout-payment-line">支払方法：<b>${esc(x.paymentMethod||'未登録')}</b></div>
+    ${splitInfo}
     <div class="checkout-attribution">
       <div><span>同伴：</span><b>${esc(x.companionCastName||'なし')}</b></div>
       <div><span>席についていたキャスト：</span><b>${(x.seatCastNames||[]).length?(x.seatCastNames||[]).map(esc).join('・'):'なし'}</b></div>
     </div>
   </div>
-  <div class="card">
-    <h3>注文明細</h3>
-    ${(x.orders||[]).map(o=>`
-      <div class="checkout-detail-line">
-        <span>${esc(o.name)} × ${Number(o.qty||1)}
-          ${orderCastName(o)?`<small class="checkout-order-cast">担当：${esc(orderCastName(o))}</small>`:''}
-        </span>
-        <b>${yen(Number(o.price||0)*Number(o.qty||1))}</b>
-      </div>`).join('')||'<div class="empty">明細なし</div>'}
-    <div class="checkout-billing-box">
-      <div><span>注文合計</span><b>${yen(x.subtotal??0)}</b></div>
-      <div><span>消費税 10%</span><b>${yen(x.taxAmount??0)}</b></div>
-      ${Number(x.roundUpAmount||0)>0?`<div><span>1,000円単位切り上げ</span><b>+${yen(x.roundUpAmount)}</b></div>`:''}
-      <div class="checkout-billing-total"><span>お会計</span><b>${yen(x.total)}</b></div>
-    </div>
-  </div>
+  ${orderSection}
   ${x.status==='cancelled'?`<div class="card checkout-cancelled-box"><b>取消済み</b><div class="meta">${esc(x.cancelReason||'理由なし')} / ${x.cancelledAt?new Date(x.cancelledAt).toLocaleString('ja-JP'):''}</div></div>`:''}
   <div class="meta">レシート発行 ${Number(x.receiptPrintCount||0)}回 / 領収書発行 ${Number(x.invoicePrintCount||0)}回</div>`;
  $('cancelCheckoutBtn').classList.toggle('hidden',x.status==='cancelled');
@@ -2698,19 +3131,27 @@ async function recordPrint(type){
 }
 
 function receiptHtml(x){
+ const isSplit=!!x.splitGroupId;
  return `<div class="receipt">
    <h2 class="center">TINKER BELL</h2>
    <div class="center">${new Date(x.closedAt).toLocaleString('ja-JP')}</div>
    <div class="center">${esc(x.customerName||'')} ${esc(x.seat)}</div>
    <div class="center">支払方法：${esc(x.paymentMethod||'未登録')}</div>
+   ${isSplit?`<div class="center">分割会計 ${x.splitPartIndex}/${x.splitPartCount}　${esc(x.splitLabel||'')}</div>`:''}
    <div class="center">同伴：${esc(x.companionCastName||'なし')}</div>
    <div class="center">席担当：${(x.seatCastNames||[]).length?(x.seatCastNames||[]).map(esc).join('・'):'なし'}</div>
    <hr>
-   ${(x.orders||[]).map(o=>`<div class="line"><span>${esc(o.name)} × ${Number(o.qty||1)}${orderCastName(o)?`（${esc(orderCastName(o))}）`:''}</span><span>${yen(Number(o.price||0)*Number(o.qty||1))}</span></div>`).join('')}
-   <div class="line"><span>注文合計</span><span>${yen(x.subtotal??0)}</span></div>
-   <div class="line"><span>消費税 10%</span><span>${yen(x.taxAmount??0)}</span></div>
-   ${Number(x.roundUpAmount||0)>0?`<div class="line"><span>切り上げ</span><span>+${yen(x.roundUpAmount)}</span></div>`:''}
-   <div class="total">お会計 ${yen(x.total)}</div>
+   ${isSplit
+     ? `<div class="line"><span>元の席合計</span><span>${yen(x.sourceSeatTotal||0)}</span></div>
+        <div class="line"><span>今回会計額</span><span>${yen(x.total)}</span></div>
+        <div class="line"><span>税抜金額</span><span>${yen(x.subtotal??0)}</span></div>
+        <div class="line"><span>消費税 10%</span><span>${yen(x.taxAmount??0)}</span></div>`
+     : `${(x.orders||[]).map(o=>`<div class="line"><span>${esc(o.name)} × ${Number(o.qty||1)}${orderCastName(o)?`（${esc(orderCastName(o))}）`:''}</span><span>${yen(Number(o.price||0)*Number(o.qty||1))}</span></div>`).join('')}
+        <div class="line"><span>注文合計</span><span>${yen(x.subtotal??0)}</span></div>
+        <div class="line"><span>消費税 10%</span><span>${yen(x.taxAmount??0)}</span></div>
+        ${Number(x.roundUpAmount||0)>0?`<div class="line"><span>切り上げ</span><span>+${yen(x.roundUpAmount)}</span></div>`:''}
+        <div class="total">お会計 ${yen(x.total)}</div>`}
+   ${isSplit?`<div class="total">お会計 ${yen(x.total)}</div>`:''}
    <p class="center">ありがとうございました</p>
   </div>`;
 }
@@ -2732,64 +3173,48 @@ function buildInvoicePreview(){
  const payment=$('invoicePaymentMethod').value||x.paymentMethod||'未登録';
  const registration=$('invoicePreviewRegistration').value.trim();
  const issuer=$('invoiceIssuerName').value.trim()||'ティンカーベル';
- const taxSummary=checkoutTaxSummary(x);
-
- const taxRows=Object.entries(taxSummary)
-  .sort((a,b)=>Number(b[0])-Number(a[0]))
-  .map(([rate,obj])=>`
-   <div class="invoice-tax-row">
-    <span>税込合計</span>
-    <b>${yen(obj.gross)}</b>
-   </div>
-   <div class="invoice-tax-row">
-    <span>税抜金額</span>
-    <b>${yen(obj.net)}</b>
-   </div>
-   <div class="invoice-tax-row">
-    <span>消費税（${rate}%）</span>
-    <b>${yen(obj.tax)}</b>
-   </div>`).join('');
-
- const invoiceNo=`${new Date(x.closedAt).toLocaleDateString('sv-SE').replaceAll('-','')}-${String(x.id).slice(-6).toUpperCase()}`;
+ const summary=checkoutTaxSummary(x);
+ const obj=summary[10] || {gross:Number(x.total||0), net:0, tax:0};
+ const no=`${new Date(x.closedAt).toLocaleDateString('sv-SE').replaceAll('-','')}-${String(x.id).slice(-6).toUpperCase()}`;
 
  $('invoicePreviewPaper').innerHTML=`
-  <div class="invoice-landscape">
-    <div class="invoice-head-row">
-      <div>
-        <div class="invoice-doc-title">領 収 書</div>
-        <div class="invoice-number">管理番号 ${invoiceNo}</div>
-      </div>
-      <div class="invoice-head-right">
-        <div>発行日 ${new Date(x.closedAt).toLocaleDateString('ja-JP')}</div>
-        ${payment==='現金'?'<div class="revenue-stamp-box">収入印紙<br>貼付欄</div>':''}
-      </div>
+  <div class="receipt-photo-layout">
+    <div class="receipt-head">
+      <div class="receipt-spacer"></div>
+      <div class="receipt-title">領 収 証</div>
+      <div class="receipt-no">No. ${esc(no)}</div>
     </div>
 
-    <div class="invoice-customer-row">
-      <div class="invoice-customer-name">${esc(name||'　　　　　　　　　　　　')} ${esc(suffix)}</div>
+    <div class="receipt-date-row">
+      <div class="receipt-date-line">発行日　${new Date(x.closedAt).toLocaleDateString('ja-JP')}</div>
     </div>
 
-    <div class="invoice-main-row">
-      <div class="invoice-main-left">
-        <div class="invoice-amount-label">領収金額</div>
-        <div class="invoice-amount">${yen(x.total)}</div>
-        <div class="invoice-proviso">但し　${esc(proviso)}</div>
-        <div class="invoice-payment">支払方法　<b>${esc(payment)}</b></div>
-      </div>
-
-      <div class="invoice-tax-box">
-        <div class="invoice-tax-heading">消費税内訳</div>
-        ${taxRows}
-      </div>
+    <div class="receipt-name-row">
+      <div class="receipt-name-line">${esc(name||'　　　　　　　　　　　　　　')} ${esc(suffix)}</div>
     </div>
 
-    <div class="invoice-footer-row">
-      <div class="invoice-note">上記正に領収いたしました。</div>
-      <div class="invoice-shop">
-        <b>${esc(issuer)}</b><br>
-        ${esc(INVOICE_ADDRESS)}<br>
-        TEL ${INVOICE_PHONE}<br>
-        登録番号 ${esc(registration||'未設定')}
+    <div class="receipt-amount-label">金 額</div>
+    <div class="receipt-amount-box">${yen(x.total)}</div>
+
+    <div class="receipt-proviso-row">
+      <span class="receipt-proviso-label">但し</span>
+      <span class="receipt-proviso-line">${esc(proviso)}</span>
+    </div>
+
+    <div class="receipt-payment-row">支払方法　${esc(payment)}</div>
+
+    <div class="receipt-bottom-grid">
+      <div class="receipt-left-block">
+        <div class="receipt-block-title">内 訳</div>
+        <div class="receipt-breakdown-row"><span>税抜金額</span><span>${yen(obj.net)}</span></div>
+        <div class="receipt-breakdown-row"><span>消費税額（10％）</span><span>${yen(obj.tax)}</span></div>
+      </div>
+
+      <div class="receipt-right-block">
+        <div class="receipt-shop-name">${esc(issuer)}</div>
+        <div class="receipt-shop-line">${esc(INVOICE_ADDRESS)}</div>
+        <div class="receipt-shop-line">TEL ${INVOICE_PHONE}</div>
+        <div class="receipt-shop-line">登録番号 ${esc(registration||DEFAULT_INVOICE_REG)}</div>
       </div>
     </div>
   </div>`;
