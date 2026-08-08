@@ -348,6 +348,20 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
  body.invoice-print-mode{background:#fff!important}
 }
 
+
+.invoice-preview-modal{z-index:140!important;align-items:flex-start!important;padding-top:max(10px,env(safe-area-inset-top))}
+.invoice-preview-modal .modal-card{max-height:96vh!important}
+.invoice-reg-warning{
+ margin:12px 0;
+ padding:13px;
+ border:2px solid #d33;
+ border-radius:10px;
+ background:#fff1f1;
+ color:#a40000;
+ font-weight:1000;
+ font-size:15px;
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -741,13 +755,13 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
       <button id="printReceiptAgainBtn" class="secondary">再発行</button>
     </div>
     <div class="row" style="margin-top:10px">
-      <button id="printInvoiceBtn" class="primary">領収書を印刷</button>
+      <button id="printInvoiceBtn" type="button" class="primary" onclick="openInvoicePreviewFromCheckout()">領収書を印刷</button>
       <button id="cancelCheckoutBtn" class="danger">会計取消</button>
     </div>
   </div>
 </div>
 
-<div id="invoicePreviewModal" class="modal hidden">
+<div id="invoicePreviewModal" class="modal hidden invoice-preview-modal">
   <div class="modal-card invoice-preview-card">
     <div class="sectionHead">
       <h2>領収書プレビュー</h2>
@@ -765,9 +779,10 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
       <label>発行者<input id="invoiceIssuerName" value="ティンカーベル"></label>
     </div>
 
+    <div id="invoiceRegistrationWarning" class="invoice-reg-warning hidden">インボイス登録番号が未入力です。印刷するには「T＋13桁」の登録番号を入力してください。</div>
     <div id="invoicePreviewPaper" class="invoice-paper"></div>
 
-    <button id="invoicePreviewPrint" class="primary invoice-print-large">この領収書を印刷</button>
+    <button id="invoicePreviewPrint" type="button" class="primary invoice-print-large" onclick="printInvoiceFromPreview()">この領収書を印刷</button>
   </div>
 </div>
 <div id="toast" class="toast hidden"></div>
@@ -775,7 +790,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v42-company-landscape-receipt';
+const APP_VERSION='v43-invoice-button-print-fix';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2694,9 +2709,12 @@ function buildInvoicePreview(){
   </div>`;
 }
 
-$('printInvoiceBtn').onclick=()=>{
+window.openInvoicePreviewFromCheckout=()=>{
  const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
- if(!x)return;
+ if(!x){
+  alert('会計データが見つかりません。会計履歴からもう一度開いてください。');
+  return;
+ }
 
  $('invoicePreviewName').value=x.customerName||'';
  $('invoicePreviewProviso').value='飲食代として';
@@ -2706,27 +2724,68 @@ $('printInvoiceBtn').onclick=()=>{
  $('invoiceIssuerName').value=localStorage.getItem(INVOICE_ISSUER_KEY)||'ティンカーベル';
 
  buildInvoicePreview();
+
+ const reg=$('invoicePreviewRegistration').value.trim();
+ $('invoiceRegistrationWarning').classList.toggle('hidden',/^T\d{13}$/.test(reg));
+
+ // 下にある会計詳細モーダルを閉じて、領収書モーダルだけを表示する。
+ $('checkoutDetailModal').classList.add('hidden');
  $('invoicePreviewModal').classList.remove('hidden');
+
+ // iPhoneで確実に画面上部から見えるようにする。
+ const card=$('invoicePreviewModal').querySelector('.modal-card');
+ if(card)card.scrollTop=0;
 };
 
 $('invoicePreviewName').oninput=buildInvoicePreview;
 $('invoicePreviewProviso').oninput=buildInvoicePreview;
 $('invoicePreviewSuffix').onchange=buildInvoicePreview;
 $('invoicePaymentMethod').onchange=buildInvoicePreview;
-$('invoicePreviewRegistration').oninput=buildInvoicePreview;
-$('invoiceIssuerName').oninput=buildInvoicePreview;
-$('invoicePreviewClose').onclick=()=>$('invoicePreviewModal').classList.add('hidden');
-
-$('invoicePreviewPrint').onclick=async()=>{
- const x=db.checkouts.find(c=>c.id===selectedCheckoutId); if(!x)return;
+$('invoicePreviewRegistration').oninput=()=>{
+ buildInvoicePreview();
  const reg=$('invoicePreviewRegistration').value.trim();
- if(!/^T\d{13}$/.test(reg))return toast('登録番号は T＋13桁で入力してください');
+ $('invoiceRegistrationWarning').classList.toggle('hidden',/^T\d{13}$/.test(reg));
+};
+$('invoiceIssuerName').oninput=buildInvoicePreview;
+$('invoicePreviewClose').onclick=()=>{
+ $('invoicePreviewModal').classList.add('hidden');
+ if(selectedCheckoutId)$('checkoutDetailModal').classList.remove('hidden');
+};
+
+window.printInvoiceFromPreview=async()=>{
+ const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
+ if(!x){
+  alert('会計データが見つかりません。');
+  return;
+ }
+
+ const reg=$('invoicePreviewRegistration').value.trim();
+ if(!/^T\d{13}$/.test(reg)){
+  $('invoiceRegistrationWarning').classList.remove('hidden');
+  $('invoicePreviewRegistration').focus();
+  alert('インボイス登録番号を「T＋13桁」で入力してから印刷してください。');
+  return;
+ }
+
  saveInvoiceRegistrationNumber(reg);
  localStorage.setItem(INVOICE_ISSUER_KEY,$('invoiceIssuerName').value.trim()||'ティンカーベル');
  buildInvoicePreview();
+
  document.body.classList.add('invoice-print-mode');
- window.print();
- setTimeout(()=>document.body.classList.remove('invoice-print-mode'),1200);
+
+ // Safari / iPhone向け。レイアウト反映後に印刷を呼ぶ。
+ requestAnimationFrame(()=>{
+  requestAnimationFrame(()=>{
+   try{
+    window.print();
+   }catch(error){
+    console.error(error);
+    alert('印刷画面を開けませんでした。Safariで開いて再度お試しください。');
+   }
+  });
+ });
+
+ setTimeout(()=>document.body.classList.remove('invoice-print-mode'),2500);
  await recordPrint('invoice');
 };
 
