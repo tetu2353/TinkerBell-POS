@@ -811,7 +811,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v46-invoice-final-total-tax';
+const APP_VERSION='v47-invoice-address';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2533,6 +2533,7 @@ function attendanceHours(record){
 const INVOICE_REG_KEY='tinkerbell_invoice_registration_number';
 const INVOICE_ISSUER_KEY='tinkerbell_invoice_issuer_name';
 const INVOICE_PHONE='0242-29-3131';
+const INVOICE_ADDRESS='福島県会津若松市上町9-10 サンチュリー・ソアビル4F';
 
 function getInvoiceRegistrationNumber(){
  return localStorage.getItem(INVOICE_REG_KEY)||'';
@@ -2786,6 +2787,7 @@ function buildInvoicePreview(){
       <div class="invoice-note">上記正に領収いたしました。</div>
       <div class="invoice-shop">
         <b>${esc(issuer)}</b><br>
+        ${esc(INVOICE_ADDRESS)}<br>
         TEL ${INVOICE_PHONE}<br>
         登録番号 ${esc(registration||'未設定')}
       </div>
