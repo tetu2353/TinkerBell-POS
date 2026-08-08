@@ -811,7 +811,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v45-tax-roundup-billing';
+const APP_VERSION='v46-invoice-final-total-tax';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2543,9 +2543,10 @@ function saveInvoiceRegistrationNumber(value){
 }
 
 function checkoutTaxSummary(checkout){
- const subtotal=Number(checkout.subtotal??0);
- const tax=Number(checkout.taxAmount??Math.round(subtotal*0.10));
- return {10:{gross:subtotal+tax,tax,net:subtotal}};
+ const gross=Math.max(0,Number(checkout.total||0));
+ const net=Math.round(gross/1.10);
+ const tax=gross-net;
+ return {10:{gross,tax,net}};
 }
 
 let selectedCheckoutId='';
@@ -2736,11 +2737,15 @@ function buildInvoicePreview(){
   .sort((a,b)=>Number(b[0])-Number(a[0]))
   .map(([rate,obj])=>`
    <div class="invoice-tax-row">
-    <span>${rate}%対象（税込）</span>
+    <span>税込合計</span>
     <b>${yen(obj.gross)}</b>
    </div>
    <div class="invoice-tax-row">
-    <span>うち消費税額（${rate}%）</span>
+    <span>税抜金額</span>
+    <b>${yen(obj.net)}</b>
+   </div>
+   <div class="invoice-tax-row">
+    <span>消費税（${rate}%）</span>
     <b>${yen(obj.tax)}</b>
    </div>`).join('');
 
