@@ -366,6 +366,15 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
   font-weight:800;
 }
 
+
+.checkout-attribution{margin-top:10px;padding:10px 12px;background:#f7f2ea;border-radius:10px;display:grid;gap:6px}
+.checkout-attribution span{color:#6b625a}
+.checkout-order-cast,.order-cast-label{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;background:#efe5d7;color:#6e4e31;font-weight:900;font-size:12px}
+
+
+.checkout-billing-box{margin-top:14px;border-top:2px solid #3b3029;padding-top:10px;display:grid;gap:7px}
+.checkout-billing-box>div{display:flex;justify-content:space-between;gap:12px;font-size:16px}
+.checkout-billing-total{border-top:2px solid #3b3029;padding-top:10px;margin-top:4px;font-size:22px!important;font-weight:1000}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -736,14 +745,21 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
     </div>
     <div id="seatCheckoutBody"></div>
     <div class="card payment-card">
-      <label>支払方法
-        <select id="seatCheckoutPayment">
-          <option value="">選択してください</option>
-          <option value="現金">現金</option>
-          <option value="クレジットカード">クレジットカード</option>
-          <option value="その他">その他</option>
-        </select>
-      </label>
+      <div class="row">
+        <label>支払方法
+          <select id="seatCheckoutPayment">
+            <option value="">選択してください</option>
+            <option value="現金">現金</option>
+            <option value="クレジットカード">クレジットカード</option>
+            <option value="その他">その他</option>
+          </select>
+        </label>
+        <label>同伴キャスト
+          <select id="seatCheckoutCompanion">
+            <option value="">同伴なし</option>
+          </select>
+        </label>
+      </div>
     </div>
     <button id="seatCheckoutConfirm" class="primary checkout-confirm-large">会計を確定する</button>
   </div>
@@ -795,10 +811,20 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v43-direct-print-visible-error';
+const APP_VERSION='v45-tax-roundup-billing';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
+function calcBillingFromBase(base){
+ const subtotal=Math.max(0,Number(base||0));
+ const tax=Math.round(subtotal*0.10);
+ const taxed=subtotal+tax;
+ const total=Math.ceil(taxed/1000)*1000;
+ const roundUp=total-taxed;
+ return {subtotal,tax,taxed,total,roundUp};
+}
+function seatBilling(seat){return calcBillingFromBase(seatTotal(seat));}
+
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const seed=()=>({
@@ -1529,6 +1555,22 @@ $('seatModalSave').onclick=()=>{
  toast('席を登録しました');
 };
 
+function normalizeCustomerNameForMatch(v){
+ return String(v||'').replace(/\s/g,'').replace(/様$/,'').trim();
+}
+function findCompanionVisitForSeat(seat){
+ const customer=normalizeCustomerNameForMatch(seat?.customerName);
+ const date=(seat?.openedAt?new Date(seat.openedAt):new Date()).toLocaleDateString('sv-SE');
+ return (db.visits||[]).slice().reverse().find(v=>
+  v.type==='同伴' &&
+  String(v.date||'')===date &&
+  normalizeCustomerNameForMatch(v.customer)===customer
+ );
+}
+function orderCastName(order){
+ return order.castName || staffById(order.castId)?.name || '';
+}
+
 let pendingCheckoutSeatId='';
 
 window.checkoutSeat=sid=>{
@@ -1537,16 +1579,29 @@ window.checkoutSeat=sid=>{
  pendingCheckoutSeatId=sid;
  $('seatCheckoutPayment').value='';
 
+ const casts=db.staff.filter(x=>x.role==='cast');
+ $('seatCheckoutCompanion').innerHTML='<option value="">同伴なし</option>'+casts.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+ const companionVisit=findCompanionVisitForSeat(s);
+ if(companionVisit?.castId)$('seatCheckoutCompanion').value=companionVisit.castId;
+
  $('seatCheckoutBody').innerHTML=`
   <div class="card">
    <div class="meta">${esc(s.name)}</div>
    <h2 style="margin:4px 0 8px">${esc(s.customerName||'')}</h2>
    ${(s.orders||[]).map(o=>`
     <div class="checkout-detail-line">
-     <span>${esc(o.name)} × ${Number(o.qty||1)}</span>
+     <span>${esc(o.name)} × ${Number(o.qty||1)}${orderCastName(o)?` <small class="order-cast-label">担当：${esc(orderCastName(o))}</small>`:''}</span>
      <b>${yen(Number(o.price||0)*Number(o.qty||1))}</b>
     </div>`).join('')||'<div class="empty">注文なし</div>'}
-   <div class="checkout-detail-total">合計 ${yen(seatTotal(s))}</div>
+   ${(()=>{
+     const b=seatBilling(s);
+     return `<div class="checkout-billing-box">
+      <div><span>注文合計</span><b>${yen(b.subtotal)}</b></div>
+      <div><span>消費税 10%</span><b>${yen(b.tax)}</b></div>
+      ${b.roundUp?`<div><span>1,000円単位切り上げ</span><b>+${yen(b.roundUp)}</b></div>`:''}
+      <div class="checkout-billing-total"><span>お会計</span><b>${yen(b.total)}</b></div>
+     </div>`;
+   })()}
   </div>`;
 
  $('seatCheckoutModal').classList.remove('hidden');
@@ -1565,9 +1620,16 @@ $('seatCheckoutConfirm').onclick=async()=>{
  const paymentMethod=$('seatCheckoutPayment').value;
  if(!paymentMethod)return toast('支払方法を選択してください');
 
+ const companionCastId=$('seatCheckoutCompanion').value||'';
+ const companionCastName=staffById(companionCastId)?.name||'';
+ const seatCastIds=Array.isArray(s.casts)?[...s.casts]:[];
+ const seatCastNamesSnapshot=seatCastIds.map(cid=>staffById(cid)?.name).filter(Boolean);
+
  const button=$('seatCheckoutConfirm');
  button.disabled=true;
  button.textContent='会計保存中...';
+
+ const billing=seatBilling(s);
 
  const checkout={
   id:id(),
@@ -1578,11 +1640,20 @@ $('seatCheckoutConfirm').onclick=async()=>{
   openedAt:s.openedAt,
   closedAt:nowISO(),
   paymentMethod,
+  companionCastId,
+  companionCastName,
+  seatCastIds,
+  seatCastNames:seatCastNamesSnapshot,
   orders:JSON.parse(JSON.stringify(s.orders.map(o=>{
    const menu=db.menu.find(m=>m.id===o.menuId);
-   return {...o,tax:Number(o.tax??menu?.tax??10)};
+   return {...o,tax:Number(o.tax??menu?.tax??10),castName:staffById(o.castId)?.name||o.castName||''};
   }))),
-  total:seatTotal(s),
+  subtotal:billing.subtotal,
+  taxRate:10,
+  taxAmount:billing.tax,
+  taxedAmount:billing.taxed,
+  roundUpAmount:billing.roundUp,
+  total:billing.total,
   status:'completed',
   receiptPrintCount:0,
   invoicePrintCount:0,
@@ -2472,22 +2543,9 @@ function saveInvoiceRegistrationNumber(value){
 }
 
 function checkoutTaxSummary(checkout){
- const rates={};
- (checkout.orders||[]).forEach(o=>{
-  const qty=Number(o.qty||1);
-  const gross=Number(o.price||0)*qty;
-  const rate=Number(o.tax??10);
-  if(!rates[rate])rates[rate]={gross:0,tax:0};
-  rates[rate].gross+=gross;
- });
-
- Object.entries(rates).forEach(([rate,obj])=>{
-  const r=Number(rate);
-  obj.tax=r===0?0:Math.round(obj.gross*r/(100+r));
-  obj.net=obj.gross-obj.tax;
- });
-
- return rates;
+ const subtotal=Number(checkout.subtotal??0);
+ const tax=Number(checkout.taxAmount??Math.round(subtotal*0.10));
+ return {10:{gross:subtotal+tax,tax,net:subtotal}};
 }
 
 let selectedCheckoutId='';
@@ -2580,15 +2638,26 @@ window.openCheckoutDetail=idn=>{
     <h3>${new Date(x.closedAt).toLocaleString('ja-JP')}</h3>
     <div class="meta">席：${esc(x.seat)} / お客様：${esc(x.customerName||'')}</div>
     <div class="checkout-payment-line">支払方法：<b>${esc(x.paymentMethod||'未登録')}</b></div>
+    <div class="checkout-attribution">
+      <div><span>同伴：</span><b>${esc(x.companionCastName||'なし')}</b></div>
+      <div><span>席についていたキャスト：</span><b>${(x.seatCastNames||[]).length?(x.seatCastNames||[]).map(esc).join('・'):'なし'}</b></div>
+    </div>
   </div>
   <div class="card">
     <h3>注文明細</h3>
     ${(x.orders||[]).map(o=>`
       <div class="checkout-detail-line">
-        <span>${esc(o.name)} × ${Number(o.qty||1)}</span>
+        <span>${esc(o.name)} × ${Number(o.qty||1)}
+          ${orderCastName(o)?`<small class="checkout-order-cast">担当：${esc(orderCastName(o))}</small>`:''}
+        </span>
         <b>${yen(Number(o.price||0)*Number(o.qty||1))}</b>
       </div>`).join('')||'<div class="empty">明細なし</div>'}
-    <div class="checkout-detail-total">合計 ${yen(x.total)}</div>
+    <div class="checkout-billing-box">
+      <div><span>注文合計</span><b>${yen(x.subtotal??0)}</b></div>
+      <div><span>消費税 10%</span><b>${yen(x.taxAmount??0)}</b></div>
+      ${Number(x.roundUpAmount||0)>0?`<div><span>1,000円単位切り上げ</span><b>+${yen(x.roundUpAmount)}</b></div>`:''}
+      <div class="checkout-billing-total"><span>お会計</span><b>${yen(x.total)}</b></div>
+    </div>
   </div>
   ${x.status==='cancelled'?`<div class="card checkout-cancelled-box"><b>取消済み</b><div class="meta">${esc(x.cancelReason||'理由なし')} / ${x.cancelledAt?new Date(x.cancelledAt).toLocaleString('ja-JP'):''}</div></div>`:''}
   <div class="meta">レシート発行 ${Number(x.receiptPrintCount||0)}回 / 領収書発行 ${Number(x.invoicePrintCount||0)}回</div>`;
@@ -2632,9 +2701,14 @@ function receiptHtml(x){
    <div class="center">${new Date(x.closedAt).toLocaleString('ja-JP')}</div>
    <div class="center">${esc(x.customerName||'')} ${esc(x.seat)}</div>
    <div class="center">支払方法：${esc(x.paymentMethod||'未登録')}</div>
+   <div class="center">同伴：${esc(x.companionCastName||'なし')}</div>
+   <div class="center">席担当：${(x.seatCastNames||[]).length?(x.seatCastNames||[]).map(esc).join('・'):'なし'}</div>
    <hr>
-   ${(x.orders||[]).map(o=>`<div class="line"><span>${esc(o.name)} × ${Number(o.qty||1)}</span><span>${yen(Number(o.price||0)*Number(o.qty||1))}</span></div>`).join('')}
-   <div class="total">合計 ${yen(x.total)}</div>
+   ${(x.orders||[]).map(o=>`<div class="line"><span>${esc(o.name)} × ${Number(o.qty||1)}${orderCastName(o)?`（${esc(orderCastName(o))}）`:''}</span><span>${yen(Number(o.price||0)*Number(o.qty||1))}</span></div>`).join('')}
+   <div class="line"><span>注文合計</span><span>${yen(x.subtotal??0)}</span></div>
+   <div class="line"><span>消費税 10%</span><span>${yen(x.taxAmount??0)}</span></div>
+   ${Number(x.roundUpAmount||0)>0?`<div class="line"><span>切り上げ</span><span>+${yen(x.roundUpAmount)}</span></div>`:''}
+   <div class="total">お会計 ${yen(x.total)}</div>
    <p class="center">ありがとうございました</p>
   </div>`;
 }
