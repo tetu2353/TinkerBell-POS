@@ -744,7 +744,7 @@ body.manager-mode .payroll-staff-settings{
  <div class="grid">
   <button class="tile" data-go="attendance"><span>🕒</span><b>出勤・退勤</b><small>勤怠を記録</small></button>
   <button class="tile" data-go="myAttendance"><span>📋</span><b>自分の実績</b><small>勤務時間・同伴・送迎</small></button>
-  <button class="tile manager manager-tile" data-go="shifts"><span>📅</span><b>シフト管理</b><small>LINE提出分を一覧・修正</small></button>
+  <button class="tile" data-go="shifts"><span>📅</span><b>全員のシフト</b><small>LINE提出分を確認</small></button>
   <button class="tile" data-go="customers"><span>👤</span><b>お客様</b><small>担当・履歴・メモ</small></button>
   <button class="tile" data-go="bottles"><span>🍾</span><b>ボトル</b><small>残量・保管場所</small></button>
   <button class="tile" data-go="visits"><span>🤝</span><b>同伴・来店予定</b><small>予約を共有</small></button>
@@ -791,7 +791,7 @@ body.manager-mode .payroll-staff-settings{
 </section>
 
 
-<section id="shifts" class="screen manager">
+<section id="shifts" class="screen">
  <div class="shift-page-head">
   <h2 id="shiftScreenTitle">シフト管理</h2>
   <p>LINEで提出されたシフトを全体確認・修正できます</p>
@@ -1248,7 +1248,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v64-payroll-attendance-refresh-fix';
+const APP_VERSION='v64-payroll-attendance-shift-visible-fix';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1442,7 +1442,7 @@ function lockManager(){
  toast('管理モードを終了しました');
 }
 
-const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance','payroll','shifts']);
+const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance','payroll']);
 
 function show(idn){
  if(MANAGER_SCREENS.has(idn)&&!managerUnlocked){
@@ -1782,7 +1782,7 @@ function renderShifts(){
  const targetId=selectedShiftStaffId||db.staff[0]?.id,target=staffById(targetId);
  $('shiftMonthTitle').textContent=`${y}年${m+1}月`;
 
- if(isManager()){
+ {
   const weekdayNames=['日','月','火','水','木','金','土'];
   let overall='';
   for(let d=1;d<=days;d++){
@@ -1806,17 +1806,24 @@ function renderShifts(){
   $('shiftOverallList').innerHTML=overall;
  }
 
- $('shiftScreenTitle').textContent='シフト管理';
+ $('shiftScreenTitle').textContent=isManager()?'シフト管理':'全員のシフト';
+ $('shifts').querySelector('.shift-page-head p').textContent=isManager()
+  ?'LINEで提出されたシフトを全体確認・修正できます'
+  :'LINEで提出された全員のシフトを確認できます';
+ $('shifts').querySelector('.shift-banner').textContent=isManager()
+  ?'LINEから提出された内容を確認し、必要な場合だけPOSで修正してください。修正内容はLINE側にも同期されます。'
+  :'閲覧専用です。シフトの登録はLINEから行い、修正は管理者がPOSで行います。';
+ $('shifts').querySelector('.shift-actions').classList.toggle('hidden',!isManager());
  $('shiftPersonPicker').innerHTML=db.staff.map(st=>`<button class="${st.id===targetId?'active':''}" onclick="selectShiftPerson('${st.id}')">${esc(st.name)}</button>`).join('');
  const weekdays=['日','月','火','水','木','金','土'],firstDow=new Date(y,m,1).getDay();
  let cal='<div class="month-calendar">'+weekdays.map((w,i)=>`<div class="dow ${i===0?'sun':i===6?'sat':''}">${w}</div>`).join('');
  for(let i=0;i<firstDow;i++)cal+='<div class="month-day blank"></div>';
  for(let d=1;d<=days;d++){
-   const dt=new Date(y,m,d),dow=dt.getDay(),ds=`${key}-${String(d).padStart(2,'0')}`,r=shiftRecord(targetId,ds),v=r?.status||(r?.time?'○':''),canEdit=true;
+   const dt=new Date(y,m,d),dow=dt.getDay(),ds=`${key}-${String(d).padStart(2,'0')}`,r=shiftRecord(targetId,ds),v=r?.status||(r?.time?'○':''),canEdit=isManager();
    cal+=`<button class="month-day ${dow===0?'sun':dow===6?'sat':''} ${shiftStatusClass(v)} ${ds===todayStr?'today':''} ${canEdit?'editable':''}" ${canEdit?`onclick="cycleShift('${targetId}','${ds}')"`:''}><span class="num">${d}</span><span class="mark">${v}</span></button>`;
  }
  cal+='</div>';$('shiftGrid').innerHTML=cal;
- $('shiftInputStatus').innerHTML=`<b>${esc(target?.name||'')}を修正中</b><div style="height:8px"></div><b>LINE提出状況</b>`+db.staff.map(st=>{const t=db.shiftMeta.submitted[`${key}:${st.id}`];return `<div class="shift-status-row"><span>${esc(st.name)}</span><span class="${t?'submitted':'unsubmitted'}">${t?'● LINE提出済み':'● 未提出'}</span></div>`}).join('');
+ $('shiftInputStatus').innerHTML=`<b>${esc(target?.name||'')}${isManager()?'を修正中':'のシフト'}</b><div style="height:8px"></div><b>LINE提出状況</b>`+db.staff.map(st=>{const t=db.shiftMeta.submitted[`${key}:${st.id}`];return `<div class="shift-status-row"><span>${esc(st.name)}</span><span class="${t?'submitted':'unsubmitted'}">${t?'● LINE提出済み':'● 未提出'}</span></div>`}).join('');
  const startDay=1,endDay=Math.min(days,14);let roster='<table class="roster-mini"><tr><th>名前</th>';
  for(let d=startDay;d<=endDay;d++)roster+=`<th>${d}</th>`;roster+='</tr>';
  db.staff.forEach(st=>{roster+=`<tr><td>${esc(st.name)}</td>`;for(let d=startDay;d<=endDay;d++){const r=shiftRecord(st.id,`${key}-${String(d).padStart(2,'0')}`),v=r?.status||(r?.time?'○':'');roster+=`<td class="${shiftStatusClass(v)}">${v||'・'}</td>`}roster+='</tr>'});roster+='</table>';$('shiftRoster').innerHTML=roster;
@@ -1858,7 +1865,7 @@ window.openShiftDayDetail=date=>{
 };
 $('shiftDayModalClose').onclick=()=>$('shiftDayModal').classList.add('hidden');
 
-window.selectShiftPerson=x=>{if(!isManager())return;selectedShiftStaffId=x;renderShifts()};
+window.selectShiftPerson=x=>{selectedShiftStaffId=x;renderShifts()};
 $('prevShiftMonth').onclick=()=>{shiftViewMonth.setMonth(shiftViewMonth.getMonth()-1);renderShifts()};
 $('nextShiftMonth').onclick=()=>{shiftViewMonth.setMonth(shiftViewMonth.getMonth()+1);renderShifts()};
 $('publishShift').onclick=()=>{if(!isManager())return;ensureShiftMeta();db.shiftMeta.published[shiftMonthKey()]=nowISO();persist();saveSharedShiftsFromPos();saveSharedShiftMetaFromPos();renderShifts();toast('全員に公開しました')};
