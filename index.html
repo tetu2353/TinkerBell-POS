@@ -1007,6 +1007,16 @@ body.manager-mode .payroll-staff-settings{
 <h2>売上・勤怠集計</h2>
 <div id="metrics" class="summary"></div>
 <div class="card">
+  <div class="sectionHead"><h3>1日の売上詳細</h3></div>
+  <div class="row3">
+    <button id="dailySalesPrev" class="secondary">← 前の日</button>
+    <label>日付<input id="dailySalesDate" type="date"></label>
+    <button id="dailySalesNext" class="secondary">次の日 →</button>
+  </div>
+  <div id="dailySalesMetrics" class="summary"></div>
+  <div id="dailySalesBreakdown"></div>
+</div>
+<div class="card">
   <div class="sectionHead"><h3>会計履歴</h3><button id="syncCheckoutHistory" class="secondary">クラウド再読込</button></div>
   <div id="checkoutHistory"></div>
 </div>
@@ -1047,7 +1057,7 @@ body.manager-mode .payroll-staff-settings{
 
 <div class="card">
   <h3 style="margin-top:0">保存方式</h3>
-  <p>現在の保存先は、この端末のブラウザ内です。Firebaseへの接続確認だけ追加してあり、既存データの保存方法はまだ変更していません。</p>
+  <p>端末内へ保存しながら、お客様・ボトル・売上・会計履歴・使用中の席と途中注文をFirebaseへ個別同期します。通信切断中の変更は永続キャッシュに保持し、接続復旧後に再同期します。</p>
 </div>
 
 <div class="card">
@@ -1263,7 +1273,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v68-customer-bottle-visit-link';
+const APP_VERSION='v70-daily-sales-detail';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1348,7 +1358,14 @@ db.staff=Array.isArray(db.staff)?db.staff.map(s=>({...s,
  dependents:Number.isFinite(Number(s.dependents))?Number(s.dependents):0
 })):[];
 localStorage.setItem(KEY,JSON.stringify(db));
-function persist(){localStorage.setItem(KEY,JSON.stringify(db))}
+let suppressActiveSeatCloudSave=false,activeSeatCloudTimer=null;
+function persist(){
+ localStorage.setItem(KEY,JSON.stringify(db));
+ if(!suppressActiveSeatCloudSave){
+  clearTimeout(activeSeatCloudTimer);
+  activeSeatCloudTimer=setTimeout(()=>window.tinkerbellFirebase?.saveActiveSeats?.(db.seats).catch(error=>console.error('Active seat cloud save failed:',error)),500);
+ }
+}
 function toast(t){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),1500)}
 function staffById(x){return db.staff.find(s=>s.id===x)}
 function customerById(x){return db.customers.find(c=>c.id===x)}
@@ -1436,6 +1453,16 @@ window.tinkerbellApplyCloudCheckoutEvents=events=>{
   persist();
 };
 window.tinkerbellGetLocalCheckoutEvents=()=>Array.isArray(db.checkoutEvents)?db.checkoutEvents:[];
+window.tinkerbellApplyCloudActiveSeats=seats=>{
+ if(!Array.isArray(seats)||!seats.length)return;
+ const cloudById=new Map(seats.map(s=>[String(s.id),s]));
+ suppressActiveSeatCloudSave=true;
+ db.seats=db.seats.map(local=>cloudById.has(String(local.id))?{...local,...cloudById.get(String(local.id)),orders:Array.isArray(cloudById.get(String(local.id))?.orders)?cloudById.get(String(local.id)).orders:[]}:local);
+ localStorage.setItem(KEY,JSON.stringify(db));
+ suppressActiveSeatCloudSave=false;
+ renderSeats();renderOrders();
+};
+window.tinkerbellGetLocalActiveSeats=()=>Array.isArray(db.seats)?db.seats:[];
 
 let managerUnlocked=sessionStorage.getItem('tb_manager_unlocked')==='1';
 
@@ -3843,6 +3870,83 @@ window.clearPayrollCorrection=async staffId=>{
  toast('手動修正を解除しました');
 };
 
+function localDateKey(value){
+ const d=new Date(value);
+ if(Number.isNaN(d.getTime()))return '';
+ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function dailyCheckoutGroups(rows){
+ const groups=new Map();
+ rows.forEach(checkout=>{
+  const key=checkout.splitGroupId||checkout.id;
+  if(!groups.has(key))groups.set(key,checkout);
+ });
+ return [...groups.values()];
+}
+
+function renderDailySales(){
+ const input=$('dailySalesDate');
+ if(!input.value)input.value=today();
+ const date=input.value;
+ const rows=db.checkouts
+  .filter(x=>x.status!=='cancelled'&&localDateKey(x.closedAt)===date)
+  .sort((a,b)=>String(a.closedAt||'').localeCompare(String(b.closedAt||'')));
+ const groups=dailyCheckoutGroups(rows);
+ const sales=rows.reduce((sum,x)=>sum+Number(x.total||0),0);
+ const orderQty=groups.reduce((sum,x)=>sum+(x.orders||[]).reduce((n,o)=>n+Number(o.qty||1),0),0);
+ const average=groups.length?Math.round(sales/groups.length):0;
+ const paymentTotals=new Map();
+ rows.forEach(x=>paymentTotals.set(x.paymentMethod||'未登録',(paymentTotals.get(x.paymentMethod||'未登録')||0)+Number(x.total||0)));
+ const productTotals=new Map();
+ groups.forEach(x=>(x.orders||[]).forEach(o=>{
+  const key=`${o.menuId||o.name}|${Number(o.price||0)}`;
+  const current=productTotals.get(key)||{name:o.name||'商品名なし',qty:0,amount:0};
+  current.qty+=Number(o.qty||1);
+  current.amount+=Number(o.price||0)*Number(o.qty||1);
+  productTotals.set(key,current);
+ }));
+ const subtotal=groups.reduce((sum,x)=>sum+Number((x.splitGroupId?x.sourceOrderSubtotal:x.subtotal)||0),0);
+ const tax=groups.reduce((sum,x)=>sum+Number((x.splitGroupId?x.sourceTaxAmount:x.taxAmount)||0),0);
+ const roundUp=groups.reduce((sum,x)=>sum+Number((x.splitGroupId?x.sourceRoundUpAmount:x.roundUpAmount)||0),0);
+
+ $('dailySalesMetrics').innerHTML=`
+  <div class="metric"><small>売上合計</small><b>${yen(sales)}</b></div>
+  <div class="metric"><small>来店会計数</small><b>${groups.length}組</b></div>
+  <div class="metric"><small>注文数</small><b>${orderQty}点</b></div>
+  <div class="metric"><small>1組平均</small><b>${yen(average)}</b></div>`;
+
+ $('dailySalesBreakdown').innerHTML=rows.length?`
+  <div class="row" style="margin-top:12px">
+   <div>
+    <h3>支払方法別</h3>
+    ${[...paymentTotals.entries()].map(([name,amount])=>`<div class="checkout-detail-line"><span>${esc(name)}</span><b>${yen(amount)}</b></div>`).join('')}
+   </div>
+   <div>
+    <h3>売上内訳</h3>
+    <div class="checkout-detail-line"><span>注文合計</span><b>${yen(subtotal)}</b></div>
+    <div class="checkout-detail-line"><span>消費税</span><b>${yen(tax)}</b></div>
+    <div class="checkout-detail-line"><span>切り上げ</span><b>${yen(roundUp)}</b></div>
+    <div class="checkout-detail-line"><span>売上合計</span><b>${yen(sales)}</b></div>
+   </div>
+  </div>
+  <h3 style="margin-top:18px">商品別集計</h3>
+  <div style="overflow:auto"><table><thead><tr><th>商品</th><th>数量</th><th>金額</th></tr></thead><tbody>
+   ${[...productTotals.values()].sort((a,b)=>b.qty-a.qty).map(item=>`<tr><td>${esc(item.name)}</td><td>${item.qty}</td><td>${yen(item.amount)}</td></tr>`).join('')||'<tr><td colspan="3">商品明細なし</td></tr>'}
+  </tbody></table></div>
+  <h3 style="margin-top:18px">会計ごとの詳細</h3>
+  ${rows.map(x=>`<button class="checkout-history-row" onclick="openCheckoutDetail('${x.id}')"><div><b>${new Date(x.closedAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}　${esc(x.customerName||'')}</b><div class="meta">${esc(x.seat||'')} / ${esc(x.paymentMethod||'未登録')}${x.splitGroupId?` / 分割 ${x.splitPartIndex}/${x.splitPartCount}`:''}</div></div><b>${yen(x.total)}</b></button>`).join('')}`
+  :'<div class="empty">この日の会計はありません</div>';
+}
+
+function shiftDailySalesDate(days){
+ const input=$('dailySalesDate');
+ const base=new Date(`${input.value||today()}T12:00:00`);
+ base.setDate(base.getDate()+days);
+ input.value=localDateKey(base);
+ renderDailySales();
+}
+
 function renderReports(){
  const activeCheckouts=db.checkouts.filter(x=>x.status!=='cancelled');
  const sales=activeCheckouts.reduce((a,x)=>a+Number(x.total||0),0);
@@ -3855,6 +3959,8 @@ function renderReports(){
   <div class="metric"><small>未会計</small><b>${yen(open)}</b></div>
   <div class="metric"><small>会計件数</small><b>${activeCheckouts.length}</b></div>
   <div class="metric"><small>注文数</small><b>${orders}</b></div>`;
+
+ renderDailySales();
 
  $('checkoutHistory').innerHTML=db.checkouts.length
   ?db.checkouts.slice().reverse().map(x=>`
@@ -4284,6 +4390,9 @@ $('syncCheckoutHistory').onclick=()=>{
 };
 
 $('attendanceReportMonth').onchange=renderReports;
+$('dailySalesDate').onchange=renderDailySales;
+$('dailySalesPrev').onclick=()=>shiftDailySalesDate(-1);
+$('dailySalesNext').onclick=()=>shiftDailySalesDate(1);
 $('payrollMonth').onchange=renderPayroll;
 
 const BACKUP_VERSION='tinkerbell-backup-v1';
@@ -4431,7 +4540,7 @@ if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, writeBatch, doc, getDoc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCUGu1dEan0D0-kfXXiiag7eKKwdmkg_TQ",
@@ -4448,6 +4557,50 @@ const retryBtn = document.getElementById("retryFirebaseConnection");
 let firebaseApp;
 let firestoreDb;
 
+function ensureFirebase(){
+ firebaseApp ||= initializeApp(firebaseConfig);
+ if(!firestoreDb){
+  try{firestoreDb=initializeFirestore(firebaseApp,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})})}
+  catch(error){console.warn('Persistent Firestore cache unavailable; using memory cache.',error);firestoreDb=getFirestore(firebaseApp)}
+ }
+ return firestoreDb;
+}
+
+function cleanCloudRow(row){return JSON.parse(JSON.stringify({...row,cloudUpdatedAt:new Date().toISOString()}))}
+
+async function replaceCloudCollection(collectionName,rows){
+ ensureFirebase();
+ const safeRows=(Array.isArray(rows)?rows:[]).filter(row=>row&&row.id).map(cleanCloudRow);
+ const existing=await getDocs(collection(firestoreDb,collectionName));
+ const wanted=new Set(safeRows.map(row=>String(row.id)));
+ const operations=[];
+ safeRows.forEach(row=>operations.push({type:'set',ref:doc(firestoreDb,collectionName,String(row.id)),data:row}));
+ existing.docs.filter(item=>!wanted.has(item.id)).forEach(item=>operations.push({type:'delete',ref:item.ref}));
+ for(let i=0;i<operations.length;i+=350){
+  const batch=writeBatch(firestoreDb);
+  operations.slice(i,i+350).forEach(op=>op.type==='set'?batch.set(op.ref,op.data,{merge:true}):batch.delete(op.ref));
+  await batch.commit();
+ }
+}
+
+async function ensureCloudCollection(collectionName,legacyKey,localRows){
+ ensureFirebase();
+ const legacyRef=doc(firestoreDb,'app','data');
+ const [items,legacySnap]=await Promise.all([getDocs(collection(firestoreDb,collectionName)),getDoc(legacyRef)]);
+ const legacy=legacySnap.exists()?legacySnap.data():{};
+ const migrations=legacy.collectionMigrations&&typeof legacy.collectionMigrations==='object'?legacy.collectionMigrations:{};
+ if(!migrations[collectionName]){
+  const source=items.empty?(Array.isArray(legacy[legacyKey])?legacy[legacyKey]:(Array.isArray(localRows)?localRows:[])):[];
+  if(source.length)await replaceCloudCollection(collectionName,source);
+  await setDoc(legacyRef,{collectionMigrations:{...migrations,[collectionName]:true},collectionSchemaVersion:2,collectionMigratedAt:new Date().toISOString()},{merge:true});
+ }
+}
+
+function listenCloudCollection(collectionName,apply,errorLabel){
+ ensureFirebase();
+ return onSnapshot(collection(firestoreDb,collectionName),snapshot=>apply(snapshot.docs.map(item=>item.data())),error=>{console.error(`${errorLabel} sync failed:`,error);setStatus(`${errorLabel}のクラウド同期エラー：${error?.code||error?.message||'不明'}`)});
+}
+
 function setStatus(message, ok = false) {
   if (!statusEl) return;
   statusEl.textContent = message;
@@ -4458,8 +4611,7 @@ function setStatus(message, ok = false) {
 async function checkFirebaseConnection() {
   setStatus("Firebaseへ接続確認中...");
   try {
-    firebaseApp ||= initializeApp(firebaseConfig);
-    firestoreDb ||= getFirestore(firebaseApp);
+    ensureFirebase();
 
     const snap = await getDoc(doc(firestoreDb, "app", "data"));
     if (snap.exists()) {
@@ -4478,35 +4630,17 @@ async function checkFirebaseConnection() {
 }
 
 async function saveCustomersToFirebase(customers) {
-  firebaseApp ||= initializeApp(firebaseConfig);
-  firestoreDb ||= getFirestore(firebaseApp);
-  await setDoc(
-    doc(firestoreDb, "app", "data"),
-    {
-      customers,
-      customersUpdatedAt: new Date().toISOString()
-    },
-    { merge: true }
-  );
+  await replaceCloudCollection('customers',customers);
 }
 
 async function saveBottlesToFirebase(bottles) {
-  firebaseApp ||= initializeApp(firebaseConfig);
-  firestoreDb ||= getFirestore(firebaseApp);
-  await setDoc(
-    doc(firestoreDb, "app", "data"),
-    { bottles, bottlesUpdatedAt: new Date().toISOString() },
-    { merge: true }
-  );
+  await replaceCloudCollection('bottles',bottles);
 }
 
 async function loadCustomersFromFirebase() {
-  firebaseApp ||= initializeApp(firebaseConfig);
-  firestoreDb ||= getFirestore(firebaseApp);
-  const snap = await getDoc(doc(firestoreDb, "app", "data"));
-  if (!snap.exists()) return null;
-  const customers = snap.data()?.customers;
-  return Array.isArray(customers) ? customers : null;
+  ensureFirebase();
+  const snap=await getDocs(collection(firestoreDb,'customers'));
+  return snap.docs.map(item=>item.data());
 }
 
 
@@ -4593,30 +4727,15 @@ function startStaffRealtimeSync() {
 
 
 async function saveCheckoutsToFirebase(checkouts,checkoutEvents) {
-  firebaseApp ||= initializeApp(firebaseConfig);
-  firestoreDb ||= getFirestore(firebaseApp);
-  await setDoc(
-    doc(firestoreDb, "app", "data"),
-    {
-      checkouts,
-      checkoutEvents,
-      checkoutsUpdatedAt: new Date().toISOString()
-    },
-    { merge: true }
-  );
+  await replaceCloudCollection('checkouts',checkouts);
+  await replaceCloudCollection('checkoutEvents',checkoutEvents);
 }
 
-function startCheckoutRealtimeSync() {
-  firebaseApp ||= initializeApp(firebaseConfig);
-  firestoreDb ||= getFirestore(firebaseApp);
-  const ref=doc(firestoreDb,"app","data");
-
-  return onSnapshot(ref,snap=>{
-    if(!snap.exists())return;
-    const d=snap.data()||{};
-    if(Array.isArray(d.checkouts))window.tinkerbellApplyCloudCheckouts?.(d.checkouts);
-    if(Array.isArray(d.checkoutEvents))window.tinkerbellApplyCloudCheckoutEvents?.(d.checkoutEvents);
-  },error=>console.error("Checkout sync failed:",error));
+async function startCheckoutRealtimeSync() {
+  await ensureCloudCollection('checkouts','checkouts',window.tinkerbellGetLocalCheckouts?.()||[]);
+  await ensureCloudCollection('checkoutEvents','checkoutEvents',window.tinkerbellGetLocalCheckoutEvents?.()||[]);
+  listenCloudCollection('checkouts',rows=>window.tinkerbellApplyCloudCheckouts?.(rows),'売上');
+  listenCloudCollection('checkoutEvents',rows=>window.tinkerbellApplyCloudCheckoutEvents?.(rows),'会計履歴');
 }
 
 async function saveMenuToFirebase(menu) {
@@ -4669,57 +4788,22 @@ function startMenuRealtimeSync() {
   );
 }
 
-function startCustomerRealtimeSync() {
-  firebaseApp ||= initializeApp(firebaseConfig);
-  firestoreDb ||= getFirestore(firebaseApp);
+async function startCustomerRealtimeSync() {
+  try{
+   await ensureCloudCollection('customers','customers',window.tinkerbellGetLocalCustomers?.()||[]);
+   await ensureCloudCollection('bottles','bottles',window.tinkerbellGetLocalBottles?.()||[]);
+   listenCloudCollection('customers',rows=>{window.tinkerbellApplyCloudCustomers?.(rows);setStatus(`Firebase接続：成功（お客様 ${rows.length}件を個別同期）`,true)},'お客様');
+   listenCloudCollection('bottles',rows=>window.tinkerbellApplyCloudBottles?.(rows),'ボトル');
+  }catch(error){
+   console.error('Customer collection initialization failed:',error);
+   setStatus(`お客様・ボトルのクラウド初期化エラー：${error?.code||error?.message||'不明'}`);
+  }
+}
 
-  const ref = doc(firestoreDb, "app", "data");
-
-  return onSnapshot(
-    ref,
-    async snap => {
-      if (!snap.exists()) {
-        await setDoc(ref, { customers: [], bottles: [], customersUpdatedAt: new Date().toISOString(), bottlesUpdatedAt: new Date().toISOString() }, { merge: true });
-        setStatus("Firebase接続：成功（お客様・ボトル0件）", true);
-        return;
-      }
-
-      const cloudCustomers = snap.data()?.customers;
-      const cloudBottles = snap.data()?.bottles;
-
-      if (Array.isArray(cloudCustomers)) {
-        window.tinkerbellApplyCloudCustomers?.(cloudCustomers);
-        if(Array.isArray(cloudBottles))window.tinkerbellApplyCloudBottles?.(cloudBottles);
-        else{
-          const localBottles=window.tinkerbellGetLocalBottles?.()||[];
-          if(localBottles.length)await setDoc(ref,{bottles:localBottles,bottlesUpdatedAt:new Date().toISOString()},{merge:true});
-        }
-        setStatus(`Firebase接続：成功（お客様 ${cloudCustomers.length}件・ボトル ${Array.isArray(cloudBottles)?cloudBottles.length:(window.tinkerbellGetLocalBottles?.()||[]).length}本を同期）`, true);
-      } else {
-        const localCustomers = window.tinkerbellGetLocalCustomers?.() || [];
-        const localBottles = window.tinkerbellGetLocalBottles?.() || [];
-        await setDoc(
-          ref,
-          {
-            customers: localCustomers,
-            bottles: localBottles,
-            customersUpdatedAt: new Date().toISOString(),
-            bottlesUpdatedAt: new Date().toISOString()
-          },
-          { merge: true }
-        );
-        setStatus(`Firebase接続：成功（端末のお客様 ${localCustomers.length}件を初回送信）`, true);
-      }
-    },
-    error => {
-      console.error("Customer realtime sync failed:", error);
-      if (error?.code === "permission-denied") {
-        setStatus("Firebase接続済み。Firestoreルールで同期が拒否されています");
-      } else {
-        setStatus(`Firebase同期エラー：${error?.code || error?.message || "不明"}`);
-      }
-    }
-  );
+async function saveActiveSeatsToFirebase(seats){await replaceCloudCollection('activeSeats',seats)}
+async function startActiveSeatRealtimeSync(){
+ await ensureCloudCollection('activeSeats','activeSeats',window.tinkerbellGetLocalActiveSeats?.()||[]);
+ return listenCloudCollection('activeSeats',rows=>window.tinkerbellApplyCloudActiveSeats?.(rows),'席・途中注文');
 }
 
 retryBtn?.addEventListener("click", checkFirebaseConnection);
@@ -4790,6 +4874,7 @@ window.tinkerbellFirebase = {
   saveMenu: saveMenuToFirebase,
   saveAdminPasscode: saveAdminPasscodeToFirebase,
   saveCheckouts: saveCheckoutsToFirebase,
+  saveActiveSeats: saveActiveSeatsToFirebase,
   saveSharedShifts: saveSharedShiftsToFirebase,
   saveSharedShiftMeta: saveSharedShiftMetaToFirebase,
   saveSharedSchedules: saveSharedSchedulesToFirebase,
@@ -4797,11 +4882,12 @@ window.tinkerbellFirebase = {
   reloadCheckouts: ()=>startCheckoutRealtimeSync()
 };
 
-startCustomerRealtimeSync();
+startCustomerRealtimeSync().catch(error=>console.error('Customer sync startup failed:',error));
 startStaffRealtimeSync();
 startMenuRealtimeSync();
 startAdminPasscodeSync();
-startCheckoutRealtimeSync();
+startCheckoutRealtimeSync().catch(error=>console.error('Checkout sync startup failed:',error));
+startActiveSeatRealtimeSync().catch(error=>console.error('Active seat sync startup failed:',error));
 startSharedShiftScheduleSync();
 startPayrollAdjustmentsSync();
 initializeSharedShiftSchedule();
