@@ -642,6 +642,17 @@ button.primary,button.secondary,.btn{font-size:16px}
 .payroll-clear-correction{width:100%;margin-top:9px}
 @media(max-width:560px){.payroll-correction-grid{grid-template-columns:1fr}}
 
+
+.payroll-staff-settings{margin:14px 0;padding:14px;border:1px solid #d8c49a;border-radius:14px;background:#fffaf0}
+.payroll-staff-settings h3{margin:0 0 10px;color:#6d4c17}
+.payroll-gross-box{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:13px;border-radius:12px;background:#f3ebd9;font-size:20px;font-weight:1000}
+.payroll-deduction-card{margin-top:14px;padding:14px;border:2px solid #c9b38a;border-radius:14px;background:#fff}
+.payroll-deduction-card h3{margin:0 0 8px}
+.payroll-deduction-list{margin:10px 0}
+.payroll-deduction-list>div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed #ddd}
+.payroll-tax-note{margin-top:6px;line-height:1.5}
+.payroll-correction-box h4{margin:14px 0 8px;color:#6e4a14}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -663,6 +674,7 @@ button.primary,button.secondary,.btn{font-size:16px}
  <div class="card" style="margin-top:13px;border:2px solid #c79b43;background:linear-gradient(145deg,#fffaf0,#fff)"><h2 style="margin:0 0 10px">店舗POS</h2><div class="grid" style="margin-top:0">
   <button class="tile" data-go="seats" style="border:2px solid #b88a35"><span>🛋️</span><b>席管理</b><small>入店・担当キャスト</small></button>
   <button class="tile" data-go="orders" style="border:2px solid #b88a35"><span>💰</span><b>注文・会計</b><small>商品追加・会計確定</small></button>
+  <button class="tile" data-go="inventory"><span>📦</span><b>お酒在庫</b><small>入荷・在庫・発注</small></button>
  </div></div>
  <h2 style="margin-top:18px">通常業務</h2>
  <div class="grid">
@@ -675,7 +687,6 @@ button.primary,button.secondary,.btn{font-size:16px}
   <button class="tile" data-go="notices"><span>🔔</span><b>お知らせ</b><small>店舗からの連絡</small></button>
   </div><h2 class="management-heading">管理</h2><div class="grid management-grid"><button class="tile manager manager-tile" data-go="staff"><span>👥</span><b>従業員管理</b><small>時給・手当・権限</small></button>
   <button class="tile manager manager-tile" data-go="menu"><span>📖</span><b>メニュー管理</b><small>料金・バック設定</small></button>
-  <button class="tile manager manager-tile" data-go="inventory"><span>📦</span><b>お酒在庫</b><small>入荷・在庫・発注</small></button>
   <button class="tile manager manager-tile" data-go="adminAttendance"><span>🗓️</span><b>全員の勤怠</b><small>月・日別の出退勤</small></button>
   <button class="tile manager manager-tile" data-go="payroll"><span>💴</span><b>給与計算</b><small>時給・バック・手当・控除</small></button>
   <button class="tile manager manager-tile" data-go="reports"><span>📊</span><b>売上・勤怠集計</b><small>日別集計</small></button>
@@ -777,7 +788,36 @@ button.primary,button.secondary,.btn{font-size:16px}
 
 <section id="notices" class="screen"><h2>お知らせ</h2><div class="card manager"><label>タイトル<input id="noticeTitle"></label><label>本文<textarea id="noticeBody" rows="4"></textarea></label><button id="saveNotice" class="primary">投稿</button></div><div id="noticeList" class="list"></div></section>
 
-<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><input id="staffEditId" type="hidden"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>同伴手当（1回）<input id="staffCompanionAllowance" type="number" value="0"></label></div><div class="row3"><label>送迎手当（1回）<input id="staffTransportAllowance" type="number" value="0"></label><div class="meta">給与計算では、勤怠・注文実績とここで設定した単価を自動集計します。</div><div class="meta">従業員ごとの暗証番号は使用しません。</div></div><div class="row"><button id="saveStaff" class="primary">従業員登録</button><button id="cancelStaffEdit" class="secondary hidden">編集をやめる</button></div></div><div id="staffList" class="list"></div></section>
+<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><input id="staffEditId" type="hidden"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>同伴手当（1回）<input id="staffCompanionAllowance" type="number" value="0"></label></div><div class="row3"><label>送迎手当（1回）<input id="staffTransportAllowance" type="number" value="0"></label><div class="meta">給与計算では、勤怠・注文実績とここで設定した単価を自動集計します。</div><div class="meta">従業員ごとの暗証番号は使用しません。</div></div>
+
+<div class="payroll-staff-settings">
+ <h3>給与・保険設定</h3>
+ <div class="row3">
+  <label>社会保険
+   <select id="staffSocialInsurance"><option value="false">加入なし</option><option value="true">加入あり</option></select>
+  </label>
+  <label>標準報酬月額
+   <input id="staffStandardRemuneration" type="number" min="0" step="1000" value="0" placeholder="例：200000">
+  </label>
+  <label>介護保険
+   <select id="staffCareInsurance"><option value="false">対象外</option><option value="true">対象（40〜64歳等）</option></select>
+  </label>
+ </div>
+ <div class="row3">
+  <label>雇用保険
+   <select id="staffEmploymentInsurance"><option value="false">加入なし</option><option value="true">加入あり</option></select>
+  </label>
+  <label>源泉所得税区分
+   <select id="staffWithholdingType"><option value="甲">甲欄</option><option value="乙">乙欄</option></select>
+  </label>
+  <label>扶養人数
+   <input id="staffDependents" type="number" min="0" max="7" value="0">
+  </label>
+ </div>
+ <div class="meta">社会保険料は2026年度・協会けんぽ福島支部を基準に計算。所得税は国税庁の令和8年分税額表を確認して入力します。</div>
+</div>
+
+<div class="row"><button id="saveStaff" class="primary">従業員登録</button><button id="cancelStaffEdit" class="secondary hidden">編集をやめる</button></div></div><div id="staffList" class="list"></div></section>
 
 <section id="payroll" class="screen manager">
 <h2>給与計算</h2>
@@ -791,9 +831,9 @@ button.primary,button.secondary,.btn{font-size:16px}
 <div id="payrollList"></div>
 </section>
 
-<section id="inventory" class="screen manager">
+<section id="inventory" class="screen">
 <h2>お酒在庫</h2>
-<div class="card"><div class="meta">在庫管理ONの商品だけ表示。席で注文すると減り、取消・数量減で戻ります。</div></div>
+<div class="card"><div class="meta">黒服など通常スタッフが使用する在庫・発注画面です。在庫管理ONの商品だけ表示し、席で注文すると減り、取消・数量減で戻ります。</div></div>
 <div id="inventoryList" class="list"></div>
 <div class="card"><h3>在庫履歴</h3><div id="inventoryHistory"></div></div>
 </section>
@@ -1122,7 +1162,7 @@ button.primary,button.secondary,.btn{font-size:16px}
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v57-payroll-manual-correction';
+const APP_VERSION='v59-inventory-normal-operation';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1197,7 +1237,13 @@ db.menu=db.menu.map((item,index)=>({
 }));
 db.staff=Array.isArray(db.staff)?db.staff.map(s=>({...s,
  companionAllowance:Number.isFinite(Number(s.companionAllowance))?Number(s.companionAllowance):0,
- transportAllowance:Number.isFinite(Number(s.transportAllowance))?Number(s.transportAllowance):0
+ transportAllowance:Number.isFinite(Number(s.transportAllowance))?Number(s.transportAllowance):0,
+ socialInsurance:Boolean(s.socialInsurance),
+ standardRemuneration:Number.isFinite(Number(s.standardRemuneration))?Number(s.standardRemuneration):0,
+ careInsurance:Boolean(s.careInsurance),
+ employmentInsurance:Boolean(s.employmentInsurance),
+ withholdingType:(s.withholdingType==='乙'?'乙':'甲'),
+ dependents:Number.isFinite(Number(s.dependents))?Number(s.dependents):0
 })):[];
 localStorage.setItem(KEY,JSON.stringify(db));
 function persist(){localStorage.setItem(KEY,JSON.stringify(db))}
@@ -1309,7 +1355,7 @@ function lockManager(){
  toast('管理モードを終了しました');
 }
 
-const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance','inventory','payroll']);
+const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance','payroll']);
 
 function show(idn){
  if(MANAGER_SCREENS.has(idn)&&!managerUnlocked){
@@ -2601,6 +2647,12 @@ function clearStaffForm(){
  $('staffBottleBack').value='1000';
  $('staffCompanionAllowance').value='0';
  $('staffTransportAllowance').value='0';
+ $('staffSocialInsurance').value='false';
+ $('staffStandardRemuneration').value='0';
+ $('staffCareInsurance').value='false';
+ $('staffEmploymentInsurance').value='false';
+ $('staffWithholdingType').value='甲';
+ $('staffDependents').value='0';
  $('saveStaff').textContent='従業員登録';
  $('cancelStaffEdit').classList.add('hidden');
 }
@@ -2626,6 +2678,12 @@ $('saveStaff').onclick=async()=>{
   bottleBack:Number($('staffBottleBack').value||0),
   companionAllowance:Number($('staffCompanionAllowance').value||0),
   transportAllowance:Number($('staffTransportAllowance').value||0),
+  socialInsurance:$('staffSocialInsurance').value==='true',
+  standardRemuneration:Number($('staffStandardRemuneration').value||0),
+  careInsurance:$('staffCareInsurance').value==='true',
+  employmentInsurance:$('staffEmploymentInsurance').value==='true',
+  withholdingType:$('staffWithholdingType').value==='乙'?'乙':'甲',
+  dependents:Number($('staffDependents').value||0),
  };
 
  try{
@@ -2672,6 +2730,12 @@ window.editStaff=idn=>{
  $('staffBottleBack').value=Number(s.bottleBack||0);
  $('staffCompanionAllowance').value=Number(s.companionAllowance||0);
  $('staffTransportAllowance').value=Number(s.transportAllowance||0);
+ $('staffSocialInsurance').value=String(Boolean(s.socialInsurance));
+ $('staffStandardRemuneration').value=Number(s.standardRemuneration||0);
+ $('staffCareInsurance').value=String(Boolean(s.careInsurance));
+ $('staffEmploymentInsurance').value=String(Boolean(s.employmentInsurance));
+ $('staffWithholdingType').value=s.withholdingType==='乙'?'乙':'甲';
+ $('staffDependents').value=Number(s.dependents||0);
  $('saveStaff').textContent='変更を保存';
  $('cancelStaffEdit').classList.remove('hidden');
  window.scrollTo({top:0,behavior:'smooth'});
@@ -2709,6 +2773,7 @@ function renderStaff(){
   <div class="item">
    <h3>${esc(s.name)} <span class="tag">${esc(staffRoleLabel(s.role))}</span></h3>
    <div class="meta">時給 ${yen(s.wage)} / ドリンクバック ${yen(s.drinkBack)} / ボトルバック ${yen(s.bottleBack)} / 同伴 ${yen(s.companionAllowance||0)} / 送迎 ${yen(s.transportAllowance||0)}</div>
+<div class="meta">社会保険 ${s.socialInsurance?'加入':'なし'}${s.socialInsurance?` / 標準報酬 ${yen(s.standardRemuneration||0)} / 介護 ${s.careInsurance?'対象':'対象外'}`:''} / 雇用保険 ${s.employmentInsurance?'加入':'なし'} / 所得税 ${esc(s.withholdingType||'甲')}欄・扶養${Number(s.dependents||0)}人</div>
    <div class="item-actions">
     <button class="secondary" onclick="editStaff('${s.id}')">編集</button>
     <button class="danger" onclick="delStaff('${s.id}')">削除</button>
@@ -3122,7 +3187,7 @@ function checkoutStatusLabel(x){
 
 function payrollAdjustment(month,staffId){
  let row=db.payrollAdjustments.find(x=>x.month===month&&x.staffId===staffId);
- if(!row){row={id:id(),month,staffId,otherAllowance:0,deduction:0,memo:'',manualOverrides:{},correctionReason:''};db.payrollAdjustments.push(row)}
+ if(!row){row={id:id(),month,staffId,otherAllowance:0,deduction:0,memo:'',manualOverrides:{},correctionReason:'',incomeTax:'',insuranceOverrides:{}};db.payrollAdjustments.push(row)}
  return row;
 }
 function payrollMenuType(order){return order.menuType||db.menu.find(m=>m.id===order.menuId)?.type||''}
@@ -3151,9 +3216,14 @@ function payrollForStaff(staff,month){
 
  const adj=payrollAdjustment(month,staff.id);
  adj.manualOverrides=(adj.manualOverrides&&typeof adj.manualOverrides==='object')?adj.manualOverrides:{};
+ adj.insuranceOverrides=(adj.insuranceOverrides&&typeof adj.insuranceOverrides==='object')?adj.insuranceOverrides:{};
 
  const useOverride=(key,autoValue)=>{
   const raw=adj.manualOverrides[key];
+  return raw===''||raw===null||raw===undefined?autoValue:Number(raw);
+ };
+ const useInsuranceOverride=(key,autoValue)=>{
+  const raw=adj.insuranceOverrides[key];
   return raw===''||raw===null||raw===undefined?autoValue:Number(raw);
  };
 
@@ -3164,19 +3234,49 @@ function payrollForStaff(staff,month){
  const transportPay=useOverride('transportPay',autoTransportPay);
 
  const otherAllowance=Number(adj.otherAllowance||0);
- const deduction=Number(adj.deduction||0);
  const gross=hourlyPay+drinkPay+bottlePay+companionPay+transportPay+otherAllowance;
- const net=gross-deduction;
+
+ // 2026年度 協会けんぽ福島支部 / 本人負担分
+ const standard=Math.max(0,Number(staff.standardRemuneration||0));
+ const social=Boolean(staff.socialInsurance)&&standard>0;
+ const autoHealthInsurance=social?Math.round(standard*0.0950/2):0;
+ const autoCareInsurance=(social&&staff.careInsurance)?Math.round(standard*0.0162/2):0;
+ const autoPension=social?Math.round(standard*0.183/2):0;
+
+ // 子ども・子育て支援金：2026年4月分以降、0.23%を労使折半
+ const childSupportApplicable=month>='2026-04';
+ const autoChildSupport=(social&&childSupportApplicable)?Math.round(standard*0.0023/2):0;
+
+ // 雇用保険：一般の事業・労働者負担 5/1000
+ const autoEmploymentInsurance=staff.employmentInsurance?Math.round(gross*0.005):0;
+
+ const healthInsurance=useInsuranceOverride('healthInsurance',autoHealthInsurance);
+ const careInsurance=useInsuranceOverride('careInsurance',autoCareInsurance);
+ const pension=useInsuranceOverride('pension',autoPension);
+ const childSupport=useInsuranceOverride('childSupport',autoChildSupport);
+ const employmentInsurance=useInsuranceOverride('employmentInsurance',autoEmploymentInsurance);
+
+ const incomeTax=adj.incomeTax===''||adj.incomeTax===null||adj.incomeTax===undefined?0:Math.max(0,Number(adj.incomeTax||0));
+ const manualDeduction=Number(adj.deduction||0);
+ const statutoryDeductions=healthInsurance+careInsurance+pension+childSupport+employmentInsurance+incomeTax;
+ const totalDeductions=statutoryDeductions+manualDeduction;
+ const net=gross-totalDeductions;
 
  const hasManualOverride=['hourlyPay','drinkPay','bottlePay','companionPay','transportPay']
   .some(k=>adj.manualOverrides[k]!==''&&adj.manualOverrides[k]!==null&&adj.manualOverrides[k]!==undefined);
+ const hasInsuranceOverride=['healthInsurance','careInsurance','pension','childSupport','employmentInsurance']
+  .some(k=>adj.insuranceOverrides[k]!==''&&adj.insuranceOverrides[k]!==null&&adj.insuranceOverrides[k]!==undefined);
 
  return {
   records,hours,
   autoHourlyPay,autoDrinkPay,autoBottlePay,autoCompanionPay,autoTransportPay,
   hourlyPay,companionCount,transportCount,drinkCount,bottleCount,
   drinkPay,bottlePay,companionPay,transportPay,
-  otherAllowance,deduction,gross,net,adj,hasManualOverride
+  otherAllowance,gross,net,adj,hasManualOverride,hasInsuranceOverride,
+  standard,
+  autoHealthInsurance,autoCareInsurance,autoPension,autoChildSupport,autoEmploymentInsurance,
+  healthInsurance,careInsurance,pension,childSupport,employmentInsurance,
+  incomeTax,manualDeduction,statutoryDeductions,totalDeductions,childSupportApplicable
  };
 }
 function renderPayroll(){
@@ -3187,8 +3287,8 @@ function renderPayroll(){
  const rows=db.staff.map(staff=>({staff,p:payrollForStaff(staff,month)}));
  $('payrollGrandTotal').textContent=yen(rows.reduce((sum,x)=>sum+x.p.net,0));
 
- const overrideValue=(adj,key)=>{
-  const v=adj.manualOverrides?.[key];
+ const overrideValue=(obj,key)=>{
+  const v=obj?.[key];
   return v===''||v===null||v===undefined?'':Number(v);
  };
 
@@ -3197,10 +3297,11 @@ function renderPayroll(){
   <summary class="payroll-summary">
    <div>
     <b>${esc(staff.name)}</b> <span class="tag">${esc(staffRoleLabel(staff.role))}</span>
-    ${p.hasManualOverride?'<span class="tag payroll-corrected-tag">手動修正あり</span>':''}
+    ${p.hasManualOverride?'<span class="tag payroll-corrected-tag">給与修正あり</span>':''}
+    ${p.hasInsuranceOverride?'<span class="tag payroll-corrected-tag">保険修正あり</span>':''}
     <div class="meta">${p.hours.toFixed(1)}時間 / 出勤 ${p.records.length}回</div>
    </div>
-   <div class="payroll-net"><small>支給額</small><b>${yen(p.net)}</b></div>
+   <div class="payroll-net"><small>手取り支給額</small><b>${yen(p.net)}</b></div>
   </summary>
 
   <div class="payroll-breakdown">
@@ -3209,37 +3310,53 @@ function renderPayroll(){
    <div><span>ボトルバック　${p.bottleCount}本 × ${yen(staff.bottleBack||0)}</span><b>${yen(p.bottlePay)}</b></div>
    <div><span>同伴手当　${p.companionCount}回 × ${yen(staff.companionAllowance||0)}</span><b>${yen(p.companionPay)}</b></div>
    <div><span>送迎手当　${p.transportCount}回 × ${yen(staff.transportAllowance||0)}</span><b>${yen(p.transportPay)}</b></div>
+   <div><span>その他手当</span><b>${yen(p.otherAllowance)}</b></div>
   </div>
 
-  <details class="payroll-correction-box" ${p.hasManualOverride?'open':''}>
-   <summary>✏️ 自動計算を手動修正する</summary>
-   <div class="meta payroll-correction-help">空欄なら自動計算のまま。修正する項目だけ金額を入力してください。</div>
+  <div class="payroll-gross-box"><span>総支給額</span><b>${yen(p.gross)}</b></div>
 
+  <div class="payroll-deduction-card">
+   <h3>保険・税金</h3>
+   <div class="meta">標準報酬月額 ${yen(p.standard)} / 所得税 ${esc(staff.withholdingType||'甲')}欄・扶養${Number(staff.dependents||0)}人</div>
+
+   <div class="payroll-deduction-list">
+    <div><span>健康保険</span><b>${yen(p.healthInsurance)}</b></div>
+    <div><span>介護保険</span><b>${yen(p.careInsurance)}</b></div>
+    <div><span>厚生年金</span><b>${yen(p.pension)}</b></div>
+    <div><span>子ども・子育て支援金${p.childSupportApplicable?'':'（対象月前）'}</span><b>${yen(p.childSupport)}</b></div>
+    <div><span>雇用保険</span><b>${yen(p.employmentInsurance)}</b></div>
+   </div>
+
+   <label>源泉所得税
+    <input type="number" min="0" value="${p.adj.incomeTax===''?'':p.incomeTax}" data-payroll-id="${staff.id}" data-payroll-field="incomeTax" placeholder="国税庁の令和8年分税額表で確認">
+   </label>
+   <div class="meta payroll-tax-note">※ 所得税は甲欄/乙欄・扶養人数・社会保険料控除後の給与額で変わるため、税額表で確認した金額を入力します。</div>
+  </div>
+
+  <details class="payroll-correction-box" ${p.hasManualOverride||p.hasInsuranceOverride?'open':''}>
+   <summary>✏️ 自動計算を手動修正する</summary>
+   <div class="meta payroll-correction-help">空欄なら自動計算。修正した項目だけ上書きします。</div>
+
+   <h4>給与項目</h4>
    <div class="payroll-correction-grid">
-    <label>基本給
-     <small>自動 ${yen(p.autoHourlyPay)}</small>
-     <input type="number" min="0" value="${overrideValue(p.adj,'hourlyPay')}" data-payroll-id="${staff.id}" data-payroll-override="hourlyPay" placeholder="${p.autoHourlyPay}">
-    </label>
-    <label>ドリンクバック
-     <small>自動 ${yen(p.autoDrinkPay)}</small>
-     <input type="number" min="0" value="${overrideValue(p.adj,'drinkPay')}" data-payroll-id="${staff.id}" data-payroll-override="drinkPay" placeholder="${p.autoDrinkPay}">
-    </label>
-    <label>ボトルバック
-     <small>自動 ${yen(p.autoBottlePay)}</small>
-     <input type="number" min="0" value="${overrideValue(p.adj,'bottlePay')}" data-payroll-id="${staff.id}" data-payroll-override="bottlePay" placeholder="${p.autoBottlePay}">
-    </label>
-    <label>同伴手当
-     <small>自動 ${yen(p.autoCompanionPay)}</small>
-     <input type="number" min="0" value="${overrideValue(p.adj,'companionPay')}" data-payroll-id="${staff.id}" data-payroll-override="companionPay" placeholder="${p.autoCompanionPay}">
-    </label>
-    <label>送迎手当
-     <small>自動 ${yen(p.autoTransportPay)}</small>
-     <input type="number" min="0" value="${overrideValue(p.adj,'transportPay')}" data-payroll-id="${staff.id}" data-payroll-override="transportPay" placeholder="${p.autoTransportPay}">
-    </label>
+    <label>基本給<small>自動 ${yen(p.autoHourlyPay)}</small><input type="number" min="0" value="${overrideValue(p.adj.manualOverrides,'hourlyPay')}" data-payroll-id="${staff.id}" data-payroll-override="hourlyPay" placeholder="${p.autoHourlyPay}"></label>
+    <label>ドリンクバック<small>自動 ${yen(p.autoDrinkPay)}</small><input type="number" min="0" value="${overrideValue(p.adj.manualOverrides,'drinkPay')}" data-payroll-id="${staff.id}" data-payroll-override="drinkPay" placeholder="${p.autoDrinkPay}"></label>
+    <label>ボトルバック<small>自動 ${yen(p.autoBottlePay)}</small><input type="number" min="0" value="${overrideValue(p.adj.manualOverrides,'bottlePay')}" data-payroll-id="${staff.id}" data-payroll-override="bottlePay" placeholder="${p.autoBottlePay}"></label>
+    <label>同伴手当<small>自動 ${yen(p.autoCompanionPay)}</small><input type="number" min="0" value="${overrideValue(p.adj.manualOverrides,'companionPay')}" data-payroll-id="${staff.id}" data-payroll-override="companionPay" placeholder="${p.autoCompanionPay}"></label>
+    <label>送迎手当<small>自動 ${yen(p.autoTransportPay)}</small><input type="number" min="0" value="${overrideValue(p.adj.manualOverrides,'transportPay')}" data-payroll-id="${staff.id}" data-payroll-override="transportPay" placeholder="${p.autoTransportPay}"></label>
+   </div>
+
+   <h4>保険項目</h4>
+   <div class="payroll-correction-grid">
+    <label>健康保険<small>自動 ${yen(p.autoHealthInsurance)}</small><input type="number" min="0" value="${overrideValue(p.adj.insuranceOverrides,'healthInsurance')}" data-payroll-id="${staff.id}" data-insurance-override="healthInsurance" placeholder="${p.autoHealthInsurance}"></label>
+    <label>介護保険<small>自動 ${yen(p.autoCareInsurance)}</small><input type="number" min="0" value="${overrideValue(p.adj.insuranceOverrides,'careInsurance')}" data-payroll-id="${staff.id}" data-insurance-override="careInsurance" placeholder="${p.autoCareInsurance}"></label>
+    <label>厚生年金<small>自動 ${yen(p.autoPension)}</small><input type="number" min="0" value="${overrideValue(p.adj.insuranceOverrides,'pension')}" data-payroll-id="${staff.id}" data-insurance-override="pension" placeholder="${p.autoPension}"></label>
+    <label>子ども・子育て支援金<small>自動 ${yen(p.autoChildSupport)}</small><input type="number" min="0" value="${overrideValue(p.adj.insuranceOverrides,'childSupport')}" data-payroll-id="${staff.id}" data-insurance-override="childSupport" placeholder="${p.autoChildSupport}"></label>
+    <label>雇用保険<small>自動 ${yen(p.autoEmploymentInsurance)}</small><input type="number" min="0" value="${overrideValue(p.adj.insuranceOverrides,'employmentInsurance')}" data-payroll-id="${staff.id}" data-insurance-override="employmentInsurance" placeholder="${p.autoEmploymentInsurance}"></label>
    </div>
 
    <label>修正理由
-    <input value="${esc(p.adj.correctionReason||'')}" data-payroll-id="${staff.id}" data-payroll-field="correctionReason" placeholder="例：勤怠打刻漏れのため基本給を修正">
+    <input value="${esc(p.adj.correctionReason||'')}" data-payroll-id="${staff.id}" data-payroll-field="correctionReason" placeholder="例：標準報酬の変更、打刻漏れなど">
    </label>
    <button type="button" class="secondary payroll-clear-correction" onclick="clearPayrollCorrection('${staff.id}')">手動修正をすべて解除</button>
   </details>
@@ -3248,8 +3365,8 @@ function renderPayroll(){
    <label>その他手当
     <input type="number" min="0" value="${p.otherAllowance}" data-payroll-id="${staff.id}" data-payroll-field="otherAllowance">
    </label>
-   <label>控除
-    <input type="number" min="0" value="${p.deduction}" data-payroll-id="${staff.id}" data-payroll-field="deduction">
+   <label>その他控除
+    <input type="number" min="0" value="${p.manualDeduction}" data-payroll-id="${staff.id}" data-payroll-field="deduction">
    </label>
   </div>
 
@@ -3257,12 +3374,13 @@ function renderPayroll(){
    <input value="${esc(p.adj.memo||'')}" data-payroll-id="${staff.id}" data-payroll-field="memo" placeholder="例：日払い済み、前借りなど">
   </label>
 
-  <button class="primary payroll-save-btn" onclick="savePayrollAdjustment('${staff.id}')">給与修正を保存</button>
+  <button class="primary payroll-save-btn" onclick="savePayrollAdjustment('${staff.id}')">給与・控除を保存</button>
 
   <div class="payroll-total-box">
-   <div><span>支給前合計</span><b>${yen(p.gross)}</b></div>
-   <div><span>控除</span><b>− ${yen(p.deduction)}</b></div>
-   <div class="payroll-final"><span>最終支給額</span><b>${yen(p.net)}</b></div>
+   <div><span>総支給額</span><b>${yen(p.gross)}</b></div>
+   <div><span>社会保険・雇用保険・所得税</span><b>− ${yen(p.statutoryDeductions)}</b></div>
+   <div><span>その他控除</span><b>− ${yen(p.manualDeduction)}</b></div>
+   <div class="payroll-final"><span>手取り支給額</span><b>${yen(p.net)}</b></div>
   </div>
  </details>`).join(''):'<div class="card">従業員が登録されていません</div>';
 }
@@ -3270,19 +3388,27 @@ window.savePayrollAdjustment=async staffId=>{
  const month=$('payrollMonth').value||today().slice(0,7);
  const row=payrollAdjustment(month,staffId);
  row.manualOverrides=(row.manualOverrides&&typeof row.manualOverrides==='object')?row.manualOverrides:{};
+ row.insuranceOverrides=(row.insuranceOverrides&&typeof row.insuranceOverrides==='object')?row.insuranceOverrides:{};
 
  document.querySelectorAll(`[data-payroll-id="${staffId}"]`).forEach(el=>{
   const f=el.dataset.payrollField;
   const override=el.dataset.payrollOverride;
+  const insuranceOverride=el.dataset.insuranceOverride;
 
-  if(override){
-   row.manualOverrides[override]=el.value.trim()===''?'':Math.max(0,Number(el.value||0));
+  if(override)row.manualOverrides[override]=el.value.trim()===''?'':Math.max(0,Number(el.value||0));
+  if(insuranceOverride)row.insuranceOverrides[insuranceOverride]=el.value.trim()===''?'':Math.max(0,Number(el.value||0));
+
+  if(f==='otherAllowance'||f==='deduction'||f==='incomeTax'){
+   row[f]=el.value.trim()===''?'':Math.max(0,Number(el.value||0));
   }
-  if(f==='otherAllowance'||f==='deduction')row[f]=Math.max(0,Number(el.value||0));
   if(f==='memo'||f==='correctionReason')row[f]=el.value.trim();
  });
 
- const hasOverride=Object.values(row.manualOverrides||{}).some(v=>v!==''&&v!==null&&v!==undefined);
+ const hasOverride=[
+  ...Object.values(row.manualOverrides||{}),
+  ...Object.values(row.insuranceOverrides||{})
+ ].some(v=>v!==''&&v!==null&&v!==undefined);
+
  if(hasOverride&&!String(row.correctionReason||'').trim()){
   toast('手動修正した場合は修正理由を入力してください');
   return;
@@ -3295,7 +3421,7 @@ window.savePayrollAdjustment=async staffId=>{
   if(window.tinkerbellFirebase?.savePayrollAdjustments){
    await window.tinkerbellFirebase.savePayrollAdjustments(db.payrollAdjustments);
   }
-  toast('給与修正を保存しました');
+  toast('給与・控除を保存しました');
  }catch(e){
   console.error(e);
   toast('端末には保存しました');
@@ -3307,6 +3433,7 @@ window.clearPayrollCorrection=async staffId=>{
  const month=$('payrollMonth').value||today().slice(0,7);
  const row=payrollAdjustment(month,staffId);
  row.manualOverrides={};
+ row.insuranceOverrides={};
  row.correctionReason='';
  row.updatedAt=nowISO();
  persist();
