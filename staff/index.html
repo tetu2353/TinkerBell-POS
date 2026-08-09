@@ -284,7 +284,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
-const APP_VERSION='line-v36-unified-customer-bottle-kana';
+const APP_VERSION='line-v36-customer-bottle-firebase-sync';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -314,6 +314,15 @@ function load(){
 }
 let db=load();
 const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
+window.tinkerbellLineCustomerBottle={
+  get:()=>({customers:Array.isArray(db.customers)?db.customers:[],bottles:Array.isArray(db.bottles)?db.bottles:[]}),
+  apply:(customers,bottles)=>{
+    if(Array.isArray(customers))db.customers=customers;
+    if(Array.isArray(bottles))db.bottles=bottles;
+    save();
+    renderCustomers();renderBottles();renderHome();
+  }
+};
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),1500)}
 function names(){return db.staff.map(s=>s.name)}
 function monday(dateStr){const d=dateStr?new Date(dateStr+'T00:00:00'):new Date(),n=(d.getDay()+6)%7;d.setDate(d.getDate()-n);return d}
@@ -591,7 +600,6 @@ function openCustomerForm(existing=null){
    <label><span>ふりがな</span><input id="cKana" value="${existing?.kana||''}" placeholder="ひらがなで入力"></label>
    <div class="form2"><label><span>誕生月</span><select id="cMonth"><option value="">未登録</option>${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthMonth)===i+1?'selected':''}>${i+1}月</option>`).join('')}</select></label><label><span>誕生日</span><select id="cDay"><option value="">未登録</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthDay)===i+1?'selected':''}>${i+1}日</option>`).join('')}</select></label></div>
    <label><span>担当</span><select id="cCast"><option>担当不明</option>${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label>
-   <label><span>電話番号</span><input id="cPhone" inputmode="tel" value="${existing?.phone||''}"></label>
    <label><span>メモ</span><textarea id="cMemo">${existing?.memo||''}</textarea></label>
    <button class="btn gold full" id="saveCustomer">保存</button>`;
   $('formDialog').showModal();
@@ -599,10 +607,10 @@ function openCustomerForm(existing=null){
     const name=$('cName').value.trim();if(!name)return toast('お客様名を入力');
     const month=$('cMonth').value,day=$('cDay').value;if((month&&!day)||(!month&&day))return toast('誕生日は月日両方');
     const id=existing?.id||uid();
-    const obj={name,kana:normalizeKanaText($('cKana').value),birthMonth:+month||'',birthDay:+day||'',cast:$('cCast').value,phone:$('cPhone').value.trim(),memo:$('cMemo').value.trim()};
+    const obj={name,kana:normalizeKanaText($('cKana').value),birthMonth:+month||'',birthDay:+day||'',cast:$('cCast').value,memo:$('cMemo').value.trim()};
     if(existing)Object.assign(existing,obj);else db.customers.push({id,...obj});
     db.bottles.filter(b=>b.customerId===id).forEach(b=>b.customer=name);
-    save();$('formDialog').close();renderCustomers();renderBottles();renderHome();toast('お客様を保存しました');
+    save();window.syncCustomerBottleCloud?.();$('formDialog').close();renderCustomers();renderBottles();renderHome();toast('お客様を保存しました');
   };
 }
 function renderCustomers(){
@@ -614,7 +622,7 @@ function renderCustomers(){
 function showCustomer(id){
   const c=db.customers.find(x=>x.id===id);if(!c)return;const bs=db.bottles.filter(b=>b.customerId===id);
   $('detailTitle').textContent='お客様詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${c.name}</div><div class="meta">ふりがな:${c.kana||'未登録'}</div><div class="meta">誕生日:${birthdayText(c)}</div><div class="meta">担当:${c.cast||'担当不明'}</div><div class="meta">電話:${c.phone||'未登録'}</div><div class="meta">メモ:${c.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-customer="${c.id}">編集</button><button class="btn red" data-delete-customer="${c.id}">削除</button></div></div><div class="card"><div class="sectionHead"><div class="rowTitle">🍾 キープボトル</div><button class="btn gold" data-add-bottle-for="${c.id}">＋追加</button></div>${bs.length?bs.map(b=>`<button class="row full" data-bottle="${b.id}">No.${b.number} ${b.name}</button>`).join(''):'<div class="meta">なし</div>'}</div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${c.name}</div><div class="meta">ふりがな:${c.kana||'未登録'}</div><div class="meta">誕生日:${birthdayText(c)}</div><div class="meta">担当:${c.cast||'担当不明'}</div><div class="meta">メモ:${c.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-customer="${c.id}">編集</button><button class="btn red" data-delete-customer="${c.id}">削除</button></div></div><div class="card"><div class="sectionHead"><div class="rowTitle">🍾 キープボトル</div><button class="btn gold" data-add-bottle-for="${c.id}">＋追加</button></div>${bs.length?bs.map(b=>`<button class="row full" data-bottle="${b.id}">No.${b.number} ${b.name}</button>`).join(''):'<div class="meta">なし</div>'}</div>`;
   $('detailDialog').showModal();
 }
 
@@ -675,6 +683,7 @@ function openBottleForm(existing=null,preselectedCustomerId=""){
 
     if(existing)Object.assign(existing,obj);else db.bottles.push(obj);
     save();
+    window.syncCustomerBottleCloud?.();
     $('formDialog').close();
     renderBottles();
     renderCustomers();
@@ -859,7 +868,7 @@ document.addEventListener('click',e=>{
   if(t.dataset.customer)return showCustomer(t.dataset.customer);
   if(t.dataset.editCustomer){const c=db.customers.find(v=>v.id===t.dataset.editCustomer);$('detailDialog').close();return openCustomerForm(c)}
   if(t.dataset.customerKana){state.customerKana=t.dataset.customerKana;renderCustomers();return}
-  if(t.dataset.deleteCustomer){if(confirm('お客様と紐付くボトルも削除しますか？')){const id=t.dataset.deleteCustomer;db.customers=db.customers.filter(c=>c.id!==id);db.bottles=db.bottles.filter(b=>b.customerId!==id);save();$('detailDialog').close();renderCustomers();renderBottles();renderHome()}return}
+  if(t.dataset.deleteCustomer){if(confirm('お客様と紐付くボトルも削除しますか？')){const id=t.dataset.deleteCustomer;db.customers=db.customers.filter(c=>c.id!==id);db.bottles=db.bottles.filter(b=>b.customerId!==id);save();window.syncCustomerBottleCloud?.();$('detailDialog').close();renderCustomers();renderBottles();renderHome()}return}
   if(t.dataset.addBottleFor){
     $('detailDialog').close();
     return openBottleForm(null,t.dataset.addBottleFor);
@@ -881,8 +890,8 @@ document.addEventListener('click',e=>{
     $('detailDialog').close();
     return openBottleForm(null,b?.customerId||'');
   }
-  if(t.dataset.toggleBottle){const b=db.bottles.find(v=>v.id===t.dataset.toggleBottle);b.status=b.status==='empty'?'stored':'empty';b.emptyDate=b.status==='empty'?today():'';save();$('detailDialog').close();renderBottles();return}
-  if(t.dataset.deleteBottle){if(confirm('削除しますか？')){db.bottles=db.bottles.filter(v=>v.id!==t.dataset.deleteBottle);save();$('detailDialog').close();renderBottles();renderCustomers()}return}
+  if(t.dataset.toggleBottle){const b=db.bottles.find(v=>v.id===t.dataset.toggleBottle);b.status=b.status==='empty'?'stored':'empty';b.emptyDate=b.status==='empty'?today():'';save();window.syncCustomerBottleCloud?.();$('detailDialog').close();renderBottles();return}
+  if(t.dataset.deleteBottle){if(confirm('削除しますか？')){db.bottles=db.bottles.filter(v=>v.id!==t.dataset.deleteBottle);save();window.syncCustomerBottleCloud?.();$('detailDialog').close();renderBottles();renderCustomers()}return}
   if(t.dataset.deleteStaff){
     const staff=db.staff.find(s=>s.id===t.dataset.deleteStaff);
     if(!staff)return;
@@ -917,6 +926,28 @@ function start(){
   route();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+</script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import {getFirestore,doc,setDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyCUGu1dEan0D0-kfXXiiag7eKKwdmkg_TQ",authDomain:"tinkerbell-pos.firebaseapp.com",projectId:"tinkerbell-pos",storageBucket:"tinkerbell-pos.firebasestorage.app",messagingSenderId:"475881462705",appId:"1:475881462705:web:2715d0514e7ef21730fb90"};
+const firebaseApp=initializeApp(firebaseConfig),firestoreDb=getFirestore(firebaseApp),sharedRef=doc(firestoreDb,"app","data");
+window.syncCustomerBottleCloud=async()=>{
+ const data=window.tinkerbellLineCustomerBottle.get();
+ await setDoc(sharedRef,{customers:data.customers,bottles:data.bottles,customersUpdatedAt:new Date().toISOString(),bottlesUpdatedAt:new Date().toISOString()},{merge:true});
+};
+onSnapshot(sharedRef,async snap=>{
+ const local=window.tinkerbellLineCustomerBottle.get();
+ if(!snap.exists()){
+  await window.syncCustomerBottleCloud();
+  return;
+ }
+ const data=snap.data();
+ const customers=Array.isArray(data.customers)?data.customers:local.customers;
+ const bottles=Array.isArray(data.bottles)?data.bottles:local.bottles;
+ window.tinkerbellLineCustomerBottle.apply(customers,bottles);
+ if(!Array.isArray(data.customers)||!Array.isArray(data.bottles))await window.syncCustomerBottleCloud();
+},error=>{console.error('LINE customer/bottle sync failed:',error)});
 </script>
 </body>
 </html>
