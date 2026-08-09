@@ -363,7 +363,7 @@ input,select,textarea{padding:13px;border-radius:12px}
 
 <script>
 'use strict';
-const APP_VERSION='line-v48-customer-save-fix';
+const APP_VERSION='line-v51-shift-pos-sync-fix';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -383,13 +383,14 @@ function load(){
           role:s.role==='manager'?'manager':(s.role==='staff'||s.role==='floor'?'staff':'cast')
         })),
         shifts:Array.isArray(d.shifts)?d.shifts:[],
+        shiftMeta:(d.shiftMeta&&typeof d.shiftMeta==='object')?d.shiftMeta:{submitted:{},published:{}},
         schedules:Array.isArray(d.schedules)?d.schedules:[],
         customers:Array.isArray(d.customers)?d.customers:[],
         bottles:(Array.isArray(d.bottles)?d.bottles:[]).map(b=>({...b,category:b.category||'other'}))
       };
     }
   }catch(e){console.error(e)}
-  return {staff:[...DEFAULT_STAFF],shifts:[],schedules:[],customers:[],bottles:[]};
+  return {staff:[...DEFAULT_STAFF],shifts:[],shiftMeta:{submitted:{},published:{}},schedules:[],customers:[],bottles:[]};
 }
 let db=load();
 
@@ -425,6 +426,13 @@ function lineCloudShifts(){
   return {id:x.id||uid(),staffId:st?.id||'',staffName:x.staff||st?.name||'',date:x.date,status:lineShiftStatusToCloud(x.mark)};
  }).filter(x=>x.date&&x.staffName&&x.status);
 }
+function ensureLineShiftMeta(){
+ if(!db.shiftMeta||typeof db.shiftMeta!=='object')db.shiftMeta={submitted:{},published:{}};
+ if(!db.shiftMeta.submitted)db.shiftMeta.submitted={};
+ if(!db.shiftMeta.published)db.shiftMeta.published={};
+}
+function lineCloudShiftMeta(){ensureLineShiftMeta();return {submitted:{...(db.shiftMeta.submitted||{})},published:{...(db.shiftMeta.published||{})}}}
+window.tinkerbellGetLineCloudShiftMeta=lineCloudShiftMeta;
 function lineCloudSchedules(){
  return (db.schedules||[]).map(x=>{
   const main=db.staff.find(s=>s.name===x.cast);
@@ -446,6 +454,14 @@ window.tinkerbellApplyCloudShifts=rows=>{
  }).filter(x=>x.staff&&x.date&&x.mark);
  save();renderShiftRegister();renderShiftCheck();renderHome();
 };
+window.tinkerbellApplyCloudShiftMeta=meta=>{
+ if(!meta||typeof meta!=='object')return;
+ ensureLineShiftMeta();
+ db.shiftMeta.submitted={...(meta.submitted||{})};
+ db.shiftMeta.published={...(meta.published||{})};
+ save();
+ renderShiftRegister();renderShiftCheck();renderHome();
+};
 window.tinkerbellApplyCloudSchedules=rows=>{
  if(!Array.isArray(rows))return;
  db.schedules=rows.map(x=>{
@@ -459,6 +475,9 @@ window.tinkerbellApplyCloudSchedules=rows=>{
 };
 async function saveSharedShifts(){
  try{await window.tinkerbellLineFirebase?.saveSharedShifts?.(lineCloudShifts())}catch(e){console.error('shift sync save failed',e);toast('シフト同期に失敗しました')}
+}
+async function saveSharedShiftMeta(){
+ try{await window.tinkerbellLineFirebase?.saveSharedShiftMeta?.(lineCloudShiftMeta())}catch(e){console.error('shift meta sync save failed',e);toast('提出状況の同期に失敗しました')}
 }
 async function saveSharedSchedules(){
  try{await window.tinkerbellLineFirebase?.saveSharedSchedules?.(lineCloudSchedules())}catch(e){console.error('schedule sync save failed',e);toast('予定同期に失敗しました')}
@@ -653,7 +672,11 @@ function saveShift(){
     if(old)old.mark=btn.dataset.cycleMark;
     else db.shifts.push({id:uid(),staff:st,date,mark:btn.dataset.cycleMark});
   });
-  save();renderShiftCheck();renderHome();saveSharedShifts();toast('シフトを登録しました');
+  ensureLineShiftMeta();
+  const staffObj=db.staff.find(s=>s.name===st);
+  const months=[...new Set([...document.querySelectorAll('#shiftInputTable [data-date]')].map(c=>String(c.dataset.date||'').slice(0,7)).filter(Boolean))];
+  months.forEach(month=>{if(staffObj?.id)db.shiftMeta.submitted[`${month}:${staffObj.id}`]=new Date().toISOString()});
+  save();renderShiftCheck();renderHome();saveSharedShifts();saveSharedShiftMeta();toast('シフトを登録しました');
 }
 
 function peopleText(value){
@@ -1442,6 +1465,9 @@ window.tinkerbellLineFirebase={
   async saveSharedShifts(sharedShifts){
     await setDoc(dataRef,{sharedShifts,sharedShiftsUpdatedAt:new Date().toISOString()},{merge:true});
   },
+  async saveSharedShiftMeta(sharedShiftMeta){
+    await setDoc(dataRef,{sharedShiftMeta,sharedShiftMetaUpdatedAt:new Date().toISOString()},{merge:true});
+  },
   async saveSharedSchedules(sharedSchedules){
     await setDoc(dataRef,{sharedSchedules,sharedSchedulesUpdatedAt:new Date().toISOString()},{merge:true});
   }
@@ -1451,6 +1477,7 @@ onSnapshot(dataRef,snap=>{
   if(!snap.exists())return;
   const d=snap.data()||{};
   if(Array.isArray(d.sharedShifts))window.tinkerbellApplyCloudShifts?.(d.sharedShifts);
+  if(d.sharedShiftMeta&&typeof d.sharedShiftMeta==='object')window.tinkerbellApplyCloudShiftMeta?.(d.sharedShiftMeta);
   if(Array.isArray(d.sharedSchedules))window.tinkerbellApplyCloudSchedules?.(d.sharedSchedules);
 },error=>console.error('LINE shared shift/schedule sync failed:',error));
 
@@ -1464,10 +1491,13 @@ async function initializeSharedData(){
    const cloudShifts=Array.isArray(d.sharedShifts)?d.sharedShifts:[];
    const shiftMap=new Map(cloudShifts.map(x=>[`${x.staffId||x.staffName}|${x.date}`,x]));
    localShifts.forEach(x=>{const k=`${x.staffId||x.staffName}|${x.date}`;if(!shiftMap.has(k))shiftMap.set(k,x)});
+   const localMeta=window.tinkerbellGetLineCloudShiftMeta?.()||{submitted:{},published:{}};
+   const cloudMeta=(d.sharedShiftMeta&&typeof d.sharedShiftMeta==='object')?d.sharedShiftMeta:{submitted:{},published:{}};
+   const mergedMeta={submitted:{...(localMeta.submitted||{}),...(cloudMeta.submitted||{})},published:{...(localMeta.published||{}),...(cloudMeta.published||{})}};
    const cloudSchedules=Array.isArray(d.sharedSchedules)?d.sharedSchedules:[];
    const scheduleMap=new Map(cloudSchedules.map(x=>[x.id,x]));
    localSchedules.forEach(x=>{if(!scheduleMap.has(x.id))scheduleMap.set(x.id,x)});
-   tx.set(dataRef,{sharedShifts:[...shiftMap.values()],sharedSchedules:[...scheduleMap.values()],sharedSyncInitializedAt:new Date().toISOString()},{merge:true});
+   tx.set(dataRef,{sharedShifts:[...shiftMap.values()],sharedShiftMeta:mergedMeta,sharedSchedules:[...scheduleMap.values()],sharedSyncInitializedAt:new Date().toISOString()},{merge:true});
   });
  }catch(e){console.error('LINE shared data initialize failed:',e)}
 }
