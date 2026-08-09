@@ -631,6 +631,17 @@ button.primary,button.secondary,.btn{font-size:16px}
 .payroll-final{border-top:2px solid #c79b43;margin-top:6px;padding-top:10px!important;font-size:20px;font-weight:1000}.payroll-final b{color:#18804a;font-size:25px}
 @media(max-width:560px){.payroll-summary{align-items:flex-start}.payroll-net b{font-size:24px}.payroll-breakdown>div{display:block}.payroll-breakdown>div b{display:block;margin-top:3px}}
 
+
+.payroll-corrected-tag{background:#fff0c8;color:#8a5b00;border:1px solid #e3bc5d}
+.payroll-correction-box{margin-top:14px;border:2px solid #d5b46f;border-radius:14px;background:#fffaf0;padding:11px}
+.payroll-correction-box>summary{cursor:pointer;font-size:17px;font-weight:1000;color:#6e4a14}
+.payroll-correction-help{margin:8px 0 10px}
+.payroll-correction-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.payroll-correction-grid label{margin:0}
+.payroll-correction-grid small{display:block;color:var(--muted);margin:3px 0 5px}
+.payroll-clear-correction{width:100%;margin-top:9px}
+@media(max-width:560px){.payroll-correction-grid{grid-template-columns:1fr}}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -645,7 +656,7 @@ button.primary,button.secondary,.btn{font-size:16px}
 </section>
 
 <div id="app">
-<header><div class="brand"><small>TINKER BELL</small><b>店舗管理</b></div><div class="header-actions"><button id="userBadge" class="pill">通常モード</button><button id="logoutBtn" class="pill">管理解除</button></div></header>
+<header><div class="brand"><small>TINKER BELL</small><b>店舗管理</b></div><div class="header-actions"><button id="userBadge" class="pill">管理者ログイン</button><button id="logoutBtn" class="pill hidden">管理解除</button></div></header>
 <main>
 <section id="home" class="screen active">
  <div class="hero"><div style="font-size:25px;color:#f0cf75">✦</div><h1>Tinker Bell POS</h1><p id="welcome"></p></div>
@@ -1111,7 +1122,7 @@ button.primary,button.secondary,.btn{font-size:16px}
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v55-payroll-calculation';
+const APP_VERSION='v57-payroll-manual-correction';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1261,12 +1272,13 @@ function refreshSelects(){
 
 function applyRole(){
  qsa('.manager').forEach(x=>{
-  x.classList.remove('hidden');
-  x.classList.toggle('locked',!managerUnlocked);
+  x.classList.toggle('hidden',!managerUnlocked);
+  x.classList.toggle('locked',false);
  });
- $('userBadge').textContent=managerUnlocked?'管理モード':'通常モード';
+ $('userBadge').textContent=managerUnlocked?'管理モード':'管理者ログイン';
  $('userBadge').classList.toggle('manager-unlocked',managerUnlocked);
- $('welcome').textContent=managerUnlocked?'管理モードで使用中':'通常業務はログインなしで使用できます';
+ $('logoutBtn').classList.toggle('hidden',!managerUnlocked);
+ $('welcome').textContent=managerUnlocked?'管理モードで使用中':'通常業務のみ表示中';
 }
 
 const ADMIN_PASSCODE_KEY='tinkerbell_admin_passcode';
@@ -1297,7 +1309,7 @@ function lockManager(){
  toast('管理モードを終了しました');
 }
 
-const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance','inventory']);
+const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance','inventory','payroll']);
 
 function show(idn){
  if(MANAGER_SCREENS.has(idn)&&!managerUnlocked){
@@ -3110,16 +3122,18 @@ function checkoutStatusLabel(x){
 
 function payrollAdjustment(month,staffId){
  let row=db.payrollAdjustments.find(x=>x.month===month&&x.staffId===staffId);
- if(!row){row={id:id(),month,staffId,otherAllowance:0,deduction:0,memo:''};db.payrollAdjustments.push(row)}
+ if(!row){row={id:id(),month,staffId,otherAllowance:0,deduction:0,memo:'',manualOverrides:{},correctionReason:''};db.payrollAdjustments.push(row)}
  return row;
 }
 function payrollMenuType(order){return order.menuType||db.menu.find(m=>m.id===order.menuId)?.type||''}
 function payrollForStaff(staff,month){
  const records=(db.attendance||[]).filter(r=>r.staffId===staff.id&&String(r.in||'').slice(0,7)===month);
  const hours=records.reduce((sum,r)=>sum+attendanceHours(r),0);
- const hourlyPay=Math.round(hours*Number(staff.wage||0));
+
+ const autoHourlyPay=Math.round(hours*Number(staff.wage||0));
  const companionCount=records.filter(r=>r.companionStatus==='yes').length;
  const transportCount=records.filter(r=>r.transportStatus==='yes').length;
+
  let drinkCount=0,bottleCount=0;
  (db.checkouts||[]).filter(c=>c.status!=='cancelled'&&String(c.closedAt||'').slice(0,7)===month).forEach(c=>{
   (c.orders||[]).forEach(o=>{
@@ -3129,28 +3143,66 @@ function payrollForStaff(staff,month){
    if(type==='ボトル')bottleCount+=qty;
   });
  });
- const drinkPay=drinkCount*Number(staff.drinkBack||0);
- const bottlePay=bottleCount*Number(staff.bottleBack||0);
- const companionPay=companionCount*Number(staff.companionAllowance||0);
- const transportPay=transportCount*Number(staff.transportAllowance||0);
+
+ const autoDrinkPay=drinkCount*Number(staff.drinkBack||0);
+ const autoBottlePay=bottleCount*Number(staff.bottleBack||0);
+ const autoCompanionPay=companionCount*Number(staff.companionAllowance||0);
+ const autoTransportPay=transportCount*Number(staff.transportAllowance||0);
+
  const adj=payrollAdjustment(month,staff.id);
- const otherAllowance=Number(adj.otherAllowance||0),deduction=Number(adj.deduction||0);
+ adj.manualOverrides=(adj.manualOverrides&&typeof adj.manualOverrides==='object')?adj.manualOverrides:{};
+
+ const useOverride=(key,autoValue)=>{
+  const raw=adj.manualOverrides[key];
+  return raw===''||raw===null||raw===undefined?autoValue:Number(raw);
+ };
+
+ const hourlyPay=useOverride('hourlyPay',autoHourlyPay);
+ const drinkPay=useOverride('drinkPay',autoDrinkPay);
+ const bottlePay=useOverride('bottlePay',autoBottlePay);
+ const companionPay=useOverride('companionPay',autoCompanionPay);
+ const transportPay=useOverride('transportPay',autoTransportPay);
+
+ const otherAllowance=Number(adj.otherAllowance||0);
+ const deduction=Number(adj.deduction||0);
  const gross=hourlyPay+drinkPay+bottlePay+companionPay+transportPay+otherAllowance;
  const net=gross-deduction;
- return {records,hours,hourlyPay,companionCount,transportCount,drinkCount,bottleCount,drinkPay,bottlePay,companionPay,transportPay,otherAllowance,deduction,gross,net,adj};
+
+ const hasManualOverride=['hourlyPay','drinkPay','bottlePay','companionPay','transportPay']
+  .some(k=>adj.manualOverrides[k]!==''&&adj.manualOverrides[k]!==null&&adj.manualOverrides[k]!==undefined);
+
+ return {
+  records,hours,
+  autoHourlyPay,autoDrinkPay,autoBottlePay,autoCompanionPay,autoTransportPay,
+  hourlyPay,companionCount,transportCount,drinkCount,bottleCount,
+  drinkPay,bottlePay,companionPay,transportPay,
+  otherAllowance,deduction,gross,net,adj,hasManualOverride
+ };
 }
 function renderPayroll(){
  if(!$('payrollMonth'))return;
  const month=$('payrollMonth').value||today().slice(0,7);
  if(!$('payrollMonth').value)$('payrollMonth').value=month;
+
  const rows=db.staff.map(staff=>({staff,p:payrollForStaff(staff,month)}));
  $('payrollGrandTotal').textContent=yen(rows.reduce((sum,x)=>sum+x.p.net,0));
+
+ const overrideValue=(adj,key)=>{
+  const v=adj.manualOverrides?.[key];
+  return v===''||v===null||v===undefined?'':Number(v);
+ };
+
  $('payrollList').innerHTML=rows.length?rows.map(({staff,p})=>`
  <details class="card payroll-card">
   <summary class="payroll-summary">
-   <div><b>${esc(staff.name)}</b> <span class="tag">${esc(staffRoleLabel(staff.role))}</span><div class="meta">${p.hours.toFixed(1)}時間 / 出勤 ${p.records.length}回</div></div>
+   <div>
+    <b>${esc(staff.name)}</b> <span class="tag">${esc(staffRoleLabel(staff.role))}</span>
+    ${p.hasManualOverride?'<span class="tag payroll-corrected-tag">手動修正あり</span>':''}
+    <div class="meta">${p.hours.toFixed(1)}時間 / 出勤 ${p.records.length}回</div>
+   </div>
    <div class="payroll-net"><small>支給額</small><b>${yen(p.net)}</b></div>
   </summary>
+
   <div class="payroll-breakdown">
    <div><span>基本給　${p.hours.toFixed(1)}時間 × ${yen(staff.wage||0)}</span><b>${yen(p.hourlyPay)}</b></div>
    <div><span>ドリンクバック　${p.drinkCount}杯 × ${yen(staff.drinkBack||0)}</span><b>${yen(p.drinkPay)}</b></div>
@@ -3158,12 +3210,55 @@ function renderPayroll(){
    <div><span>同伴手当　${p.companionCount}回 × ${yen(staff.companionAllowance||0)}</span><b>${yen(p.companionPay)}</b></div>
    <div><span>送迎手当　${p.transportCount}回 × ${yen(staff.transportAllowance||0)}</span><b>${yen(p.transportPay)}</b></div>
   </div>
+
+  <details class="payroll-correction-box" ${p.hasManualOverride?'open':''}>
+   <summary>✏️ 自動計算を手動修正する</summary>
+   <div class="meta payroll-correction-help">空欄なら自動計算のまま。修正する項目だけ金額を入力してください。</div>
+
+   <div class="payroll-correction-grid">
+    <label>基本給
+     <small>自動 ${yen(p.autoHourlyPay)}</small>
+     <input type="number" min="0" value="${overrideValue(p.adj,'hourlyPay')}" data-payroll-id="${staff.id}" data-payroll-override="hourlyPay" placeholder="${p.autoHourlyPay}">
+    </label>
+    <label>ドリンクバック
+     <small>自動 ${yen(p.autoDrinkPay)}</small>
+     <input type="number" min="0" value="${overrideValue(p.adj,'drinkPay')}" data-payroll-id="${staff.id}" data-payroll-override="drinkPay" placeholder="${p.autoDrinkPay}">
+    </label>
+    <label>ボトルバック
+     <small>自動 ${yen(p.autoBottlePay)}</small>
+     <input type="number" min="0" value="${overrideValue(p.adj,'bottlePay')}" data-payroll-id="${staff.id}" data-payroll-override="bottlePay" placeholder="${p.autoBottlePay}">
+    </label>
+    <label>同伴手当
+     <small>自動 ${yen(p.autoCompanionPay)}</small>
+     <input type="number" min="0" value="${overrideValue(p.adj,'companionPay')}" data-payroll-id="${staff.id}" data-payroll-override="companionPay" placeholder="${p.autoCompanionPay}">
+    </label>
+    <label>送迎手当
+     <small>自動 ${yen(p.autoTransportPay)}</small>
+     <input type="number" min="0" value="${overrideValue(p.adj,'transportPay')}" data-payroll-id="${staff.id}" data-payroll-override="transportPay" placeholder="${p.autoTransportPay}">
+    </label>
+   </div>
+
+   <label>修正理由
+    <input value="${esc(p.adj.correctionReason||'')}" data-payroll-id="${staff.id}" data-payroll-field="correctionReason" placeholder="例：勤怠打刻漏れのため基本給を修正">
+   </label>
+   <button type="button" class="secondary payroll-clear-correction" onclick="clearPayrollCorrection('${staff.id}')">手動修正をすべて解除</button>
+  </details>
+
   <div class="row payroll-adjust-row">
-   <label>その他手当<input type="number" min="0" value="${p.otherAllowance}" data-payroll-id="${staff.id}" data-payroll-field="otherAllowance"></label>
-   <label>控除<input type="number" min="0" value="${p.deduction}" data-payroll-id="${staff.id}" data-payroll-field="deduction"></label>
+   <label>その他手当
+    <input type="number" min="0" value="${p.otherAllowance}" data-payroll-id="${staff.id}" data-payroll-field="otherAllowance">
+   </label>
+   <label>控除
+    <input type="number" min="0" value="${p.deduction}" data-payroll-id="${staff.id}" data-payroll-field="deduction">
+   </label>
   </div>
-  <label>メモ<input value="${esc(p.adj.memo||'')}" data-payroll-id="${staff.id}" data-payroll-field="memo" placeholder="例：日払い済み、前借りなど"></label>
-  <button class="primary payroll-save-btn" onclick="savePayrollAdjustment('${staff.id}')">この人の手当・控除を保存</button>
+
+  <label>メモ
+   <input value="${esc(p.adj.memo||'')}" data-payroll-id="${staff.id}" data-payroll-field="memo" placeholder="例：日払い済み、前借りなど">
+  </label>
+
+  <button class="primary payroll-save-btn" onclick="savePayrollAdjustment('${staff.id}')">給与修正を保存</button>
+
   <div class="payroll-total-box">
    <div><span>支給前合計</span><b>${yen(p.gross)}</b></div>
    <div><span>控除</span><b>− ${yen(p.deduction)}</b></div>
@@ -3172,16 +3267,58 @@ function renderPayroll(){
  </details>`).join(''):'<div class="card">従業員が登録されていません</div>';
 }
 window.savePayrollAdjustment=async staffId=>{
- const month=$('payrollMonth').value||today().slice(0,7),row=payrollAdjustment(month,staffId);
+ const month=$('payrollMonth').value||today().slice(0,7);
+ const row=payrollAdjustment(month,staffId);
+ row.manualOverrides=(row.manualOverrides&&typeof row.manualOverrides==='object')?row.manualOverrides:{};
+
  document.querySelectorAll(`[data-payroll-id="${staffId}"]`).forEach(el=>{
   const f=el.dataset.payrollField;
+  const override=el.dataset.payrollOverride;
+
+  if(override){
+   row.manualOverrides[override]=el.value.trim()===''?'':Math.max(0,Number(el.value||0));
+  }
   if(f==='otherAllowance'||f==='deduction')row[f]=Math.max(0,Number(el.value||0));
-  if(f==='memo')row[f]=el.value.trim();
+  if(f==='memo'||f==='correctionReason')row[f]=el.value.trim();
  });
+
+ const hasOverride=Object.values(row.manualOverrides||{}).some(v=>v!==''&&v!==null&&v!==undefined);
+ if(hasOverride&&!String(row.correctionReason||'').trim()){
+  toast('手動修正した場合は修正理由を入力してください');
+  return;
+ }
+
+ row.updatedAt=nowISO();
  persist();
- try{if(window.tinkerbellFirebase?.savePayrollAdjustments)await window.tinkerbellFirebase.savePayrollAdjustments(db.payrollAdjustments);toast('給与調整を保存しました')}
- catch(e){console.error(e);toast('端末には保存しました')}
+
+ try{
+  if(window.tinkerbellFirebase?.savePayrollAdjustments){
+   await window.tinkerbellFirebase.savePayrollAdjustments(db.payrollAdjustments);
+  }
+  toast('給与修正を保存しました');
+ }catch(e){
+  console.error(e);
+  toast('端末には保存しました');
+ }
  renderPayroll();
+};
+
+window.clearPayrollCorrection=async staffId=>{
+ const month=$('payrollMonth').value||today().slice(0,7);
+ const row=payrollAdjustment(month,staffId);
+ row.manualOverrides={};
+ row.correctionReason='';
+ row.updatedAt=nowISO();
+ persist();
+
+ try{
+  if(window.tinkerbellFirebase?.savePayrollAdjustments){
+   await window.tinkerbellFirebase.savePayrollAdjustments(db.payrollAdjustments);
+  }
+ }catch(e){console.error(e)}
+
+ renderPayroll();
+ toast('手動修正を解除しました');
 };
 
 function renderReports(){
