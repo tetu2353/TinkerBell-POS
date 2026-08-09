@@ -1024,7 +1024,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v52-split-invoice-button-fix';
+const APP_VERSION='v53-line-pos-shift-schedule-sync';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1476,6 +1476,40 @@ function renderMyAttendance(){
 $('myAttendanceStaff').onchange=renderMyAttendance;
 $('myAttendanceMonth').onchange=renderMyAttendance;
 
+
+function posShiftToCloud(x){
+ const st=db.staff.find(s=>s.id===x.staffId);
+ return {id:x.id||id(),staffId:x.staffId||st?.id||'',staffName:st?.name||'',date:x.date,status:x.status||(x.time?'○':'')};
+}
+function posCloudShifts(){return (db.shifts||[]).map(posShiftToCloud).filter(x=>x.staffId&&x.date&&x.status)}
+function posScheduleToCloud(v){
+ const main=db.staff.find(s=>s.id===v.castId);
+ const extraIds=Array.isArray(v.extraCastIds)?v.extraCastIds:[];
+ return {id:v.id||id(),date:v.date,type:v.type==='同伴'?'companion':'reservation',time:v.time||'',customerId:v.customerId||'',customer:v.customer||'',castId:v.castId||'',castName:main?.name||v.castName||'',extraCastIds:extraIds,extraCastNames:extraIds.map(cid=>staffById(cid)?.name).filter(Boolean),people:v.people??1,memo:v.memo||''};
+}
+function posCloudSchedules(){return (db.visits||[]).map(posScheduleToCloud)}
+window.tinkerbellGetLocalSharedShifts=posCloudShifts;
+window.tinkerbellGetLocalSharedSchedules=posCloudSchedules;
+window.tinkerbellApplyCloudShifts=rows=>{
+ if(!Array.isArray(rows))return;
+ db.shifts=rows.map(x=>{
+  const st=db.staff.find(s=>s.id===x.staffId)||db.staff.find(s=>s.name===x.staffName);
+  return {id:x.id||id(),staffId:st?.id||x.staffId||'',date:x.date,status:x.status};
+ }).filter(x=>x.staffId&&x.date&&x.status);
+ persist();renderShifts();
+};
+window.tinkerbellApplyCloudSchedules=rows=>{
+ if(!Array.isArray(rows))return;
+ db.visits=rows.map(x=>{
+  const main=db.staff.find(s=>s.id===x.castId)||db.staff.find(s=>s.name===x.castName);
+  const extraIds=Array.isArray(x.extraCastIds)&&x.extraCastIds.length?x.extraCastIds:(x.extraCastNames||[]).map(n=>db.staff.find(s=>s.name===n)?.id).filter(Boolean);
+  return {id:x.id||id(),castId:main?.id||x.castId||'',customerId:x.customerId||'',customer:x.customer||'',date:x.date,type:x.type==='companion'?'同伴':'予約',time:x.time||'',people:x.people??1,memo:x.memo||'',extraCastIds:extraIds};
+ });
+ persist();renderVisits();
+};
+function saveSharedShiftsFromPos(){return window.tinkerbellFirebase?.saveSharedShifts?.(posCloudShifts()).catch(e=>{console.error(e);toast('シフト同期に失敗しました')})}
+function saveSharedSchedulesFromPos(){return window.tinkerbellFirebase?.saveSharedSchedules?.(posCloudSchedules()).catch(e=>{console.error(e);toast('予定同期に失敗しました')})}
+
 let shiftViewMonth=new Date();shiftViewMonth.setDate(1);
 let selectedShiftStaffId='';
 const shiftStatuses=['','○','△','×'];
@@ -1483,7 +1517,7 @@ function shiftMonthKey(){return `${shiftViewMonth.getFullYear()}-${String(shiftV
 function ensureShiftMeta(){if(!db.shiftMeta)db.shiftMeta={submitted:{},published:{}};if(!db.shiftMeta.submitted)db.shiftMeta.submitted={};if(!db.shiftMeta.published)db.shiftMeta.published={}}
 function shiftStatusClass(v){return v==='○'?'status-ok':v==='△'?'status-late':v==='×'?'status-off':''}
 function shiftRecord(staffId,date){return db.shifts.find(x=>x.staffId===staffId&&x.date===date)}
-window.cycleShift=(staffId,date)=>{if(!current||(staffId!==current.id&&!isManager()))return;let r=shiftRecord(staffId,date),now=r?.status||(r?.time?'○':''),next=shiftStatuses[(shiftStatuses.indexOf(now)+1)%shiftStatuses.length];if(next){if(r){r.status=next;delete r.time}else db.shifts.push({id:id(),staffId,date,status:next})}else if(r){db.shifts=db.shifts.filter(x=>x.id!==r.id)}ensureShiftMeta();delete db.shiftMeta.submitted[`${shiftMonthKey()}:${staffId}`];persist();renderShifts()}
+window.cycleShift=(staffId,date)=>{if(!current||(staffId!==current.id&&!isManager()))return;let r=shiftRecord(staffId,date),now=r?.status||(r?.time?'○':''),next=shiftStatuses[(shiftStatuses.indexOf(now)+1)%shiftStatuses.length];if(next){if(r){r.status=next;delete r.time}else db.shifts.push({id:id(),staffId,date,status:next})}else if(r){db.shifts=db.shifts.filter(x=>x.id!==r.id)}ensureShiftMeta();delete db.shiftMeta.submitted[`${shiftMonthKey()}:${staffId}`];persist();saveSharedShiftsFromPos();renderShifts()}
 function monthShiftCount(staffId,key){return db.shifts.filter(x=>x.staffId===staffId&&x.date.startsWith(key)).length}
 function renderShifts(){
  ensureShiftMeta();
@@ -1574,9 +1608,9 @@ $('shiftDayModalClose').onclick=()=>$('shiftDayModal').classList.add('hidden');
 window.selectShiftPerson=x=>{if(!isManager())return;selectedShiftStaffId=x;renderShifts()};
 $('prevShiftMonth').onclick=()=>{shiftViewMonth.setMonth(shiftViewMonth.getMonth()-1);renderShifts()};
 $('nextShiftMonth').onclick=()=>{shiftViewMonth.setMonth(shiftViewMonth.getMonth()+1);renderShifts()};
-$('saveMyShift').onclick=()=>{ensureShiftMeta();db.shiftMeta.submitted[`${shiftMonthKey()}:${current.id}`]=nowISO();persist();renderShifts();toast('シフトを保存しました')};
-$('publishShift').onclick=()=>{if(!isManager())return;ensureShiftMeta();db.shiftMeta.published[shiftMonthKey()]=nowISO();persist();renderShifts();toast('全員に公開しました')};
-$('copyPrevShift').onclick=()=>{if(!isManager())return;const key=shiftMonthKey(),prev=new Date(shiftViewMonth);prev.setMonth(prev.getMonth()-1);const pkey=`${prev.getFullYear()}-${String(prev.getMonth()+1).padStart(2,'0')}`;if(!confirm('前月の予定を今月へコピーしますか？'))return;db.staff.forEach(st=>{for(let d=1;d<=new Date(shiftViewMonth.getFullYear(),shiftViewMonth.getMonth()+1,0).getDate();d++){const target=`${key}-${String(d).padStart(2,'0')}`;if(shiftRecord(st.id,target))continue;const source=`${pkey}-${String(Math.min(d,new Date(prev.getFullYear(),prev.getMonth()+1,0).getDate())).padStart(2,'0')}`,r=shiftRecord(st.id,source);if(r)db.shifts.push({id:id(),staffId:st.id,date:target,status:r.status||(r.time?'○':'')})}});persist();renderShifts();toast('前月からコピーしました')};
+$('saveMyShift').onclick=()=>{ensureShiftMeta();db.shiftMeta.submitted[`${shiftMonthKey()}:${current.id}`]=nowISO();persist();saveSharedShiftsFromPos();renderShifts();toast('シフトを保存しました')};
+$('publishShift').onclick=()=>{if(!isManager())return;ensureShiftMeta();db.shiftMeta.published[shiftMonthKey()]=nowISO();persist();saveSharedShiftsFromPos();renderShifts();toast('全員に公開しました')};
+$('copyPrevShift').onclick=()=>{if(!isManager())return;const key=shiftMonthKey(),prev=new Date(shiftViewMonth);prev.setMonth(prev.getMonth()-1);const pkey=`${prev.getFullYear()}-${String(prev.getMonth()+1).padStart(2,'0')}`;if(!confirm('前月の予定を今月へコピーしますか？'))return;db.staff.forEach(st=>{for(let d=1;d<=new Date(shiftViewMonth.getFullYear(),shiftViewMonth.getMonth()+1,0).getDate();d++){const target=`${key}-${String(d).padStart(2,'0')}`;if(shiftRecord(st.id,target))continue;const source=`${pkey}-${String(Math.min(d,new Date(prev.getFullYear(),prev.getMonth()+1,0).getDate())).padStart(2,'0')}`,r=shiftRecord(st.id,source);if(r)db.shifts.push({id:id(),staffId:st.id,date:target,status:r.status||(r.time?'○':'')})}});persist();saveSharedShiftsFromPos();renderShifts();toast('前月からコピーしました')};
 $('printShift').onclick=()=>window.print();
 $('exportShiftCsv').onclick=()=>{const key=shiftMonthKey(),days=new Date(shiftViewMonth.getFullYear(),shiftViewMonth.getMonth()+1,0).getDate();let rows=[['名前',...Array.from({length:days},(_,i)=>`${i+1}日`)]];db.staff.forEach(st=>rows.push([st.name,...Array.from({length:days},(_,i)=>shiftRecord(st.id,`${key}-${String(i+1).padStart(2,'0')}`)?.status||'')]));const csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tinkerbell_shift_${key}.csv`;a.click();URL.revokeObjectURL(a.href)};
 
@@ -2435,9 +2469,9 @@ function renderBottles(){$('bottleList').innerHTML=db.bottles.length?db.bottles.
 window.changeBottle=x=>{const b=db.bottles.find(v=>v.id===x);const n=prompt('残量を入力（満タン・75%・50%・25%・ほぼ空）',b.level);if(n===null)return;b.level=n;persist();renderAll()}
 window.delBottle=x=>{db.bottles=db.bottles.filter(v=>v.id!==x);persist();renderAll()}
 
-$('saveVisit').onclick=()=>{if(!$('visitCustomer').value.trim())return toast('お客様名を入力');db.visits.push({id:id(),castId:$('visitCast').value,customer:$('visitCustomer').value,date:$('visitDate').value,type:$('visitType').value,time:$('visitTime').value,people:$('visitPeople').value,memo:$('visitMemo').value});persist();renderVisits();toast('予定登録')};
-function renderVisits(){const a=db.visits.sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));$('visitList').innerHTML=a.length?a.map(v=>`<div class="item"><h3>${esc(v.customer)} <span class="tag">${esc(v.type)}</span></h3><div class="meta">${esc(v.date)} ${esc(v.time)} / ${esc(v.people)}名<br>担当 ${esc(staffById(v.castId)?.name||'')}<br>${esc(v.memo||'')}</div><div class="item-actions"><button class="danger" onclick="delVisit('${v.id}')">削除</button></div></div>`).join(''):'<div class="empty">予定なし</div>'}
-window.delVisit=x=>{db.visits=db.visits.filter(v=>v.id!==x);persist();renderVisits()}
+$('saveVisit').onclick=()=>{if(!$('visitCustomer').value.trim())return toast('お客様名を入力');db.visits.push({id:id(),castId:$('visitCast').value,customer:$('visitCustomer').value,date:$('visitDate').value,type:$('visitType').value,time:$('visitTime').value,people:$('visitPeople').value,memo:$('visitMemo').value});persist();saveSharedSchedulesFromPos();renderVisits();toast('予定登録')};
+function renderVisits(){const a=db.visits.sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));$('visitList').innerHTML=a.length?a.map(v=>`<div class="item"><h3>${esc(v.customer)} <span class="tag">${esc(v.type)}</span></h3><div class="meta">${esc(v.date)} ${esc(v.time)} / ${esc(v.people)}名<br>担当 ${esc(staffById(v.castId)?.name||'')}${v.type==='同伴'&&v.extraCastIds?.length?`<br>同行 ${(v.extraCastIds||[]).map(cid=>esc(staffById(cid)?.name||'')).filter(Boolean).join('・')}`:''}<br>${esc(v.memo||'')}</div><div class="item-actions"><button class="danger" onclick="delVisit('${v.id}')">削除</button></div></div>`).join(''):'<div class="empty">予定なし</div>'}
+window.delVisit=x=>{db.visits=db.visits.filter(v=>v.id!==x);persist();saveSharedSchedulesFromPos();renderVisits()}
 
 $('saveNotice').onclick=()=>{db.notices.unshift({id:id(),title:$('noticeTitle').value,body:$('noticeBody').value,date:today()});persist();renderNotices();toast('投稿しました')};
 function renderNotices(){$('noticeList').innerHTML=db.notices.length?db.notices.map(n=>`<div class="item"><h3>${esc(n.title)}</h3><div class="meta">${esc(n.date)}<br>${esc(n.body)}</div></div>`).join(''):'<div class="empty">お知らせなし</div>'}
@@ -3552,7 +3586,7 @@ if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCUGu1dEan0D0-kfXXiiag7eKKwdmkg_TQ",
@@ -3827,6 +3861,43 @@ function startCustomerRealtimeSync() {
 retryBtn?.addEventListener("click", checkFirebaseConnection);
 checkFirebaseConnection();
 
+
+async function saveSharedShiftsToFirebase(sharedShifts){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ await setDoc(doc(firestoreDb,"app","data"),{sharedShifts,sharedShiftsUpdatedAt:new Date().toISOString()},{merge:true});
+}
+async function saveSharedSchedulesToFirebase(sharedSchedules){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ await setDoc(doc(firestoreDb,"app","data"),{sharedSchedules,sharedSchedulesUpdatedAt:new Date().toISOString()},{merge:true});
+}
+function startSharedShiftScheduleSync(){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ const ref=doc(firestoreDb,"app","data");
+ return onSnapshot(ref,snap=>{
+  if(!snap.exists())return;const d=snap.data()||{};
+  if(Array.isArray(d.sharedShifts))window.tinkerbellApplyCloudShifts?.(d.sharedShifts);
+  if(Array.isArray(d.sharedSchedules))window.tinkerbellApplyCloudSchedules?.(d.sharedSchedules);
+ },e=>console.error('POS shared shift/schedule sync failed:',e));
+}
+async function initializeSharedShiftSchedule(){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ const ref=doc(firestoreDb,"app","data");
+ try{
+  const localShifts=window.tinkerbellGetLocalSharedShifts?.()||[];
+  const localSchedules=window.tinkerbellGetLocalSharedSchedules?.()||[];
+  await runTransaction(firestoreDb,async tx=>{
+   const snap=await tx.get(ref);const d=snap.exists()?snap.data():{};
+   const cloudShifts=Array.isArray(d.sharedShifts)?d.sharedShifts:[];
+   const shiftMap=new Map(cloudShifts.map(x=>[`${x.staffId||x.staffName}|${x.date}`,x]));
+   localShifts.forEach(x=>{const k=`${x.staffId||x.staffName}|${x.date}`;if(!shiftMap.has(k))shiftMap.set(k,x)});
+   const cloudSchedules=Array.isArray(d.sharedSchedules)?d.sharedSchedules:[];
+   const scheduleMap=new Map(cloudSchedules.map(x=>[x.id,x]));
+   localSchedules.forEach(x=>{if(!scheduleMap.has(x.id))scheduleMap.set(x.id,x)});
+   tx.set(ref,{sharedShifts:[...shiftMap.values()],sharedSchedules:[...scheduleMap.values()],sharedSyncInitializedAt:new Date().toISOString()},{merge:true});
+  });
+ }catch(e){console.error('POS shared initialize failed:',e)}
+}
+
 window.tinkerbellFirebase = {
   get app() { return firebaseApp; },
   get db() { return firestoreDb; },
@@ -3837,6 +3908,8 @@ window.tinkerbellFirebase = {
   saveMenu: saveMenuToFirebase,
   saveAdminPasscode: saveAdminPasscodeToFirebase,
   saveCheckouts: saveCheckoutsToFirebase,
+  saveSharedShifts: saveSharedShiftsToFirebase,
+  saveSharedSchedules: saveSharedSchedulesToFirebase,
   reloadCheckouts: ()=>startCheckoutRealtimeSync()
 };
 
@@ -3845,6 +3918,8 @@ startStaffRealtimeSync();
 startMenuRealtimeSync();
 startAdminPasscodeSync();
 startCheckoutRealtimeSync();
+startSharedShiftScheduleSync();
+initializeSharedShiftSchedule();
 </script>
 
 </body></html>
