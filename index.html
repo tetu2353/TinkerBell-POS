@@ -869,7 +869,7 @@ body.manager-mode .payroll-staff-settings{
 </div>
 </section>
 
-<section id="customers" class="screen"><h2>お客様管理</h2><div class="card"><div class="meta">お客様データはFirebaseとリアルタイム同期します。</div></div><div class="card"><label>検索<input id="customerSearch" placeholder="名前・ふりがな・担当・メモ"></label><div id="customerKanaTabs" class="kana-tabs"></div></div><div class="card"><input id="customerEditId" type="hidden"><div class="row3"><label>お客様名<input id="customerName"></label><label>ふりがな<input id="customerKana" placeholder="ひらがなで入力"></label><label>担当キャスト<select id="customerCast"></select></label></div><div class="row3"><label>誕生月<select id="customerBirthMonth"><option value="">未登録</option></select></label><label>誕生日<select id="customerBirthDay"><option value="">未登録</option></select></label><label>電話番号<input id="customerPhone" inputmode="tel"></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><div class="row"><button id="cancelCustomerEdit" class="secondary hidden">編集をやめる</button><button id="saveCustomer" class="primary">お客様登録</button></div></div><div id="customerList" class="list"></div></section>
+<section id="customers" class="screen"><h2>お客様管理</h2><div class="card"><div class="meta">お客様データはFirebaseとリアルタイム同期します。</div></div><div class="card"><label>検索<input id="customerSearch" placeholder="名前・ふりがな・担当・メモ"></label><div id="customerKanaTabs" class="kana-tabs"></div></div><div class="card"><input id="customerEditId" type="hidden"><div class="row3"><label>お客様名<input id="customerName"></label><label>ふりがな<input id="customerKana" placeholder="ひらがなで入力"></label><label>担当キャスト<select id="customerCast"></select></label></div><div class="row"><label>誕生月<select id="customerBirthMonth"><option value="">未登録</option></select></label><label>誕生日<select id="customerBirthDay"><option value="">未登録</option></select></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><div class="row"><button id="cancelCustomerEdit" class="secondary hidden">編集をやめる</button><button id="saveCustomer" class="primary">お客様登録</button></div></div><div id="customerList" class="list"></div></section>
 
 <section id="bottles" class="screen"><h2>ボトル管理</h2><div class="card"><input id="bottleEditId" type="hidden"><div class="row3"><label>管理番号<input id="bottleNumber"></label><label>お客様<select id="bottleCustomer"></select></label><label>種類<select id="bottleCategory"><option value="whisky">ウイスキー</option><option value="brandy">ブランデー</option><option value="shochu">焼酎</option><option value="wine">ワイン</option><option value="sake">日本酒</option><option value="other">その他</option></select></label></div><div class="row3"><label>ボトル名<input id="bottleName"></label><label>担当<select id="bottleCast"></select></label><label>本数<input id="bottleQty" type="number" min="1" value="1"></label></div><label>状態<select id="bottleStatus"><option value="stored">保管中</option><option value="empty">空ボトル</option></select></label><div class="row"><button id="cancelBottleEdit" class="secondary hidden">編集をやめる</button><button id="saveBottle" class="primary">ボトル登録</button></div></div><div id="bottleList" class="list"></div></section>
 
@@ -1255,7 +1255,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v64-unified-customer-bottle-kana';
+const APP_VERSION='v64-customer-bottle-firebase-sync';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1377,6 +1377,15 @@ window.tinkerbellApplyCloudCustomers=customers=>{
   renderCustomers();
 };
 window.tinkerbellGetLocalCustomers=()=>Array.isArray(db.customers)?db.customers:[];
+window.tinkerbellApplyCloudBottles=bottles=>{
+  if(!Array.isArray(bottles))return;
+  db.bottles=bottles;
+  persist();
+  refreshSelects();
+  renderBottles();
+  renderCustomers();
+};
+window.tinkerbellGetLocalBottles=()=>Array.isArray(db.bottles)?db.bottles:[];
 window.tinkerbellApplyCloudStaff=staff=>{
   if(!Array.isArray(staff))return;
   db.staff=staff;
@@ -2789,15 +2798,17 @@ $('saveCustomer').onclick=async()=>{
  const birthMonth=$('customerBirthMonth').value,birthDay=$('customerBirthDay').value;
  if((birthMonth&&!birthDay)||(!birthMonth&&birthDay))return toast('誕生日は月日両方を選択');
  const beforeCustomers=JSON.parse(JSON.stringify(db.customers));
+ const beforeBottles=JSON.parse(JSON.stringify(db.bottles));
 
  button.disabled=true;
  button.textContent='保存中...';
 
  let customer=db.customers.find(c=>c.id===editId);
  if(customer){
-  Object.assign(customer,{name,kana:normalizeKanaText($('customerKana').value),birthMonth:Number(birthMonth)||'',birthDay:Number(birthDay)||'',castId:$('customerCast').value,cast:staffById($('customerCast').value)?.name||'',phone:$('customerPhone').value.trim(),memo:$('customerMemo').value.trim()});
+  Object.assign(customer,{name,kana:normalizeKanaText($('customerKana').value),birthMonth:Number(birthMonth)||'',birthDay:Number(birthDay)||'',castId:$('customerCast').value,cast:staffById($('customerCast').value)?.name||'',memo:$('customerMemo').value.trim()});
+  db.bottles.filter(b=>b.customerId===customer.id).forEach(b=>b.customer=name);
  }else{
-  customer={id:id(),name,kana:normalizeKanaText($('customerKana').value),birthMonth:Number(birthMonth)||'',birthDay:Number(birthDay)||'',castId:$('customerCast').value,cast:staffById($('customerCast').value)?.name||'',phone:$('customerPhone').value.trim(),memo:$('customerMemo').value.trim(),visits:0};
+  customer={id:id(),name,kana:normalizeKanaText($('customerKana').value),birthMonth:Number(birthMonth)||'',birthDay:Number(birthDay)||'',castId:$('customerCast').value,cast:staffById($('customerCast').value)?.name||'',memo:$('customerMemo').value.trim(),visits:0};
   db.customers.push(customer);
  }
  persist();
@@ -2809,11 +2820,13 @@ $('saveCustomer').onclick=async()=>{
    throw new Error('Firebase準備中');
   }
   await window.tinkerbellFirebase.saveCustomers(db.customers);
+  await window.tinkerbellFirebase.saveBottles(db.bottles);
   clearCustomerForm();
   toast('クラウド保存しました');
  }catch(error){
   console.error('Customer cloud save failed:',error);
   db.customers=beforeCustomers;
+  db.bottles=beforeBottles;
   persist();
   refreshSelects();
   renderCustomers();
@@ -2825,12 +2838,12 @@ $('saveCustomer').onclick=async()=>{
 };
 
 function clearCustomerForm(){
- $('customerEditId').value='';$('customerName').value='';$('customerKana').value='';$('customerBirthMonth').value='';$('customerBirthDay').value='';$('customerPhone').value='';$('customerMemo').value='';
+ $('customerEditId').value='';$('customerName').value='';$('customerKana').value='';$('customerBirthMonth').value='';$('customerBirthDay').value='';$('customerMemo').value='';
  $('saveCustomer').textContent='お客様登録';$('cancelCustomerEdit').classList.add('hidden');
 }
 window.editCustomer=customerId=>{
  const c=customerById(customerId);if(!c)return;
- $('customerEditId').value=c.id;$('customerName').value=c.name;$('customerKana').value=c.kana||'';$('customerBirthMonth').value=c.birthMonth||'';$('customerBirthDay').value=c.birthDay||'';$('customerCast').value=c.castId||db.staff.find(s=>s.name===c.cast)?.id||'';$('customerPhone').value=c.phone||'';$('customerMemo').value=c.memo||'';
+ $('customerEditId').value=c.id;$('customerName').value=c.name;$('customerKana').value=c.kana||'';$('customerBirthMonth').value=c.birthMonth||'';$('customerBirthDay').value=c.birthDay||'';$('customerCast').value=c.castId||db.staff.find(s=>s.name===c.cast)?.id||'';$('customerMemo').value=c.memo||'';
  $('saveCustomer').textContent='お客様情報を更新';$('cancelCustomerEdit').classList.remove('hidden');scrollTo(0,0);
 };
 $('cancelCustomerEdit').onclick=clearCustomerForm;
@@ -2839,8 +2852,8 @@ $('customerSearch').oninput=renderCustomers;
 function renderCustomers(){
  const q=normalizeKanaText($('customerSearch').value);
  $('customerKanaTabs').innerHTML=kanaTabsHtml(customerKanaFilter,'setCustomerKana');
- const a=db.customers.filter(c=>(customerKanaFilter==='all'||customerKanaGroup(c)===customerKanaFilter)&&(!q||normalizeKanaText(`${c.name} ${c.kana||''} ${c.phone||''} ${c.memo||''} ${staffById(c.castId)?.name||''}`).includes(q))).sort((x,y)=>customerSortValue(x).localeCompare(customerSortValue(y),'ja'));
- $('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)} <small class="meta">${esc(c.kana||'ふりがな未登録')}</small></h3><div class="meta">誕生日 ${c.birthMonth&&c.birthDay?`${c.birthMonth}月${c.birthDay}日`:'未登録'}<br>担当 ${esc(staffById(c.castId)?.name||c.cast||'未設定')}<br>電話 ${esc(c.phone||'未登録')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>esc(b.name)).join('、'):'なし'}</div><div class="item-actions"><button class="secondary" onclick="editCustomer('${c.id}')">編集</button><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>';
+ const a=db.customers.filter(c=>(customerKanaFilter==='all'||customerKanaGroup(c)===customerKanaFilter)&&(!q||normalizeKanaText(`${c.name} ${c.kana||''} ${c.memo||''} ${staffById(c.castId)?.name||''}`).includes(q))).sort((x,y)=>customerSortValue(x).localeCompare(customerSortValue(y),'ja'));
+ $('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)} <small class="meta">${esc(c.kana||'ふりがな未登録')}</small></h3><div class="meta">誕生日 ${c.birthMonth&&c.birthDay?`${c.birthMonth}月${c.birthDay}日`:'未登録'}<br>担当 ${esc(staffById(c.castId)?.name||c.cast||'未設定')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>esc(b.name)).join('、'):'なし'}</div><div class="item-actions"><button class="secondary" onclick="editCustomer('${c.id}')">編集</button><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>';
 }
 window.delCustomer=async x=>{
  if(!confirm('削除しますか？'))return;
@@ -2856,6 +2869,7 @@ window.delCustomer=async x=>{
  try{
   if(!window.tinkerbellFirebase?.saveCustomers)throw new Error('Firebase準備中');
   await window.tinkerbellFirebase.saveCustomers(db.customers);
+  await window.tinkerbellFirebase.saveBottles(db.bottles);
   toast('クラウドから削除しました');
  }catch(error){
   console.error('Customer cloud delete failed:',error);
@@ -2871,18 +2885,19 @@ window.delCustomer=async x=>{
 function bottleCategoryName(v){return {whisky:'ウイスキー',brandy:'ブランデー',shochu:'焼酎',wine:'ワイン',sake:'日本酒',other:'その他'}[v]||'その他'}
 function clearBottleForm(){$('bottleEditId').value='';$('bottleNumber').value='';$('bottleName').value='';$('bottleQty').value='1';$('bottleStatus').value='stored';$('bottleCategory').value='shochu';$('saveBottle').textContent='ボトル登録';$('cancelBottleEdit').classList.add('hidden')}
 $('cancelBottleEdit').onclick=clearBottleForm;
-$('saveBottle').onclick=()=>{
+$('saveBottle').onclick=async()=>{
  const number=$('bottleNumber').value.trim(),customerId=$('bottleCustomer').value,name=$('bottleName').value.trim(),editId=$('bottleEditId').value;
  if(!number||!customerId||!name)return toast('管理番号・お客様・ボトル名を入力');
  if(db.bottles.some(b=>String(b.number||'')===number&&b.id!==editId))return toast('同じ管理番号があります');
  const customer=customerById(customerId),castId=$('bottleCast').value;
  const obj={number,customerId,customer:customer?.name||'',category:$('bottleCategory').value,name,castId,cast:staffById(castId)?.name||'',qty:Math.max(1,Number($('bottleQty').value||1)),status:$('bottleStatus').value,emptyDate:$('bottleStatus').value==='empty'?today():''};
  const existing=db.bottles.find(b=>b.id===editId);if(existing)Object.assign(existing,obj);else db.bottles.push({id:id(),...obj});
- persist();clearBottleForm();renderBottles();renderCustomers();toast('ボトルを保存しました');
+ persist();clearBottleForm();renderBottles();renderCustomers();
+ try{if(!window.tinkerbellFirebase?.saveBottles)throw new Error('Firebase準備中');await window.tinkerbellFirebase.saveBottles(db.bottles);toast('ボトルを同期しました')}catch(e){console.error(e);toast('ボトルの同期に失敗しました')}
 };
 window.editBottle=x=>{const b=db.bottles.find(v=>v.id===x);if(!b)return;$('bottleEditId').value=b.id;$('bottleNumber').value=b.number||'';$('bottleCustomer').value=b.customerId||'';$('bottleCategory').value=b.category||'other';$('bottleName').value=b.name||'';$('bottleCast').value=b.castId||db.staff.find(s=>s.name===b.cast)?.id||'';$('bottleQty').value=b.qty||1;$('bottleStatus').value=b.status||'stored';$('saveBottle').textContent='ボトル情報を更新';$('cancelBottleEdit').classList.remove('hidden');scrollTo(0,0)};
 function renderBottles(){$('bottleList').innerHTML=db.bottles.length?db.bottles.slice().sort((a,b)=>String(a.number||'').localeCompare(String(b.number||''),'ja',{numeric:true})).map(b=>`<div class="item"><h3>No.${esc(b.number||'未登録')} ${esc(b.name)}</h3><div class="meta">${esc(customerById(b.customerId)?.name||b.customer||'不明')} / ${bottleCategoryName(b.category)} / 担当 ${esc(staffById(b.castId)?.name||b.cast||'未設定')} / ${Number(b.qty||1)}本 / ${b.status==='empty'?'空ボトル':'保管中'}</div><div class="item-actions"><button class="secondary" onclick="editBottle('${b.id}')">編集</button><button class="danger" onclick="delBottle('${b.id}')">削除</button></div></div>`).join(''):'<div class="empty">ボトルなし</div>'}
-window.delBottle=x=>{db.bottles=db.bottles.filter(v=>v.id!==x);persist();renderAll()}
+window.delBottle=async x=>{db.bottles=db.bottles.filter(v=>v.id!==x);persist();renderAll();try{await window.tinkerbellFirebase?.saveBottles?.(db.bottles)}catch(e){console.error(e);toast('ボトル削除の同期に失敗しました')}}
 
 $('saveVisit').onclick=()=>{if(!$('visitCustomer').value.trim())return toast('お客様名を入力');db.visits.push({id:id(),castId:$('visitCast').value,customer:$('visitCustomer').value,date:$('visitDate').value,type:$('visitType').value,time:$('visitTime').value,people:$('visitPeople').value,memo:$('visitMemo').value});persist();saveSharedSchedulesFromPos();renderVisits();toast('予定登録')};
 function renderVisits(){const a=db.visits.sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));$('visitList').innerHTML=a.length?a.map(v=>`<div class="item"><h3>${esc(v.customer)} <span class="tag">${esc(v.type)}</span></h3><div class="meta">${esc(v.date)} ${esc(v.time)} / ${esc(v.people)}名<br>担当 ${esc(staffById(v.castId)?.name||'')}${v.type==='同伴'&&v.extraCastIds?.length?`<br>同行 ${(v.extraCastIds||[]).map(cid=>esc(staffById(cid)?.name||'')).filter(Boolean).join('・')}`:''}<br>${esc(v.memo||'')}</div><div class="item-actions"><button class="danger" onclick="delVisit('${v.id}')">削除</button></div></div>`).join(''):'<div class="empty">予定なし</div>'}
@@ -4355,6 +4370,16 @@ async function saveCustomersToFirebase(customers) {
   );
 }
 
+async function saveBottlesToFirebase(bottles) {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  await setDoc(
+    doc(firestoreDb, "app", "data"),
+    { bottles, bottlesUpdatedAt: new Date().toISOString() },
+    { merge: true }
+  );
+}
+
 async function loadCustomersFromFirebase() {
   firebaseApp ||= initializeApp(firebaseConfig);
   firestoreDb ||= getFirestore(firebaseApp);
@@ -4534,23 +4559,32 @@ function startCustomerRealtimeSync() {
     ref,
     async snap => {
       if (!snap.exists()) {
-        await setDoc(ref, { customers: [], customersUpdatedAt: new Date().toISOString() }, { merge: true });
-        setStatus("Firebase接続：成功（お客様0件）", true);
+        await setDoc(ref, { customers: [], bottles: [], customersUpdatedAt: new Date().toISOString(), bottlesUpdatedAt: new Date().toISOString() }, { merge: true });
+        setStatus("Firebase接続：成功（お客様・ボトル0件）", true);
         return;
       }
 
       const cloudCustomers = snap.data()?.customers;
+      const cloudBottles = snap.data()?.bottles;
 
       if (Array.isArray(cloudCustomers)) {
         window.tinkerbellApplyCloudCustomers?.(cloudCustomers);
-        setStatus(`Firebase接続：成功（お客様 ${cloudCustomers.length}件をリアルタイム同期）`, true);
+        if(Array.isArray(cloudBottles))window.tinkerbellApplyCloudBottles?.(cloudBottles);
+        else{
+          const localBottles=window.tinkerbellGetLocalBottles?.()||[];
+          if(localBottles.length)await setDoc(ref,{bottles:localBottles,bottlesUpdatedAt:new Date().toISOString()},{merge:true});
+        }
+        setStatus(`Firebase接続：成功（お客様 ${cloudCustomers.length}件・ボトル ${Array.isArray(cloudBottles)?cloudBottles.length:(window.tinkerbellGetLocalBottles?.()||[]).length}本を同期）`, true);
       } else {
         const localCustomers = window.tinkerbellGetLocalCustomers?.() || [];
+        const localBottles = window.tinkerbellGetLocalBottles?.() || [];
         await setDoc(
           ref,
           {
             customers: localCustomers,
-            customersUpdatedAt: new Date().toISOString()
+            bottles: localBottles,
+            customersUpdatedAt: new Date().toISOString(),
+            bottlesUpdatedAt: new Date().toISOString()
           },
           { merge: true }
         );
@@ -4630,6 +4664,7 @@ window.tinkerbellFirebase = {
   get db() { return firestoreDb; },
   checkConnection: checkFirebaseConnection,
   saveCustomers: saveCustomersToFirebase,
+  saveBottles: saveBottlesToFirebase,
   loadCustomers: loadCustomersFromFirebase,
   saveStaff: saveStaffToFirebase,
   saveMenu: saveMenuToFirebase,
