@@ -1273,7 +1273,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v70-daily-sales-detail';
+const APP_VERSION='v71-seat-checkout-button-fix';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1995,7 +1995,7 @@ function renderSeats(){
   const typeClass=isBox?'seat-box':'seat-counter';
   const statusClass=s.customerName?'seat-inuse':'seat-empty';
 
-  return `<div class="seat ${typeClass} ${statusClass}" onclick="${s.customerName?`openSeatOrder('${s.id}')`:`openSeat('${s.id}')`}">
+  return `<div class="seat ${typeClass} ${statusClass}" data-seat-id="${esc(s.id)}">
    <div class="seat-topline">
     <div class="seat-number">${esc(s.name)}</div>
     <div class="seat-status">${s.customerName?'使用中':'空席'}</div>
@@ -2008,19 +2008,36 @@ function renderSeats(){
     <div class="seat-total">${yen(seatTotal(s))}</div>
     <div class="seat-order-count">注文 ${s.orders.length}件</div>
     <div class="item-actions seat-actions">
-      <button class="secondary" onclick="event.stopPropagation();openSeatDetail('${s.id}')">詳細</button>
-      <button class="primary" onclick="event.stopPropagation();openSeatOrder('${s.id}')">注文</button>
-      <button class="danger" onclick="event.stopPropagation();checkoutSeat('${s.id}')">会計</button>
+      <button type="button" class="secondary" data-seat-action="detail" data-seat-target="${esc(s.id)}">詳細</button>
+      <button type="button" class="primary" data-seat-action="order" data-seat-target="${esc(s.id)}">注文</button>
+      <button type="button" class="danger" data-seat-action="checkout" data-seat-target="${esc(s.id)}">会計</button>
     </div>
    `:`
     <div class="seat-empty-text">空席</div>
     <div class="item-actions seat-actions">
-      <button class="primary">入店登録</button>
+      <button type="button" class="primary" data-seat-action="open" data-seat-target="${esc(s.id)}">入店登録</button>
     </div>
    `}
   </div>`;
  }).join('');
 }
+
+$('seatGrid').addEventListener('click',event=>{
+ const button=event.target.closest('button[data-seat-action]');
+ if(button){
+  const sid=button.dataset.seatTarget;
+  const action=button.dataset.seatAction;
+  if(action==='detail')return window.openSeatDetail(sid);
+  if(action==='order')return window.openSeatOrder(sid);
+  if(action==='checkout')return window.checkoutSeat(sid);
+  if(action==='open')return window.openSeat(sid);
+ }
+ const seat=event.target.closest('[data-seat-id]');
+ if(!seat)return;
+ const row=db.seats.find(s=>String(s.id)===String(seat.dataset.seatId));
+ if(!row)return;
+ row.customerName?window.openSeatOrder(row.id):window.openSeat(row.id);
+});
 
 window.openSeatOrder=sid=>{
  selectedOrderSeat=sid;
