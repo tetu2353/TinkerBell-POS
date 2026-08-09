@@ -557,6 +557,66 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 
 #invoicePreviewModal{z-index:10050}
 #checkoutDetailModal{z-index:10020}
+
+/* larger readable UI */
+html{font-size:17px}
+body{font-size:17px;line-height:1.5}
+button,input,select,textarea{font-size:17px}
+.card{padding:17px}
+.grid{gap:12px}
+.tile{min-height:124px;padding:16px 12px}
+.tile span{font-size:33px}
+.tile b{font-size:18px}
+.tile small{font-size:13px}
+label{font-size:14px}
+input,select,textarea{padding:13px}
+button.primary,button.secondary,.btn{font-size:16px}
+.sectionHead h2,.order-step-title,.shift-page-head h2,.order-seat-header h2{font-size:24px}
+.brand small{font-size:11px}
+.brand b{font-size:22px}
+.meta{font-size:13px}
+.order-menu-button{min-height:96px}
+.order-menu-button b{font-size:20px}
+.order-menu-button small{font-size:18px}
+.order-total{font-size:28px}
+.checkout-large{min-height:66px;font-size:20px}
+.cast-order-choice{min-height:60px;font-size:19px}
+.attendance-person-card summary{font-size:18px}
+.attendance-main-action{font-size:22px}
+.attendance-staff-button b{font-size:24px}
+.attendance-confirm-action{font-size:26px}
+.attendance-confirm-name{font-size:46px}
+.attendance-confirm-question{font-size:26px}
+.attendance-confirm-buttons button{min-height:76px;font-size:27px}
+.personal-attendance-date{font-size:19px}
+.personal-attendance-times{font-size:24px}
+.admin-calendar-cell b{font-size:19px}
+.admin-attendance-time{font-size:22px}
+.seat-number{font-size:36px}
+.seat-status{font-size:17px}
+.seat-customer{font-size:27px}
+.seat-casts{font-size:22px}
+.seat-total{font-size:28px}
+.seat-order-count{font-size:17px}
+.seat-actions button{min-height:50px;font-size:17px}
+.shift-month-title{font-size:23px}
+.month-day .num{font-size:13px}
+.month-day .mark{width:38px;height:38px;font-size:23px}
+.shift-count{font-size:20px}
+.shift-overall-date{font-size:18px}
+@media(max-width:560px){
+  html{font-size:16px}
+  body{font-size:16px}
+  button,input,select,textarea{font-size:16px}
+  .tile b{font-size:17px}
+  .attendance-confirm-name{font-size:38px}
+  .attendance-confirm-question{font-size:22px}
+  .seat-number{font-size:29px}
+  .seat-customer{font-size:23px}
+  .seat-casts{font-size:19px}
+  .seat-total{font-size:24px}
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -1024,7 +1084,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v53-line-pos-shift-schedule-sync';
+const APP_VERSION='v54-large-text-line-pos-shift-schedule-sync';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
