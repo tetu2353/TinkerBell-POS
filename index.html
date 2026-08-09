@@ -71,6 +71,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .order-menu-button b{display:block;font-size:19px;line-height:1.3}
 .order-menu-button small{display:block;font-size:17px;font-weight:900;color:#9b6920;margin-top:7px}
 .order-menu-button:active{transform:scale(.97);background:#ffe8a9}
+.order-quick-note{margin-top:9px;padding:9px 11px;border-radius:11px;background:#fff3d4;color:#715019;font-size:13px;font-weight:800}
 .selected-order-summary{border:3px solid #7f5a1c}
 .order-total{font-size:26px;color:#8d5d13}
 .order-line{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
@@ -858,6 +859,7 @@ body.manager-mode .payroll-staff-settings{
 <div id="orderWorkspace">
   <div class="card order-step-card">
     <b class="order-step-title">商品をタップ</b>
+    <div id="orderQuickNote" class="order-quick-note">よく出る商品を表示中。ほかの商品は下の種類を押してください。</div>
     <div id="orderCategories" class="category-row" style="margin-top:10px"></div>
     <div id="tapMenuGrid" class="order-menu-grid" style="margin-top:12px"></div>
   </div>
@@ -954,6 +956,9 @@ body.manager-mode .payroll-staff-settings{
     </label>
     <label>注文画面への表示
       <select id="menuVisible"><option value="true">表示する</option><option value="false">非表示</option></select>
+    </label>
+    <label>注文画面の最初に表示
+      <select id="menuQuickAccess"><option value="false">種類を押した時だけ表示</option><option value="true">よく出る商品として表示</option></select>
     </label>
   </div>
   <div class="row3">
@@ -1166,11 +1171,10 @@ body.manager-mode .payroll-staff-settings{
             <option value="split">分割会計</option>
           </select>
         </label>
-        <label>同伴キャスト
-          <select id="seatCheckoutCompanion">
-            <option value="">同伴なし</option>
-          </select>
-        </label>
+        <div style="flex:1;min-width:240px">
+          <b>同伴キャスト（複数選択可）</b>
+          <div id="seatCheckoutCompanions" class="seat-cast-grid" style="margin-top:8px"></div>
+        </div>
       </div>
 
       <div id="singleCheckoutArea">
@@ -1255,7 +1259,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v64-customer-bottle-firebase-sync';
+const APP_VERSION='v66-quick-order-categories';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1326,6 +1330,7 @@ db.menu=db.menu.map((item,index)=>({
   reorderPoint:Number.isFinite(Number(item.reorderPoint))?Number(item.reorderPoint):0,
   type:item.name==='キャストドリンク'&&item.type==='ドリンク'?'キャストドリンク':item.type,
   visible:item.visible!==false,
+  quickAccess:item.quickAccess===true,
   sortOrder:Number.isFinite(Number(item.sortOrder))?Number(item.sortOrder):index
 }));
 db.staff=Array.isArray(db.staff)?db.staff.map(s=>({...s,
@@ -1402,6 +1407,7 @@ window.tinkerbellApplyCloudMenu=menu=>{
     stock:Number.isFinite(Number(item.stock))?Number(item.stock):0,
     reorderPoint:Number.isFinite(Number(item.reorderPoint))?Number(item.reorderPoint):0,
     visible:item.visible!==false,
+    quickAccess:item.quickAccess===true,
     sortOrder:Number.isFinite(Number(item.sortOrder))?Number(item.sortOrder):index
   }));
   persist();
@@ -1985,7 +1991,7 @@ function renderSeats(){
 
 window.openSeatOrder=sid=>{
  selectedOrderSeat=sid;
- selectedCategory='すべて';
+ selectedCategory='よく出る';
  pendingMenu='';
  show('orders');
 };
@@ -2299,6 +2305,27 @@ function resetSplitCheckoutDraft(){
 }
 
 let pendingCheckoutSeatId='';
+let seatCheckoutCompanionIds=[];
+
+function renderSeatCheckoutCompanions(){
+ const casts=db.staff.filter(x=>x.role==='cast');
+ $('seatCheckoutCompanions').innerHTML=casts.length?casts.map(c=>`
+  <label class="seat-cast-option ${seatCheckoutCompanionIds.includes(c.id)?'selected':''}">
+   <input type="checkbox" value="${esc(c.id)}" ${seatCheckoutCompanionIds.includes(c.id)?'checked':''}>
+   <span>${esc(c.name)}</span>
+  </label>`).join(''):'<div class="empty">キャストが登録されていません</div>';
+}
+
+$('seatCheckoutCompanions').addEventListener('change',e=>{
+ const input=e.target.closest('input[type="checkbox"]');
+ if(!input)return;
+ if(input.checked){
+  if(!seatCheckoutCompanionIds.includes(input.value))seatCheckoutCompanionIds.push(input.value);
+ }else{
+  seatCheckoutCompanionIds=seatCheckoutCompanionIds.filter(cid=>cid!==input.value);
+ }
+ input.closest('.seat-cast-option')?.classList.toggle('selected',input.checked);
+});
 
 window.checkoutSeat=sid=>{
  const s=db.seats.find(x=>x.id===sid);
@@ -2309,11 +2336,12 @@ window.checkoutSeat=sid=>{
  $('splitCheckoutCount').value='2';
  splitCheckoutDraft=buildDefaultSplitDraft(seatBilling(s).total,2,s.customerName||'');
 
- const casts=db.staff.filter(x=>x.role==='cast');
- $('seatCheckoutCompanion').innerHTML='<option value="">同伴なし</option>'+casts.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
  const companionVisit=findCompanionVisitForSeat(s);
- $('seatCheckoutCompanion').value='';
- if(companionVisit?.castId)$('seatCheckoutCompanion').value=companionVisit.castId;
+ seatCheckoutCompanionIds=companionVisit
+  ?[companionVisit.castId,...(Array.isArray(companionVisit.extraCastIds)?companionVisit.extraCastIds:[])].filter(Boolean)
+  :[];
+ seatCheckoutCompanionIds=[...new Set(seatCheckoutCompanionIds)];
+ renderSeatCheckoutCompanions();
 
  $('seatCheckoutBody').innerHTML=`
   <div class="card">
@@ -2370,8 +2398,10 @@ $('seatCheckoutConfirm').onclick=async()=>{
  if(!s)return;
 
  const mode=$('seatCheckoutMode').value||'single';
- const companionCastId=$('seatCheckoutCompanion').value||'';
- const companionCastName=staffById(companionCastId)?.name||'';
+ const companionCastIds=[...new Set(seatCheckoutCompanionIds)].filter(cid=>staffById(cid));
+ const companionCastNames=companionCastIds.map(cid=>staffById(cid)?.name).filter(Boolean);
+ const companionCastId=companionCastIds[0]||'';
+ const companionCastName=companionCastNames.join('・');
  const seatCastIds=Array.isArray(s.casts)?[...s.casts]:[];
  const seatCastNamesSnapshot=seatCastIds.map(cid=>staffById(cid)?.name).filter(Boolean);
  const billing=seatBilling(s);
@@ -2410,6 +2440,8 @@ $('seatCheckoutConfirm').onclick=async()=>{
     paymentMethod,
     companionCastId,
     companionCastName,
+    companionCastIds,
+    companionCastNames,
     seatCastIds,
     seatCastNames:seatCastNamesSnapshot,
     orders:ordersSnapshot,
@@ -2474,6 +2506,8 @@ $('seatCheckoutConfirm').onclick=async()=>{
      paymentMethod:row.paymentMethod,
      companionCastId,
      companionCastName,
+     companionCastIds,
+     companionCastNames,
      seatCastIds,
      seatCastNames:seatCastNamesSnapshot,
      orders:ordersSnapshot,
@@ -2548,11 +2582,11 @@ $('seatCheckoutConfirm').onclick=async()=>{
  toast(mode==='split'?`分割会計を${createdCheckouts.length}件保存しました`:'会計を確定しました');
 };
 
-let selectedOrderSeat='',selectedCategory='すべて',pendingMenu='',lastOrder=null,undoTimer=null;
+let selectedOrderSeat='',selectedCategory='よく出る',pendingMenu='',lastOrder=null,undoTimer=null;
 
 window.selectOrderSeat=sid=>{
  selectedOrderSeat=sid;
- selectedCategory='すべて';
+ selectedCategory='よく出る';
  pendingMenu='';
  renderOrders();
 };
@@ -2616,20 +2650,26 @@ function renderTapOrders(){
   .filter(m=>m.visible!==false)
   .sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
 
- const cats=['すべて',...new Set(visibleMenu.map(m=>m.type))];
+ const cats=['よく出る',...new Set(visibleMenu.map(m=>m.type).filter(Boolean))];
 
  $('orderCategories').innerHTML=cats.map(c=>`
   <button class="${c===selectedCategory?'primary':'secondary'}" onclick="setCategory('${esc(c)}')">
    ${esc(c)}
   </button>`).join('');
 
- const items=visibleMenu.filter(m=>selectedCategory==='すべて'||m.type===selectedCategory);
+ const items=visibleMenu.filter(m=>selectedCategory==='よく出る'?m.quickAccess===true:m.type===selectedCategory);
+
+ $('orderQuickNote').textContent=selectedCategory==='よく出る'
+  ?'よく出る商品を表示中。ほかの商品は種類を押してください。'
+  :`${selectedCategory}の商品を表示中`;
 
  $('tapMenuGrid').innerHTML=items.length?items.map(m=>`
   <button class="order-menu-button" onclick="tapMenu('${m.id}')">
    <b>${esc(m.name)}</b>
    <small>${yen(m.price)}</small>
-  </button>`).join(''):'<div class="empty">この分類の商品はありません</div>';
+  </button>`).join(''):(selectedCategory==='よく出る'
+   ?'<div class="empty">商品管理で「よく出る商品として表示」を設定してください。<br>ほかの商品は上の種類から選べます。</div>'
+   :'<div class="empty">この種類の商品はありません</div>');
 
  $('castPicker').classList.add('hidden');
 }
@@ -3064,6 +3104,7 @@ function clearMenuForm(){
  $('menuBack').value='0';
  $('menuTax').value='10';
  $('menuVisible').value='true';
+ $('menuQuickAccess').value='false';
  $('menuStockEnabled').value='false';
  $('menuStock').value='0';
  $('menuReorderPoint').value='0';
@@ -3098,6 +3139,7 @@ $('saveMenu').onclick=async()=>{
   back:backValue,
   tax:Number($('menuTax').value),
   visible:$('menuVisible').value==='true',
+  quickAccess:$('menuQuickAccess').value==='true',
   stockEnabled:$('menuStockEnabled').value==='true',
   stock:Math.max(0,Number($('menuStock').value||0)),
   reorderPoint:Math.max(0,Number($('menuReorderPoint').value||0))
@@ -3116,6 +3158,7 @@ $('saveMenu').onclick=async()=>{
    item.back=data.back;
    item.tax=data.tax;
    item.visible=data.visible;
+   item.quickAccess=data.quickAccess;
    item.stockEnabled=data.stockEnabled;
    item.stock=data.stock;
    item.reorderPoint=data.reorderPoint;
@@ -3189,7 +3232,7 @@ function renderInventory(){
 function renderMenu(){
  const list=[...db.menu].sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
  $('menuList').innerHTML=list.length?list.map((m,index)=>`<div class="item" style="${m.visible===false?'opacity:.55':''}">
-  <h3>${esc(m.name)} <span class="tag">${esc(m.type)}</span> ${m.visible===false?'<span class="tag">非表示</span>':''}</h3>
+  <h3>${esc(m.name)} <span class="tag">${esc(m.type)}</span> ${m.quickAccess===true?'<span class="tag">よく出る</span>':''} ${m.visible===false?'<span class="tag">非表示</span>':''}</h3>
   <div class="meta">${yen(m.price)} / バック ${yen(m.back)} / 税 ${m.tax}% ${m.stockEnabled?`/ 在庫 ${Number(m.stock||0)} / 発注 ${Number(m.reorderPoint||0)}以下`:''}</div>
   <div class="item-actions">
    <button class="secondary" onclick="moveMenu('${m.id}',-1)" ${index===0?'disabled':''}>↑</button>
@@ -3211,6 +3254,7 @@ window.editMenu=idn=>{
  $('menuBack').value=Number(m.back??0);
  $('menuTax').value=String(m.tax??10);
  $('menuVisible').value=m.visible===false?'false':'true';
+ $('menuQuickAccess').value=m.quickAccess===true?'true':'false';
  $('menuStockEnabled').value=m.stockEnabled===true?'true':'false';
  $('menuStock').value=Number(m.stock||0);
  $('menuReorderPoint').value=Number(m.reorderPoint||0);
@@ -3459,6 +3503,16 @@ function checkoutStatusLabel(x){
  return '確定';
 }
 
+function checkoutCompanionIds(checkout){
+ const ids=Array.isArray(checkout?.companionCastIds)?checkout.companionCastIds:[];
+ return [...new Set([...ids,checkout?.companionCastId].filter(Boolean).map(String))];
+}
+
+function checkoutCompanionLabel(checkout){
+ const names=Array.isArray(checkout?.companionCastNames)?checkout.companionCastNames.filter(Boolean):[];
+ return names.length?names.join('・'):(checkout?.companionCastName||'なし');
+}
+
 
 function payrollAdjustment(month,staffId){
  let row=db.payrollAdjustments.find(x=>x.month===month&&x.staffId===staffId);
@@ -3471,7 +3525,13 @@ function payrollForStaff(staff,month){
  const hours=records.reduce((sum,r)=>sum+attendanceHours(r),0);
 
  const autoHourlyPay=Math.round(hours*Number(staff.wage||0));
- const companionCount=records.filter(r=>r.companionStatus==='yes').length;
+ const attendanceCompanionCount=records.filter(r=>r.companionStatus==='yes').length;
+ const checkoutCompanionGroups=new Set(
+  (db.checkouts||[])
+   .filter(c=>c.status!=='cancelled'&&String(c.closedAt||'').slice(0,7)===month&&checkoutCompanionIds(c).includes(String(staff.id)))
+   .map(c=>c.splitGroupId||c.id)
+ );
+ const companionCount=Math.max(attendanceCompanionCount,checkoutCompanionGroups.size);
  const transportCount=records.filter(r=>r.transportStatus==='yes').length;
 
  let drinkCount=0,bottleCount=0;
@@ -3928,7 +3988,7 @@ window.openCheckoutDetail=idn=>{
     <div class="checkout-payment-line">支払方法：<b>${esc(x.paymentMethod||'未登録')}</b></div>
     ${splitInfo}
     <div class="checkout-attribution">
-      <div><span>同伴：</span><b>${esc(x.companionCastName||'なし')}</b></div>
+      <div><span>同伴：</span><b>${esc(checkoutCompanionLabel(x))}</b></div>
       <div><span>席についていたキャスト：</span><b>${(x.seatCastNames||[]).length?(x.seatCastNames||[]).map(esc).join('・'):'なし'}</b></div>
     </div>
   </div>
@@ -3978,7 +4038,7 @@ function receiptHtml(x){
    <div class="center">${esc(x.customerName||'')} ${esc(x.seat)}</div>
    <div class="center">支払方法：${esc(x.paymentMethod||'未登録')}</div>
    ${isSplit?`<div class="center">分割会計 ${x.splitPartIndex}/${x.splitPartCount}　${esc(x.splitLabel||'')}</div>`:''}
-   <div class="center">同伴：${esc(x.companionCastName||'なし')}</div>
+   <div class="center">同伴：${esc(checkoutCompanionLabel(x))}</div>
    <div class="center">席担当：${(x.seatCastNames||[]).length?(x.seatCastNames||[]).map(esc).join('・'):'なし'}</div>
    <hr>
    ${isSplit
