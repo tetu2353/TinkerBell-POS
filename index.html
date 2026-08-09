@@ -617,6 +617,20 @@ button.primary,button.secondary,.btn{font-size:16px}
   .seat-total{font-size:24px}
 }
 
+
+.payroll-toolbar{border:2px solid #c79b43;background:#fffaf0}
+.payroll-month-total{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:8px 12px}
+.payroll-month-total small{color:var(--muted);font-weight:800}.payroll-month-total b{font-size:30px;color:#7b4f0e}
+.payroll-card{overflow:hidden}.payroll-summary{display:flex;justify-content:space-between;align-items:center;gap:14px;cursor:pointer;list-style:none}
+.payroll-summary::-webkit-details-marker{display:none}.payroll-summary>div:first-child>b{font-size:21px}
+.payroll-net{text-align:right}.payroll-net small{display:block;color:var(--muted);font-weight:800}.payroll-net b{font-size:28px;color:#18804a}
+.payroll-breakdown{margin-top:16px;border-top:1px solid var(--line)}
+.payroll-breakdown>div{display:flex;justify-content:space-between;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line)}
+.payroll-breakdown span{font-weight:800}.payroll-adjust-row{margin-top:14px}.payroll-save-btn{width:100%;margin-top:10px;min-height:50px}
+.payroll-total-box{margin-top:14px;padding:13px;border-radius:14px;background:#f7f3f8}.payroll-total-box>div{display:flex;justify-content:space-between;padding:6px 0}
+.payroll-final{border-top:2px solid #c79b43;margin-top:6px;padding-top:10px!important;font-size:20px;font-weight:1000}.payroll-final b{color:#18804a;font-size:25px}
+@media(max-width:560px){.payroll-summary{align-items:flex-start}.payroll-net b{font-size:24px}.payroll-breakdown>div{display:block}.payroll-breakdown>div b{display:block;margin-top:3px}}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -652,6 +666,7 @@ button.primary,button.secondary,.btn{font-size:16px}
   <button class="tile manager manager-tile" data-go="menu"><span>📖</span><b>メニュー管理</b><small>料金・バック設定</small></button>
   <button class="tile manager manager-tile" data-go="inventory"><span>📦</span><b>お酒在庫</b><small>入荷・在庫・発注</small></button>
   <button class="tile manager manager-tile" data-go="adminAttendance"><span>🗓️</span><b>全員の勤怠</b><small>月・日別の出退勤</small></button>
+  <button class="tile manager manager-tile" data-go="payroll"><span>💴</span><b>給与計算</b><small>時給・バック・手当・控除</small></button>
   <button class="tile manager manager-tile" data-go="reports"><span>📊</span><b>売上・勤怠集計</b><small>日別集計</small></button>
   <button class="tile manager manager-tile" data-go="settings"><span>⚙️</span><b>設定</b><small>データ保存・初期化</small></button>
  </div>
@@ -751,7 +766,19 @@ button.primary,button.secondary,.btn{font-size:16px}
 
 <section id="notices" class="screen"><h2>お知らせ</h2><div class="card manager"><label>タイトル<input id="noticeTitle"></label><label>本文<textarea id="noticeBody" rows="4"></textarea></label><button id="saveNotice" class="primary">投稿</button></div><div id="noticeList" class="list"></div></section>
 
-<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><input id="staffEditId" type="hidden"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><div class="meta">従業員ごとの暗証番号は使用しません。</div></div><div class="row"><button id="saveStaff" class="primary">従業員登録</button><button id="cancelStaffEdit" class="secondary hidden">編集をやめる</button></div></div><div id="staffList" class="list"></div></section>
+<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><input id="staffEditId" type="hidden"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>同伴手当（1回）<input id="staffCompanionAllowance" type="number" value="0"></label></div><div class="row3"><label>送迎手当（1回）<input id="staffTransportAllowance" type="number" value="0"></label><div class="meta">給与計算では、勤怠・注文実績とここで設定した単価を自動集計します。</div><div class="meta">従業員ごとの暗証番号は使用しません。</div></div><div class="row"><button id="saveStaff" class="primary">従業員登録</button><button id="cancelStaffEdit" class="secondary hidden">編集をやめる</button></div></div><div id="staffList" class="list"></div></section>
+
+<section id="payroll" class="screen manager">
+<h2>給与計算</h2>
+<div class="card payroll-toolbar">
+ <div class="row">
+  <label>対象月<input id="payrollMonth" type="month"></label>
+  <div class="payroll-month-total"><small>全員の支給額合計</small><b id="payrollGrandTotal">¥0</b></div>
+ </div>
+ <div class="meta">勤務時間・キャストドリンク・ボトル・同伴・送迎を自動集計。その他手当と控除は月ごとに入力できます。</div>
+</div>
+<div id="payrollList"></div>
+</section>
 
 <section id="inventory" class="screen manager">
 <h2>お酒在庫</h2>
@@ -1084,7 +1111,7 @@ button.primary,button.secondary,.btn{font-size:16px}
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v54-large-text-line-pos-shift-schedule-sync';
+const APP_VERSION='v55-payroll-calculation';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1125,7 +1152,7 @@ const seed=()=>({
  ],
  seats:[...Array.from({length:6},(_,i)=>({id:'C'+(i+1),name:'カウンター'+(i+1),customerId:'',customerName:'',casts:[],openedAt:'',orders:[]})),
  ...Array.from({length:5},(_,i)=>({id:'B'+(i+1),name:'BOX '+(i+1),customerId:'',customerName:'',casts:[],openedAt:'',orders:[]}))],
- customers:[], bottles:[], attendance:[], shifts:[], shiftMeta:{submitted:{},published:{}}, visits:[], notices:[], checkouts:[], checkoutEvents:[]
+ customers:[], bottles:[], attendance:[], shifts:[], shiftMeta:{submitted:{},published:{}}, visits:[], notices:[], checkouts:[], checkoutEvents:[], payrollAdjustments:[]
 });
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||seed(), current=null;
 const REQUIRED_MENU_ITEMS=[
@@ -1147,6 +1174,7 @@ REQUIRED_MENU_ITEMS.forEach(item=>{
 db.inventoryLog=Array.isArray(db.inventoryLog)?db.inventoryLog:[];
 db.checkouts=Array.isArray(db.checkouts)?db.checkouts:[];
 db.checkoutEvents=Array.isArray(db.checkoutEvents)?db.checkoutEvents:[];
+db.payrollAdjustments=Array.isArray(db.payrollAdjustments)?db.payrollAdjustments:[];
 db.menu=db.menu.map((item,index)=>({
   ...item,
   stockEnabled:item.stockEnabled===true,
@@ -1156,6 +1184,10 @@ db.menu=db.menu.map((item,index)=>({
   visible:item.visible!==false,
   sortOrder:Number.isFinite(Number(item.sortOrder))?Number(item.sortOrder):index
 }));
+db.staff=Array.isArray(db.staff)?db.staff.map(s=>({...s,
+ companionAllowance:Number.isFinite(Number(s.companionAllowance))?Number(s.companionAllowance):0,
+ transportAllowance:Number.isFinite(Number(s.transportAllowance))?Number(s.transportAllowance):0
+})):[];
 localStorage.setItem(KEY,JSON.stringify(db));
 function persist(){localStorage.setItem(KEY,JSON.stringify(db))}
 function toast(t){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),1500)}
@@ -1197,8 +1229,12 @@ window.tinkerbellApplyCloudCheckouts=checkouts=>{
   db.checkouts=checkouts;
   persist();
   renderReports();
+ renderPayroll();
 };
 window.tinkerbellGetLocalCheckouts=()=>Array.isArray(db.checkouts)?db.checkouts:[];
+window.tinkerbellApplyCloudPayrollAdjustments=rows=>{if(!Array.isArray(rows))return;db.payrollAdjustments=rows;persist();renderPayroll()};
+window.tinkerbellGetLocalPayrollAdjustments=()=>Array.isArray(db.payrollAdjustments)?db.payrollAdjustments:[];
+
 window.tinkerbellApplyCloudCheckoutEvents=events=>{
   if(!Array.isArray(events))return;
   db.checkoutEvents=events;
@@ -2042,7 +2078,7 @@ $('seatCheckoutConfirm').onclick=async()=>{
 
  const ordersSnapshot=JSON.parse(JSON.stringify(s.orders.map(o=>{
   const menu=db.menu.find(m=>m.id===o.menuId);
-  return {...o,tax:Number(o.tax??menu?.tax??10),castName:staffById(o.castId)?.name||o.castName||''};
+  return {...o,menuType:o.menuType||menu?.type||'',tax:Number(o.tax??menu?.tax??10),castName:staffById(o.castId)?.name||o.castName||''};
  })));
 
  const button=$('seatCheckoutConfirm');
@@ -2349,6 +2385,7 @@ window.commitTapOrder=(mid,castId)=>{
    qty:1,
    castId,
    back:m.back,
+   menuType:m.type||'',
    tax:Number(m.tax??10),
    memo:''
   };
@@ -2550,6 +2587,8 @@ function clearStaffForm(){
  $('staffWage').value='1500';
  $('staffDrinkBack').value='200';
  $('staffBottleBack').value='1000';
+ $('staffCompanionAllowance').value='0';
+ $('staffTransportAllowance').value='0';
  $('saveStaff').textContent='従業員登録';
  $('cancelStaffEdit').classList.add('hidden');
 }
@@ -2573,6 +2612,8 @@ $('saveStaff').onclick=async()=>{
   wage:Number($('staffWage').value||0),
   drinkBack:Number($('staffDrinkBack').value||0),
   bottleBack:Number($('staffBottleBack').value||0),
+  companionAllowance:Number($('staffCompanionAllowance').value||0),
+  transportAllowance:Number($('staffTransportAllowance').value||0),
  };
 
  try{
@@ -2617,6 +2658,8 @@ window.editStaff=idn=>{
  $('staffWage').value=Number(s.wage||0);
  $('staffDrinkBack').value=Number(s.drinkBack||0);
  $('staffBottleBack').value=Number(s.bottleBack||0);
+ $('staffCompanionAllowance').value=Number(s.companionAllowance||0);
+ $('staffTransportAllowance').value=Number(s.transportAllowance||0);
  $('saveStaff').textContent='変更を保存';
  $('cancelStaffEdit').classList.remove('hidden');
  window.scrollTo({top:0,behavior:'smooth'});
@@ -2653,7 +2696,7 @@ function renderStaff(){
  $('staffList').innerHTML=db.staff.length?db.staff.map(s=>`
   <div class="item">
    <h3>${esc(s.name)} <span class="tag">${esc(staffRoleLabel(s.role))}</span></h3>
-   <div class="meta">時給 ${yen(s.wage)} / ドリンクバック ${yen(s.drinkBack)} / ボトルバック ${yen(s.bottleBack)}</div>
+   <div class="meta">時給 ${yen(s.wage)} / ドリンクバック ${yen(s.drinkBack)} / ボトルバック ${yen(s.bottleBack)} / 同伴 ${yen(s.companionAllowance||0)} / 送迎 ${yen(s.transportAllowance||0)}</div>
    <div class="item-actions">
     <button class="secondary" onclick="editStaff('${s.id}')">編集</button>
     <button class="danger" onclick="delStaff('${s.id}')">削除</button>
@@ -3063,6 +3106,83 @@ function checkoutStatusLabel(x){
  if(x.status==='cancelled')return '取消済み';
  return '確定';
 }
+
+
+function payrollAdjustment(month,staffId){
+ let row=db.payrollAdjustments.find(x=>x.month===month&&x.staffId===staffId);
+ if(!row){row={id:id(),month,staffId,otherAllowance:0,deduction:0,memo:''};db.payrollAdjustments.push(row)}
+ return row;
+}
+function payrollMenuType(order){return order.menuType||db.menu.find(m=>m.id===order.menuId)?.type||''}
+function payrollForStaff(staff,month){
+ const records=(db.attendance||[]).filter(r=>r.staffId===staff.id&&String(r.in||'').slice(0,7)===month);
+ const hours=records.reduce((sum,r)=>sum+attendanceHours(r),0);
+ const hourlyPay=Math.round(hours*Number(staff.wage||0));
+ const companionCount=records.filter(r=>r.companionStatus==='yes').length;
+ const transportCount=records.filter(r=>r.transportStatus==='yes').length;
+ let drinkCount=0,bottleCount=0;
+ (db.checkouts||[]).filter(c=>c.status!=='cancelled'&&String(c.closedAt||'').slice(0,7)===month).forEach(c=>{
+  (c.orders||[]).forEach(o=>{
+   if(String(o.castId||'')!==String(staff.id))return;
+   const qty=Number(o.qty||1),type=payrollMenuType(o);
+   if(type==='キャストドリンク')drinkCount+=qty;
+   if(type==='ボトル')bottleCount+=qty;
+  });
+ });
+ const drinkPay=drinkCount*Number(staff.drinkBack||0);
+ const bottlePay=bottleCount*Number(staff.bottleBack||0);
+ const companionPay=companionCount*Number(staff.companionAllowance||0);
+ const transportPay=transportCount*Number(staff.transportAllowance||0);
+ const adj=payrollAdjustment(month,staff.id);
+ const otherAllowance=Number(adj.otherAllowance||0),deduction=Number(adj.deduction||0);
+ const gross=hourlyPay+drinkPay+bottlePay+companionPay+transportPay+otherAllowance;
+ const net=gross-deduction;
+ return {records,hours,hourlyPay,companionCount,transportCount,drinkCount,bottleCount,drinkPay,bottlePay,companionPay,transportPay,otherAllowance,deduction,gross,net,adj};
+}
+function renderPayroll(){
+ if(!$('payrollMonth'))return;
+ const month=$('payrollMonth').value||today().slice(0,7);
+ if(!$('payrollMonth').value)$('payrollMonth').value=month;
+ const rows=db.staff.map(staff=>({staff,p:payrollForStaff(staff,month)}));
+ $('payrollGrandTotal').textContent=yen(rows.reduce((sum,x)=>sum+x.p.net,0));
+ $('payrollList').innerHTML=rows.length?rows.map(({staff,p})=>`
+ <details class="card payroll-card">
+  <summary class="payroll-summary">
+   <div><b>${esc(staff.name)}</b> <span class="tag">${esc(staffRoleLabel(staff.role))}</span><div class="meta">${p.hours.toFixed(1)}時間 / 出勤 ${p.records.length}回</div></div>
+   <div class="payroll-net"><small>支給額</small><b>${yen(p.net)}</b></div>
+  </summary>
+  <div class="payroll-breakdown">
+   <div><span>基本給　${p.hours.toFixed(1)}時間 × ${yen(staff.wage||0)}</span><b>${yen(p.hourlyPay)}</b></div>
+   <div><span>ドリンクバック　${p.drinkCount}杯 × ${yen(staff.drinkBack||0)}</span><b>${yen(p.drinkPay)}</b></div>
+   <div><span>ボトルバック　${p.bottleCount}本 × ${yen(staff.bottleBack||0)}</span><b>${yen(p.bottlePay)}</b></div>
+   <div><span>同伴手当　${p.companionCount}回 × ${yen(staff.companionAllowance||0)}</span><b>${yen(p.companionPay)}</b></div>
+   <div><span>送迎手当　${p.transportCount}回 × ${yen(staff.transportAllowance||0)}</span><b>${yen(p.transportPay)}</b></div>
+  </div>
+  <div class="row payroll-adjust-row">
+   <label>その他手当<input type="number" min="0" value="${p.otherAllowance}" data-payroll-id="${staff.id}" data-payroll-field="otherAllowance"></label>
+   <label>控除<input type="number" min="0" value="${p.deduction}" data-payroll-id="${staff.id}" data-payroll-field="deduction"></label>
+  </div>
+  <label>メモ<input value="${esc(p.adj.memo||'')}" data-payroll-id="${staff.id}" data-payroll-field="memo" placeholder="例：日払い済み、前借りなど"></label>
+  <button class="primary payroll-save-btn" onclick="savePayrollAdjustment('${staff.id}')">この人の手当・控除を保存</button>
+  <div class="payroll-total-box">
+   <div><span>支給前合計</span><b>${yen(p.gross)}</b></div>
+   <div><span>控除</span><b>− ${yen(p.deduction)}</b></div>
+   <div class="payroll-final"><span>最終支給額</span><b>${yen(p.net)}</b></div>
+  </div>
+ </details>`).join(''):'<div class="card">従業員が登録されていません</div>';
+}
+window.savePayrollAdjustment=async staffId=>{
+ const month=$('payrollMonth').value||today().slice(0,7),row=payrollAdjustment(month,staffId);
+ document.querySelectorAll(`[data-payroll-id="${staffId}"]`).forEach(el=>{
+  const f=el.dataset.payrollField;
+  if(f==='otherAllowance'||f==='deduction')row[f]=Math.max(0,Number(el.value||0));
+  if(f==='memo')row[f]=el.value.trim();
+ });
+ persist();
+ try{if(window.tinkerbellFirebase?.savePayrollAdjustments)await window.tinkerbellFirebase.savePayrollAdjustments(db.payrollAdjustments);toast('給与調整を保存しました')}
+ catch(e){console.error(e);toast('端末には保存しました')}
+ renderPayroll();
+};
 
 function renderReports(){
  const activeCheckouts=db.checkouts.filter(x=>x.status!=='cancelled');
@@ -3501,6 +3621,7 @@ $('syncCheckoutHistory').onclick=()=>{
 };
 
 $('attendanceReportMonth').onchange=renderReports;
+$('payrollMonth').onchange=renderPayroll;
 
 const BACKUP_VERSION='tinkerbell-backup-v1';
 let pendingRestoreData=null;
@@ -3634,6 +3755,7 @@ $('saveInvoiceSettings').onclick=()=>{
 
 $('visitDate').value=today();
 $('myAttendanceMonth').value=today().slice(0,7);
+$('payrollMonth').value=today().slice(0,7);
 $('adminAttendanceMonth').value=today().slice(0,7);
 $('invoiceRegistrationNumber').value=getInvoiceRegistrationNumber();
 refreshSelects();
@@ -3922,6 +4044,15 @@ retryBtn?.addEventListener("click", checkFirebaseConnection);
 checkFirebaseConnection();
 
 
+
+async function savePayrollAdjustmentsToFirebase(payrollAdjustments){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ await setDoc(doc(firestoreDb,"app","data"),{payrollAdjustments,payrollAdjustmentsUpdatedAt:new Date().toISOString()},{merge:true});
+}
+function startPayrollAdjustmentsSync(){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ return onSnapshot(doc(firestoreDb,"app","data"),snap=>{if(!snap.exists())return;const rows=snap.data()?.payrollAdjustments;if(Array.isArray(rows))window.tinkerbellApplyCloudPayrollAdjustments?.(rows)},e=>console.error('Payroll adjustments sync failed:',e));
+}
 async function saveSharedShiftsToFirebase(sharedShifts){
  firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
  await setDoc(doc(firestoreDb,"app","data"),{sharedShifts,sharedShiftsUpdatedAt:new Date().toISOString()},{merge:true});
@@ -3970,6 +4101,7 @@ window.tinkerbellFirebase = {
   saveCheckouts: saveCheckoutsToFirebase,
   saveSharedShifts: saveSharedShiftsToFirebase,
   saveSharedSchedules: saveSharedSchedulesToFirebase,
+  savePayrollAdjustments: savePayrollAdjustmentsToFirebase,
   reloadCheckouts: ()=>startCheckoutRealtimeSync()
 };
 
@@ -3979,6 +4111,7 @@ startMenuRealtimeSync();
 startAdminPasscodeSync();
 startCheckoutRealtimeSync();
 startSharedShiftScheduleSync();
+startPayrollAdjustmentsSync();
 initializeSharedShiftSchedule();
 </script>
 
