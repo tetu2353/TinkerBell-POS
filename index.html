@@ -53,6 +53,8 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .seat-cast-option{display:flex;align-items:center;gap:10px;border:2px solid var(--line);background:#fff;border-radius:14px;padding:14px;font-weight:900;cursor:pointer}
 .seat-cast-option input{width:22px;height:22px;margin:0;accent-color:#a77b2b}
 .seat-cast-option.selected{border-color:#b98c35;background:#fff3d4;box-shadow:0 0 0 2px #ecd79e inset}
+.seat-customer-profile{margin:10px 0 14px;padding:13px;border:2px solid #d8c6a0;border-radius:14px;background:#fffaf0}
+.seat-customer-profile h3{margin:0 0 9px;color:#684816}.seat-customer-profile .profile-row{padding:6px 0;border-bottom:1px solid #eadfc8;line-height:1.5}.seat-customer-profile .profile-row:last-child{border-bottom:0}.seat-customer-profile .profile-label{display:block;font-size:11px;color:#7a6c78;font-weight:800}.seat-customer-profile .history-line{font-size:13px;margin-top:4px}
 .management-heading{margin:22px 0 10px;padding-top:16px;border-top:3px solid #d8bc78;color:#76531c}
 .management-grid{padding:12px;background:#fff8e8;border:2px solid #d8bc78;border-radius:18px}
 .manager-tile{border:2px solid #c79b43!important;background:linear-gradient(145deg,#fffaf0,#fff)!important}
@@ -1131,7 +1133,7 @@ body.manager-mode .payroll-staff-settings{
     </div>
   </div>
 </div>
-<div id="seatModal" class="modal hidden"><div class="modal-card"><h2 id="seatModalTitle">入店登録</h2><label>お客様名<input id="seatCustomerName" list="customerNames" placeholder="名前を入力"></label><datalist id="customerNames"></datalist><p><b>ついている女の子</b></p><div id="seatCastChoices" class="seat-cast-grid"></div><div class="row" style="margin-top:14px"><button id="seatModalCancel" class="secondary">閉じる</button><button id="seatModalSave" class="primary">保存</button></div></div></div>
+<div id="seatModal" class="modal hidden"><div class="modal-card"><h2 id="seatModalTitle">入店登録</h2><label>お客様を検索<input id="seatCustomerName" list="customerNames" placeholder="登録名を入力・選択"></label><datalist id="customerNames"></datalist><div id="seatCustomerProfile" class="seat-customer-profile hidden"></div><p><b>ついている女の子</b></p><div id="seatCastChoices" class="seat-cast-grid"></div><div class="row" style="margin-top:14px"><button id="seatModalCancel" class="secondary">閉じる</button><button id="seatModalSave" class="primary">保存</button></div></div></div>
 <div id="undoBar" class="undo hidden"><span id="undoText">注文を追加しました</span><button id="undoBtn" class="secondary">取り消す</button></div>
 <div id="shiftDayModal" class="modal hidden">
  <div class="modal-card">
@@ -1248,7 +1250,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v64-payroll-attendance-shift-visible-fix';
+const APP_VERSION='v64-registered-customer-seat-profile';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2016,6 +2018,53 @@ function renderSeatCastChoices(){
  });
 }
 
+function findRegisteredSeatCustomer(name){
+ const normalized=normalizeCustomerNameForMatch(name);
+ return db.customers.find(c=>normalizeCustomerNameForMatch(c.name)===normalized)||null;
+}
+
+function customerVisitHistory(customer){
+ if(!customer)return [];
+ const matched=db.checkouts.filter(x=>
+  x.status!=='cancelled' &&
+  ((customer.id&&x.customerId===customer.id)||
+   normalizeCustomerNameForMatch(x.groupCustomerName||x.customerName)===normalizeCustomerNameForMatch(customer.name))
+ ).sort((a,b)=>String(b.closedAt||'').localeCompare(String(a.closedAt||'')));
+ const unique=new Map();
+ matched.forEach(x=>{const key=x.splitGroupId||x.id;if(!unique.has(key))unique.set(key,x)});
+ return [...unique.values()];
+}
+
+function formatCustomerVisitDate(value){
+ if(!value)return '記録なし';
+ const d=new Date(value);
+ return Number.isNaN(d.getTime())?'記録なし':d.toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric'});
+}
+
+function renderSeatCustomerProfile(applyAssignedCast=false){
+ const customer=findRegisteredSeatCustomer($('seatCustomerName').value);
+ const box=$('seatCustomerProfile');
+ if(!customer){box.classList.add('hidden');box.innerHTML='';return}
+
+ const history=customerVisitHistory(customer);
+ const bottles=db.bottles.filter(b=>b.customerId===customer.id);
+ const assigned=staffById(customer.castId);
+ box.innerHTML=`
+  <h3>登録済みのお客様です</h3>
+  <div class="profile-row"><span class="profile-label">お客様名</span><b>${esc(customer.name)}</b></div>
+  <div class="profile-row"><span class="profile-label">担当キャスト</span><b>${esc(assigned?.name||'未設定')}</b></div>
+  <div class="profile-row"><span class="profile-label">前回来店日</span><b>${esc(formatCustomerVisitDate(history[0]?.closedAt))}</b></div>
+  <div class="profile-row"><span class="profile-label">キープボトル</span><b>${bottles.length?bottles.map(b=>esc(b.name)).join('、'):'なし'}</b></div>
+  <div class="profile-row"><span class="profile-label">メモ・好み・注意事項</span>${esc(customer.memo||'登録なし')}</div>
+  <div class="profile-row"><span class="profile-label">最近の来店履歴</span>${history.length?history.slice(0,3).map(x=>`<div class="history-line">${esc(formatCustomerVisitDate(x.closedAt))}　${esc(x.seat||'')}</div>`).join(''):'記録なし'}</div>`;
+ box.classList.remove('hidden');
+
+ if(applyAssignedCast&&assigned&&assigned.role==='cast'&&!seatCastSelected.length){
+  seatCastSelected=[assigned.id];
+  renderSeatCastChoices();
+ }
+}
+
 function openSeatModal(sid){
  const s=db.seats.find(x=>x.id===sid);
  seatEditId=sid;
@@ -2024,6 +2073,7 @@ function openSeatModal(sid){
  $('seatModalTitle').textContent=s.customerName?`${s.name}を変更`:`${s.name}へ入店`;
  $('seatCustomerName').value=s.customerName||'';
  renderSeatCastChoices();
+ renderSeatCustomerProfile(false);
  $('seatModal').classList.remove('hidden');
 }
 
@@ -2032,13 +2082,15 @@ window.editSeat=openSeatModal;
 
 
 $('seatModalCancel').onclick=()=>$('seatModal').classList.add('hidden');
+$('seatCustomerName').oninput=()=>renderSeatCustomerProfile(true);
+$('seatCustomerName').onchange=()=>renderSeatCustomerProfile(true);
 
 $('seatModalSave').onclick=()=>{
  const name=$('seatCustomerName').value.trim();
  if(!name)return toast('お客様名を入力');
 
  const s=db.seats.find(x=>x.id===seatEditId);
- const c=db.customers.find(x=>x.name===name);
+ const c=findRegisteredSeatCustomer(name);
  if(!s)return toast('席が見つかりません');
 
  // 選択されたキャストは、他の席から外してこの席へ移動する。
