@@ -374,6 +374,54 @@ window.tinkerbellApplyCloudStaff=staff=>{
 
 window.tinkerbellGetLineStaff=()=>Array.isArray(db.staff)?db.staff:[];
 
+function lineShiftStatusToCloud(mark){return mark==='o'?'○':mark==='tri'?'△':mark==='x'?'×':''}
+function cloudShiftStatusToLine(status){return status==='○'?'o':status==='△'?'tri':status==='×'?'x':''}
+function lineCloudShifts(){
+ return (db.shifts||[]).map(x=>{
+  const st=db.staff.find(s=>s.name===x.staff);
+  return {id:x.id||uid(),staffId:st?.id||'',staffName:x.staff||st?.name||'',date:x.date,status:lineShiftStatusToCloud(x.mark)};
+ }).filter(x=>x.date&&x.staffName&&x.status);
+}
+function lineCloudSchedules(){
+ return (db.schedules||[]).map(x=>{
+  const main=db.staff.find(s=>s.name===x.cast);
+  const extras=(x.extraCasts||[]).map(n=>db.staff.find(s=>s.name===n)).filter(Boolean);
+  return {
+   id:x.id||uid(),date:x.date,type:x.type==='companion'?'companion':'reservation',time:x.time||'',
+   customerId:x.customerId||'',customer:x.customer||'',castId:main?.id||'',castName:x.cast||main?.name||'担当なし',
+   extraCastIds:extras.map(s=>s.id),extraCastNames:(x.extraCasts||[]),people:x.people??1,memo:x.memo||''
+  };
+ });
+}
+window.tinkerbellGetLineCloudShifts=lineCloudShifts;
+window.tinkerbellGetLineCloudSchedules=lineCloudSchedules;
+window.tinkerbellApplyCloudShifts=rows=>{
+ if(!Array.isArray(rows))return;
+ db.shifts=rows.map(x=>{
+  const st=db.staff.find(s=>s.id===x.staffId)||db.staff.find(s=>s.name===x.staffName);
+  return {id:x.id||uid(),staff:st?.name||x.staffName||'',date:x.date,mark:cloudShiftStatusToLine(x.status)};
+ }).filter(x=>x.staff&&x.date&&x.mark);
+ save();renderShiftRegister();renderShiftCheck();renderHome();
+};
+window.tinkerbellApplyCloudSchedules=rows=>{
+ if(!Array.isArray(rows))return;
+ db.schedules=rows.map(x=>{
+  const main=db.staff.find(s=>s.id===x.castId)||db.staff.find(s=>s.name===x.castName);
+  const extraNames=Array.isArray(x.extraCastNames)&&x.extraCastNames.length
+    ?x.extraCastNames
+    :(x.extraCastIds||[]).map(id=>db.staff.find(s=>s.id===id)?.name).filter(Boolean);
+  return {id:x.id||uid(),date:x.date,type:x.type==='companion'?'companion':'reservation',time:x.time||'',customerId:x.customerId||'',customer:x.customer||'',cast:main?.name||x.castName||'担当なし',extraCasts:extraNames,people:x.people??1,memo:x.memo||''};
+ });
+ save();renderSchedules();renderHome();
+};
+async function saveSharedShifts(){
+ try{await window.tinkerbellLineFirebase?.saveSharedShifts?.(lineCloudShifts())}catch(e){console.error('shift sync save failed',e);toast('シフト同期に失敗しました')}
+}
+async function saveSharedSchedules(){
+ try{await window.tinkerbellLineFirebase?.saveSharedSchedules?.(lineCloudSchedules())}catch(e){console.error('schedule sync save failed',e);toast('予定同期に失敗しました')}
+}
+
+
 async function saveStaffToFirebase(){
   try{
     if(!window.tinkerbellLineFirebase?.saveStaff)throw new Error('Firebase準備中');
@@ -562,7 +610,7 @@ function saveShift(){
     if(old)old.mark=btn.dataset.cycleMark;
     else db.shifts.push({id:uid(),staff:st,date,mark:btn.dataset.cycleMark});
   });
-  save();renderShiftCheck();renderHome();toast('シフトを登録しました');
+  save();renderShiftCheck();renderHome();saveSharedShifts();toast('シフトを登録しました');
 }
 
 function peopleText(value){
@@ -760,6 +808,7 @@ function openScheduleForm(existing=null){
 
     if(existing)Object.assign(existing,obj);else db.schedules.push(obj);
     save();
+    saveSharedSchedules();
     $('formDialog').close();
     renderSchedules();
     renderHome();
@@ -1154,6 +1203,8 @@ function openStaffForm(existing=null){
     renderShiftRegister();
     renderShiftCheck();
     saveStaffToFirebase();
+    saveSharedShifts();
+    saveSharedSchedules();
     $('formDialog').close();
     toast(existing?'従業員情報を更新しました':'従業員を追加しました');
   };
@@ -1231,7 +1282,7 @@ document.addEventListener('click',e=>{
   }
   if(t.dataset.schedule)return showSchedule(t.dataset.schedule);
   if(t.dataset.editSchedule){const x=db.schedules.find(v=>v.id===t.dataset.editSchedule);$('detailDialog').close();return openScheduleForm(x)}
-  if(t.dataset.deleteSchedule){if(confirm('削除しますか？')){db.schedules=db.schedules.filter(v=>v.id!==t.dataset.deleteSchedule);save();$('detailDialog').close();renderSchedules();renderHome()}return}
+  if(t.dataset.deleteSchedule){if(confirm('削除しますか？')){db.schedules=db.schedules.filter(v=>v.id!==t.dataset.deleteSchedule);save();saveSharedSchedules();$('detailDialog').close();renderSchedules();renderHome()}return}
   if(t.dataset.customer)return showCustomer(t.dataset.customer);
   if(t.dataset.editCustomer){const c=db.customers.find(v=>v.id===t.dataset.editCustomer);$('detailDialog').close();return openCustomerForm(c)}
   if(t.dataset.deleteCustomer){if(confirm('お客様と紐付くボトルも削除しますか？')){const id=t.dataset.deleteCustomer;db.customers=db.customers.filter(c=>c.id!==id);db.bottles=db.bottles.filter(b=>b.customerId!==id);save();$('detailDialog').close();renderCustomers();renderBottles();renderHome()}return}
@@ -1301,7 +1352,7 @@ document.addEventListener('input',e=>{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCUGu1dEan0D0-kfXXiiag7eKKwdmkg_TQ",
@@ -1343,12 +1394,41 @@ onSnapshot(dataRef,snap=>{
 
 window.tinkerbellLineFirebase={
   async saveStaff(staff){
-    await setDoc(dataRef,{
-      staff,
-      staffUpdatedAt:new Date().toISOString()
-    },{merge:true});
+    await setDoc(dataRef,{staff,staffUpdatedAt:new Date().toISOString()},{merge:true});
+  },
+  async saveSharedShifts(sharedShifts){
+    await setDoc(dataRef,{sharedShifts,sharedShiftsUpdatedAt:new Date().toISOString()},{merge:true});
+  },
+  async saveSharedSchedules(sharedSchedules){
+    await setDoc(dataRef,{sharedSchedules,sharedSchedulesUpdatedAt:new Date().toISOString()},{merge:true});
   }
 };
+
+onSnapshot(dataRef,snap=>{
+  if(!snap.exists())return;
+  const d=snap.data()||{};
+  if(Array.isArray(d.sharedShifts))window.tinkerbellApplyCloudShifts?.(d.sharedShifts);
+  if(Array.isArray(d.sharedSchedules))window.tinkerbellApplyCloudSchedules?.(d.sharedSchedules);
+},error=>console.error('LINE shared shift/schedule sync failed:',error));
+
+async function initializeSharedData(){
+ try{
+  const localShifts=window.tinkerbellGetLineCloudShifts?.()||[];
+  const localSchedules=window.tinkerbellGetLineCloudSchedules?.()||[];
+  await runTransaction(firestore,async tx=>{
+   const snap=await tx.get(dataRef);
+   const d=snap.exists()?snap.data():{};
+   const cloudShifts=Array.isArray(d.sharedShifts)?d.sharedShifts:[];
+   const shiftMap=new Map(cloudShifts.map(x=>[`${x.staffId||x.staffName}|${x.date}`,x]));
+   localShifts.forEach(x=>{const k=`${x.staffId||x.staffName}|${x.date}`;if(!shiftMap.has(k))shiftMap.set(k,x)});
+   const cloudSchedules=Array.isArray(d.sharedSchedules)?d.sharedSchedules:[];
+   const scheduleMap=new Map(cloudSchedules.map(x=>[x.id,x]));
+   localSchedules.forEach(x=>{if(!scheduleMap.has(x.id))scheduleMap.set(x.id,x)});
+   tx.set(dataRef,{sharedShifts:[...shiftMap.values()],sharedSchedules:[...scheduleMap.values()],sharedSyncInitializedAt:new Date().toISOString()},{merge:true});
+  });
+ }catch(e){console.error('LINE shared data initialize failed:',e)}
+}
+initializeSharedData();
 </script>
 
 </body>
