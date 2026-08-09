@@ -555,6 +555,8 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
  .split-output-actions button{flex:1}
 }
 
+#invoicePreviewModal{z-index:10050}
+#checkoutDetailModal{z-index:10020}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -1022,7 +1024,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v51-split-multi-output';
+const APP_VERSION='v52-split-invoice-button-fix';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -3061,17 +3063,21 @@ window.printSplitReceipt=idn=>{
 };
 
 window.printSplitInvoice=idn=>{
- selectedCheckoutId=idn;
  const x=db.checkouts.find(c=>c.id===idn);
- if(!x)return;
- $('invoicePreviewName').value=x.customerName||'';
- $('invoicePreviewProviso').value='飲食代として';
- $('invoicePreviewSuffix').value='御中';
- $('invoicePaymentMethod').value=x.paymentMethod||'現金';
- $('invoicePreviewRegistration').value=getInvoiceRegistrationNumber();
- $('invoiceIssuerName').value=localStorage.getItem(INVOICE_ISSUER_KEY)||'ティンカーベル';
- buildInvoicePreview();
- $('invoicePreviewModal').classList.remove('hidden');
+ if(!x)return toast('会計データが見つかりません');
+
+ selectedCheckoutId=idn;
+
+ const normalInvoiceButton=$('printInvoiceBtn');
+ if(!normalInvoiceButton)return toast('領収書機能を開けません');
+
+ normalInvoiceButton.click();
+
+ const modal=$('invoicePreviewModal');
+ if(modal){
+  modal.classList.remove('hidden');
+  modal.style.zIndex='10050';
+ }
 };
 
 function renderSplitCheckoutActions(checkout){
@@ -3096,9 +3102,9 @@ function renderSplitCheckoutActions(checkout){
        <div class="meta">${esc(m.paymentMethod||'未登録')} / ${yen(m.total)}</div>
       </div>
       <div class="split-output-actions">
-       <button class="secondary" onclick="openSplitCheckoutPart('${m.id}')">詳細</button>
-       <button class="primary" onclick="printSplitReceipt('${m.id}')">明細</button>
-       <button class="primary" onclick="printSplitInvoice('${m.id}')">領収書</button>
+       <button type="button" class="secondary" onclick="openSplitCheckoutPart('${m.id}')">詳細</button>
+       <button type="button" class="primary" onclick="printSplitReceipt('${m.id}')">明細</button>
+       <button type="button" class="primary" onclick="printSplitInvoice('${m.id}')">領収書</button>
       </div>
      </div>`).join('')}
    </div>
