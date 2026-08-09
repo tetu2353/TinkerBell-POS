@@ -653,6 +653,67 @@ button.primary,button.secondary,.btn{font-size:16px}
 .payroll-tax-note{margin-top:6px;line-height:1.5}
 .payroll-correction-box h4{margin:14px 0 8px;color:#6e4a14}
 
+
+body.manager-mode{
+ background:
+  radial-gradient(circle at top right, rgba(215,180,80,.20), transparent 28%),
+  linear-gradient(180deg, #fff6dc 0%, #fffaf0 100%);
+}
+body.manager-mode header{
+ background:linear-gradient(135deg,#6f0f1f 0%, #a3213d 45%, #d4af37 100%);
+ box-shadow:0 14px 40px rgba(111,15,31,.28);
+}
+body.manager-mode .brand small,
+body.manager-mode .brand b,
+body.manager-mode #welcome{
+ color:#fff8ef;
+}
+body.manager-mode .pill{
+ border-color:rgba(255,255,255,.35);
+}
+body.manager-mode .userBadge,
+body.manager-mode #userBadge.manager-unlocked{
+ background:#fff4cc;
+ color:#6f0f1f;
+ border-color:#f0d27a;
+ font-weight:1000;
+}
+body.manager-mode #logoutBtn{
+ background:#fff;
+ color:#7a1730;
+ border-color:#f3d38b;
+ font-weight:1000;
+}
+body.manager-mode .screen.active .card,
+body.manager-mode .card{
+ border-color:#ead39a;
+ box-shadow:0 10px 24px rgba(122,78,20,.08);
+}
+body.manager-mode .tile{
+ border-color:#e4c980;
+ background:linear-gradient(180deg,#fffdf7 0%, #fff6e0 100%);
+}
+body.manager-mode .tile b{
+ color:#7a1730;
+}
+body.manager-mode .tile small{
+ color:#7a5a2f;
+}
+body.manager-mode .manager-tile{
+ border:2px solid #d4af37;
+ background:linear-gradient(180deg,#fff7da 0%, #ffefbf 100%);
+}
+body.manager-mode h2,
+body.manager-mode h3{
+ color:#7a1730;
+}
+body.manager-mode .payroll-toolbar,
+body.manager-mode .payroll-deduction-card,
+body.manager-mode .payroll-correction-box,
+body.manager-mode .payroll-staff-settings{
+ border-color:#d4af37;
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -1162,7 +1223,7 @@ button.primary,button.secondary,.btn{font-size:16px}
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v59-inventory-normal-operation';
+const APP_VERSION='v60-manager-color-mode';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1321,6 +1382,7 @@ function applyRole(){
   x.classList.toggle('hidden',!managerUnlocked);
   x.classList.toggle('locked',false);
  });
+ document.body.classList.toggle('manager-mode',managerUnlocked);
  $('userBadge').textContent=managerUnlocked?'管理モード':'管理者ログイン';
  $('userBadge').classList.toggle('manager-unlocked',managerUnlocked);
  $('logoutBtn').classList.toggle('hidden',!managerUnlocked);
