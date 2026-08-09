@@ -1273,7 +1273,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v71-seat-checkout-button-fix';
+const APP_VERSION='v72-direct-seat-button-handlers';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2019,25 +2019,32 @@ function renderSeats(){
     </div>
    `}
   </div>`;
- }).join('');
+  }).join('');
+ bindSeatActionButtons();
 }
 
-$('seatGrid').addEventListener('click',event=>{
- const button=event.target.closest('button[data-seat-action]');
- if(button){
-  const sid=button.dataset.seatTarget;
-  const action=button.dataset.seatAction;
-  if(action==='detail')return window.openSeatDetail(sid);
-  if(action==='order')return window.openSeatOrder(sid);
-  if(action==='checkout')return window.checkoutSeat(sid);
-  if(action==='open')return window.openSeat(sid);
- }
- const seat=event.target.closest('[data-seat-id]');
- if(!seat)return;
- const row=db.seats.find(s=>String(s.id)===String(seat.dataset.seatId));
- if(!row)return;
- row.customerName?window.openSeatOrder(row.id):window.openSeat(row.id);
-});
+function bindSeatActionButtons(){
+ qsa('#seatGrid button[data-seat-action]').forEach(button=>{
+  button.onclick=event=>{
+   event.preventDefault();
+   event.stopPropagation();
+   const sid=button.dataset.seatTarget;
+   const action=button.dataset.seatAction;
+   if(action==='detail')window.openSeatDetail(sid);
+   else if(action==='order')window.openSeatOrder(sid);
+   else if(action==='checkout')window.checkoutSeat(sid);
+   else if(action==='open')window.openSeat(sid);
+  };
+ });
+ qsa('#seatGrid [data-seat-id]').forEach(seat=>{
+  seat.onclick=event=>{
+   if(event.target.closest('button[data-seat-action]'))return;
+   const row=db.seats.find(s=>String(s.id)===String(seat.dataset.seatId));
+   if(!row)return;
+   row.customerName?window.openSeatOrder(row.id):window.openSeat(row.id);
+  };
+ });
+}
 
 window.openSeatOrder=sid=>{
  selectedOrderSeat=sid;
