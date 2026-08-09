@@ -143,6 +143,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 .shiftDetailSummary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .shiftDetailMetric{background:#f8f5f8;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}.shiftDetailMetric small{display:block;color:var(--muted)}.shiftDetailMetric b{font-size:22px}
 .shiftDetailGroup{margin-top:14px}.shiftDetailGroup h3{margin:0 0 8px}.shiftDetailName{padding:10px 12px;background:#f8f5f8;border:1px solid var(--line);border-radius:11px;margin-bottom:7px;font-weight:800}
+.kanaTabs{display:flex;gap:7px;overflow-x:auto;padding:4px 0 10px;-webkit-overflow-scrolling:touch}.kanaTabs button{flex:0 0 auto;min-width:42px}.kanaTabs button.active{background:#76541d;color:#fff}
 @media(max-width:560px){.shiftOverviewRow{grid-template-columns:minmax(90px,1fr) auto auto auto;gap:8px;padding:14px 10px}.shiftOverviewCount{font-size:16px}.shiftDetailSummary{grid-template-columns:repeat(2,1fr)}}
 
 </style>
@@ -217,6 +218,7 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 <section id="customers" class="hidden">
   <button class="btn ghost" data-nav="home">← ホーム</button>
   <div class="sectionHead"><h2>お客様情報</h2><button class="btn gold" data-action="new-customer">＋登録</button></div>
+  <div class="card"><label><span>名前・ふりがなで検索</span><input id="customerSearch" placeholder="例：たなか、田中"></label><div id="customerKanaTabs" class="kanaTabs"></div></div>
   <div id="customerList" class="list"></div>
 </section>
 
@@ -282,11 +284,11 @@ dialog::backdrop{background:rgba(35,28,17,.55)}
 
 <script>
 'use strict';
-const APP_VERSION='line-v36-shift-detail-swipe-navigation';
+const APP_VERSION='line-v36-unified-customer-bottle-kana';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
-const state={scheduleMode:'today',editing:null,bottleCategory:'all',bottleStatus:'all'};
+const state={scheduleMode:'today',editing:null,bottleCategory:'all',bottleStatus:'all',customerKana:'all'};
 const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random().toString(16).slice(2);
 const today=()=>new Date().toLocaleDateString('sv-SE');
 function load(){
@@ -330,6 +332,10 @@ function rangeDates(start,end){
   return out;
 }
 function birthdayText(c){return c.birthMonth&&c.birthDay?`${c.birthMonth}月${c.birthDay}日`:'未登録'}
+const CUSTOMER_KANA_GROUPS=[['all','すべて'],['あ','あ'],['か','か'],['さ','さ'],['た','た'],['な','な'],['は','は'],['ま','ま'],['や','や'],['ら','ら'],['わ','わ'],['other','その他']];
+function normalizeKanaText(value){return String(value||'').trim().toLowerCase().replace(/[ァ-ヶ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60))}
+function customerReading(c){const kana=normalizeKanaText(c?.kana);if(kana)return kana;const name=normalizeKanaText(c?.name);return /^[ぁ-ん]/.test(name)?name:''}
+function customerKanaGroup(c){const f=customerReading(c).charAt(0);if(!f)return'other';if('あいうえお'.includes(f))return'あ';if('かきくけこがぎぐげご'.includes(f))return'か';if('さしすせそざじずぜぞ'.includes(f))return'さ';if('たちつてとだぢづでど'.includes(f))return'た';if('なにぬねの'.includes(f))return'な';if('はひふへほばびぶべぼぱぴぷぺぽ'.includes(f))return'は';if('まみむめも'.includes(f))return'ま';if('やゆよ'.includes(f))return'や';if('らりるれろ'.includes(f))return'ら';if('わをん'.includes(f))return'わ';return'other'}
 
 function populateStaff(){
   $('shiftStaff').innerHTML=names().map(n=>`<option>${n}</option>`).join('');
@@ -579,39 +585,36 @@ function showSchedule(id){
 }
 
 function openCustomerForm(existing=null){
-  const linked=existing?db.bottles.filter(b=>b.customerId===existing.id):[];
   $('formTitle').textContent=existing?'お客様編集':'お客様登録';
-  $('formBody').innerHTML=`<label><span>お客様名</span><input id="cName" value="${existing?.name||''}"></label><div class="form2"><label><span>誕生月</span><select id="cMonth"><option value="">未登録</option>${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthMonth)===i+1?'selected':''}>${i+1}月</option>`).join('')}</select></label><label><span>誕生日</span><select id="cDay"><option value="">未登録</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthDay)===i+1?'selected':''}>${i+1}日</option>`).join('')}</select></label></div><label><span>担当</span><select id="cCast"><option>担当不明</option>${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>備考</span><textarea id="cMemo">${existing?.memo||''}</textarea></label><div class="card"><div class="rowTitle">🍾 キープボトル登録</div><div id="customerBottleRows" class="list" style="margin-top:9px"></div><button type="button" class="btn ghost full" id="addCustomerBottle">＋ボトル追加</button></div><button class="btn gold full" id="saveCustomer">保存</button>`;
+  $('formBody').innerHTML=`
+   <label><span>お客様名</span><input id="cName" value="${existing?.name||''}"></label>
+   <label><span>ふりがな</span><input id="cKana" value="${existing?.kana||''}" placeholder="ひらがなで入力"></label>
+   <div class="form2"><label><span>誕生月</span><select id="cMonth"><option value="">未登録</option>${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthMonth)===i+1?'selected':''}>${i+1}月</option>`).join('')}</select></label><label><span>誕生日</span><select id="cDay"><option value="">未登録</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthDay)===i+1?'selected':''}>${i+1}日</option>`).join('')}</select></label></div>
+   <label><span>担当</span><select id="cCast"><option>担当不明</option>${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label>
+   <label><span>電話番号</span><input id="cPhone" inputmode="tel" value="${existing?.phone||''}"></label>
+   <label><span>メモ</span><textarea id="cMemo">${existing?.memo||''}</textarea></label>
+   <button class="btn gold full" id="saveCustomer">保存</button>`;
   $('formDialog').showModal();
-  const rows=linked.map(b=>({...b}));
-  if(!rows.length)rows.push({id:'',number:'',name:'',cast:existing?.cast||'担当不明',qty:1});
-  const renderRows=()=>{
-    $('customerBottleRows').innerHTML=rows.map((b,i)=>`<div class="row"><div class="form2"><label><span>ボトルNo.</span><input data-bn="${i}" value="${b.number||''}"></label><label><span>ボトル名</span><input data-bname="${i}" value="${b.name||''}"></label><label><span>担当</span><select data-bcast="${i}"><option>担当不明</option>${names().map(n=>`<option ${n===b.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>本数</span><input data-bqty="${i}" type="number" min="1" value="${b.qty||1}"></label></div><button type="button" class="btn red" data-remove-row="${i}">削除</button></div>`).join('');
-  };
-  renderRows();
-  $('addCustomerBottle').onclick=()=>{rows.push({id:'',number:'',name:'',cast:$('cCast').value,qty:1});renderRows()};
-  $('customerBottleRows').onclick=e=>{const b=e.target.closest('[data-remove-row]');if(!b)return;rows.splice(+b.dataset.removeRow,1);if(!rows.length)rows.push({id:'',number:'',name:'',cast:$('cCast').value,qty:1});renderRows()};
   $('saveCustomer').onclick=()=>{
     const name=$('cName').value.trim();if(!name)return toast('お客様名を入力');
     const month=$('cMonth').value,day=$('cDay').value;if((month&&!day)||(!month&&day))return toast('誕生日は月日両方');
-    rows.forEach((r,i)=>{r.number=document.querySelector(`[data-bn="${i}"]`).value.trim();r.name=document.querySelector(`[data-bname="${i}"]`).value.trim();r.cast=document.querySelector(`[data-bcast="${i}"]`).value;r.qty=+document.querySelector(`[data-bqty="${i}"]`).value||1});
-    const entered=rows.filter(r=>r.number||r.name);if(entered.some(r=>!r.number||!r.name))return toast('No.とボトル名を両方入力');
-    if(entered.some(r=>db.bottles.some(b=>String(b.number)===String(r.number)&&b.id!==r.id)))return toast('登録済みNo.があります');
     const id=existing?.id||uid();
-    if(existing)Object.assign(existing,{name,birthMonth:+month||'',birthDay:+day||'',cast:$('cCast').value,memo:$('cMemo').value.trim()});
-    else db.customers.push({id,name,birthMonth:+month||'',birthDay:+day||'',cast:$('cCast').value,memo:$('cMemo').value.trim()});
-    db.bottles=db.bottles.filter(b=>b.customerId!==id||entered.some(r=>r.id===b.id));
-    entered.forEach(r=>{if(r.id){const b=db.bottles.find(x=>x.id===r.id);Object.assign(b,{number:r.number,name:r.name,cast:r.cast,qty:r.qty,customerId:id,customer:name})}else db.bottles.push({id:uid(),number:r.number,name:r.name,cast:r.cast,qty:r.qty,customerId:id,customer:name,status:'stored',emptyDate:''})});
+    const obj={name,kana:normalizeKanaText($('cKana').value),birthMonth:+month||'',birthDay:+day||'',cast:$('cCast').value,phone:$('cPhone').value.trim(),memo:$('cMemo').value.trim()};
+    if(existing)Object.assign(existing,obj);else db.customers.push({id,...obj});
+    db.bottles.filter(b=>b.customerId===id).forEach(b=>b.customer=name);
     save();$('formDialog').close();renderCustomers();renderBottles();renderHome();toast('お客様を保存しました');
   };
 }
 function renderCustomers(){
-  $('customerList').innerHTML=db.customers.length?db.customers.map(c=>`<button class="row full" data-customer="${c.id}"><div class="rowTitle">${c.name}</div><div class="meta">誕生日:${birthdayText(c)}／担当:${c.cast||'担当不明'}</div><div class="meta">ボトル:${db.bottles.filter(b=>b.customerId===c.id).length}本</div></button>`).join(''):'<div class="card">登録なし</div>';
+  const q=normalizeKanaText($('customerSearch').value);
+  $('customerKanaTabs').innerHTML=CUSTOMER_KANA_GROUPS.map(([key,label])=>`<button class="btn ghost ${state.customerKana===key?'active':''}" data-customer-kana="${key}">${label}</button>`).join('');
+  const list=db.customers.filter(c=>(state.customerKana==='all'||customerKanaGroup(c)===state.customerKana)&&(!q||normalizeKanaText(`${c.name} ${c.kana||''}`).includes(q))).sort((a,b)=>(customerReading(a)||a.name).localeCompare(customerReading(b)||b.name,'ja'));
+  $('customerList').innerHTML=list.length?list.map(c=>`<button class="row full" data-customer="${c.id}"><div class="rowTitle">${c.name}</div><div class="meta">${c.kana||'ふりがな未登録'}／誕生日:${birthdayText(c)}／担当:${c.cast||'担当不明'}</div><div class="meta">ボトル:${db.bottles.filter(b=>b.customerId===c.id).length}本</div></button>`).join(''):'<div class="card">該当するお客様はいません</div>';
 }
 function showCustomer(id){
   const c=db.customers.find(x=>x.id===id);if(!c)return;const bs=db.bottles.filter(b=>b.customerId===id);
   $('detailTitle').textContent='お客様詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${c.name}</div><div class="meta">誕生日:${birthdayText(c)}</div><div class="meta">担当:${c.cast||'担当不明'}</div><div class="meta">備考:${c.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-customer="${c.id}">編集</button><button class="btn red" data-delete-customer="${c.id}">削除</button></div></div><div class="card"><div class="sectionHead"><div class="rowTitle">🍾 キープボトル</div><button class="btn gold" data-add-bottle-for="${c.id}">＋追加</button></div>${bs.length?bs.map(b=>`<button class="row full" data-bottle="${b.id}">No.${b.number} ${b.name}</button>`).join(''):'<div class="meta">なし</div>'}</div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${c.name}</div><div class="meta">ふりがな:${c.kana||'未登録'}</div><div class="meta">誕生日:${birthdayText(c)}</div><div class="meta">担当:${c.cast||'担当不明'}</div><div class="meta">電話:${c.phone||'未登録'}</div><div class="meta">メモ:${c.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-customer="${c.id}">編集</button><button class="btn red" data-delete-customer="${c.id}">削除</button></div></div><div class="card"><div class="sectionHead"><div class="rowTitle">🍾 キープボトル</div><button class="btn gold" data-add-bottle-for="${c.id}">＋追加</button></div>${bs.length?bs.map(b=>`<button class="row full" data-bottle="${b.id}">No.${b.number} ${b.name}</button>`).join(''):'<div class="meta">なし</div>'}</div>`;
   $('detailDialog').showModal();
 }
 
@@ -855,6 +858,7 @@ document.addEventListener('click',e=>{
   if(t.dataset.deleteSchedule){if(confirm('削除しますか？')){db.schedules=db.schedules.filter(v=>v.id!==t.dataset.deleteSchedule);save();$('detailDialog').close();renderSchedules();renderHome()}return}
   if(t.dataset.customer)return showCustomer(t.dataset.customer);
   if(t.dataset.editCustomer){const c=db.customers.find(v=>v.id===t.dataset.editCustomer);$('detailDialog').close();return openCustomerForm(c)}
+  if(t.dataset.customerKana){state.customerKana=t.dataset.customerKana;renderCustomers();return}
   if(t.dataset.deleteCustomer){if(confirm('お客様と紐付くボトルも削除しますか？')){const id=t.dataset.deleteCustomer;db.customers=db.customers.filter(c=>c.id!==id);db.bottles=db.bottles.filter(b=>b.customerId!==id);save();$('detailDialog').close();renderCustomers();renderBottles();renderHome()}return}
   if(t.dataset.addBottleFor){
     $('detailDialog').close();
@@ -903,6 +907,7 @@ $('saveShiftPeriodBtn').onclick=()=>{
 };
 $('scheduleViewDate').onchange=renderSchedules;
 $('bottleSearch').oninput=renderBottles;
+$('customerSearch').oninput=renderCustomers;
 window.addEventListener('hashchange',route);
 
 function start(){
