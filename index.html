@@ -1222,6 +1222,7 @@ body.manager-mode .payroll-staff-settings{
       </div>
     </div>
 
+    <div id="seatCheckoutError" class="hidden" style="margin:10px 0;padding:12px;border:2px solid #d84a55;border-radius:12px;background:#fff0f1;color:#9d2130;font-weight:900"></div>
     <button id="seatCheckoutConfirm" class="primary checkout-confirm-large">会計を確定する</button>
   </div>
 </div>
@@ -1273,7 +1274,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v72-direct-seat-button-handlers';
+const APP_VERSION='v73-checkout-cloud-fallback';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2367,6 +2368,13 @@ function resetSplitCheckoutDraft(){
 let pendingCheckoutSeatId='';
 let seatCheckoutCompanionIds=[];
 
+function showSeatCheckoutError(message){
+ const box=$('seatCheckoutError');
+ box.textContent=message||'';
+ box.classList.toggle('hidden',!message);
+ if(message)box.scrollIntoView?.({behavior:'smooth',block:'center'});
+}
+
 function seatHasCompanionCharge(seat){
  return Boolean(seat&&(seat.orders||[]).some(order=>{
   const menu=db.menu.find(m=>String(m.id)===String(order.menuId));
@@ -2400,6 +2408,7 @@ window.checkoutSeat=sid=>{
  const s=db.seats.find(x=>x.id===sid);
  if(!s)return;
  pendingCheckoutSeatId=sid;
+ showSeatCheckoutError('');
  $('seatCheckoutPayment').value='';
  $('seatCheckoutMode').value='single';
  $('splitCheckoutCount').value='2';
@@ -2442,6 +2451,7 @@ $('seatCheckoutClose').onclick=()=>{
 };
 
 $('seatCheckoutMode').onchange=renderSplitCheckoutUI;
+$('seatCheckoutPayment').onchange=()=>showSeatCheckoutError('');
 $('splitCheckoutCount').onchange=resetSplitCheckoutDraft;
 $('splitCheckoutEven').onclick=resetSplitCheckoutDraft;
 $('splitCheckoutRows').addEventListener('input',e=>{
@@ -2469,7 +2479,7 @@ $('seatCheckoutConfirm').onclick=async()=>{
  const mode=$('seatCheckoutMode').value||'single';
  const hasCompanionCharge=seatHasCompanionCharge(s);
  const companionCastIds=hasCompanionCharge?[...new Set(seatCheckoutCompanionIds)].filter(cid=>staffById(cid)):[];
- if(hasCompanionCharge&&!companionCastIds.length)return toast('同伴した女の子を選択してください');
+ if(hasCompanionCharge&&!companionCastIds.length){showSeatCheckoutError('同伴した女の子を選択してください');return toast('同伴した女の子を選択してください')}
  const companionCastNames=companionCastIds.map(cid=>staffById(cid)?.name).filter(Boolean);
  const companionCastId=companionCastIds[0]||'';
  const companionCastName=companionCastNames.join('・');
@@ -2496,6 +2506,8 @@ $('seatCheckoutConfirm').onclick=async()=>{
    if(!paymentMethod){
     button.disabled=false;
     button.textContent='会計を確定する';
+    showSeatCheckoutError('支払方法を選択してください');
+    $('seatCheckoutPayment').focus();
     return toast('支払方法を選択してください');
    }
 
@@ -2631,6 +2643,7 @@ $('seatCheckoutConfirm').onclick=async()=>{
   persist();
   button.disabled=false;
   button.textContent='会計を確定する';
+  showSeatCheckoutError('クラウド保存に失敗したため、会計を確定できませんでした。接続を確認してもう一度押してください。');
   return toast('会計のクラウド保存に失敗しました');
  }
 
@@ -4751,15 +4764,33 @@ function startStaffRealtimeSync() {
 
 
 async function saveCheckoutsToFirebase(checkouts,checkoutEvents) {
-  await replaceCloudCollection('checkouts',checkouts);
-  await replaceCloudCollection('checkoutEvents',checkoutEvents);
+  try{
+   await replaceCloudCollection('checkouts',checkouts);
+   await replaceCloudCollection('checkoutEvents',checkoutEvents);
+  }catch(collectionError){
+   console.warn('Individual checkout collection save failed; using app/data fallback.',collectionError);
+   ensureFirebase();
+   await setDoc(doc(firestoreDb,'app','data'),{checkouts,checkoutEvents,checkoutsUpdatedAt:new Date().toISOString(),checkoutStorageMode:'app-data-fallback'},{merge:true});
+   setStatus('売上は互換クラウド保存で同期中（個別保存ルールの更新が必要）',true);
+  }
 }
 
 async function startCheckoutRealtimeSync() {
-  await ensureCloudCollection('checkouts','checkouts',window.tinkerbellGetLocalCheckouts?.()||[]);
-  await ensureCloudCollection('checkoutEvents','checkoutEvents',window.tinkerbellGetLocalCheckoutEvents?.()||[]);
-  listenCloudCollection('checkouts',rows=>window.tinkerbellApplyCloudCheckouts?.(rows),'売上');
-  listenCloudCollection('checkoutEvents',rows=>window.tinkerbellApplyCloudCheckoutEvents?.(rows),'会計履歴');
+  try{
+   await ensureCloudCollection('checkouts','checkouts',window.tinkerbellGetLocalCheckouts?.()||[]);
+   await ensureCloudCollection('checkoutEvents','checkoutEvents',window.tinkerbellGetLocalCheckoutEvents?.()||[]);
+   listenCloudCollection('checkouts',rows=>window.tinkerbellApplyCloudCheckouts?.(rows),'売上');
+   listenCloudCollection('checkoutEvents',rows=>window.tinkerbellApplyCloudCheckoutEvents?.(rows),'会計履歴');
+  }catch(collectionError){
+   console.warn('Checkout collection sync unavailable; listening to app/data fallback.',collectionError);
+   ensureFirebase();
+   return onSnapshot(doc(firestoreDb,'app','data'),snap=>{
+    if(!snap.exists())return;
+    const data=snap.data()||{};
+    if(Array.isArray(data.checkouts))window.tinkerbellApplyCloudCheckouts?.(data.checkouts);
+    if(Array.isArray(data.checkoutEvents))window.tinkerbellApplyCloudCheckoutEvents?.(data.checkoutEvents);
+   },error=>console.error('Checkout fallback sync failed:',error));
+  }
 }
 
 async function saveMenuToFirebase(menu) {
