@@ -55,6 +55,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .seat-cast-option.selected{border-color:#b98c35;background:#fff3d4;box-shadow:0 0 0 2px #ecd79e inset}
 .seat-customer-profile{margin:10px 0 14px;padding:13px;border:2px solid #d8c6a0;border-radius:14px;background:#fffaf0}
 .seat-customer-profile h3{margin:0 0 9px;color:#684816}.seat-customer-profile .profile-row{padding:6px 0;border-bottom:1px solid #eadfc8;line-height:1.5}.seat-customer-profile .profile-row:last-child{border-bottom:0}.seat-customer-profile .profile-label{display:block;font-size:11px;color:#7a6c78;font-weight:800}.seat-customer-profile .history-line{font-size:13px;margin-top:4px}
+.kana-tabs{display:flex;gap:7px;overflow-x:auto;padding:4px 0 10px;-webkit-overflow-scrolling:touch}.kana-tabs button{flex:0 0 auto;min-width:42px;border:1px solid #d7ccdb;background:#fff;border-radius:999px;padding:9px 11px;font-weight:900;color:#5f5261}.kana-tabs button.active{background:#7d68ae;color:#fff;border-color:#7d68ae}.customer-pick-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:210px;overflow:auto;margin-bottom:12px}.customer-pick-list button{text-align:left;border:1px solid #ddd2e2;background:#fff;border-radius:11px;padding:10px;font-weight:900}.customer-pick-list small{display:block;color:#817584;font-weight:700;margin-top:3px}
 .management-heading{margin:22px 0 10px;padding-top:16px;border-top:3px solid #d8bc78;color:#76531c}
 .management-grid{padding:12px;background:#fff8e8;border:2px solid #d8bc78;border-radius:18px}
 .manager-tile{border:2px solid #c79b43!important;background:linear-gradient(145deg,#fffaf0,#fff)!important}
@@ -868,9 +869,9 @@ body.manager-mode .payroll-staff-settings{
 </div>
 </section>
 
-<section id="customers" class="screen"><h2>お客様管理</h2><div class="card"><div class="meta">お客様データはFirebaseとリアルタイム同期します。</div></div><div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・メモ"></label></div><div class="card"><div class="row3"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label><label>電話番号<input id="customerPhone" inputmode="tel"></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><button id="saveCustomer" class="primary">お客様登録</button></div><div id="customerList" class="list"></div></section>
+<section id="customers" class="screen"><h2>お客様管理</h2><div class="card"><div class="meta">お客様データはFirebaseとリアルタイム同期します。</div></div><div class="card"><label>検索<input id="customerSearch" placeholder="名前・ふりがな・担当・メモ"></label><div id="customerKanaTabs" class="kana-tabs"></div></div><div class="card"><input id="customerEditId" type="hidden"><div class="row3"><label>お客様名<input id="customerName"></label><label>ふりがな<input id="customerKana" placeholder="ひらがなで入力"></label><label>担当キャスト<select id="customerCast"></select></label></div><div class="row3"><label>誕生月<select id="customerBirthMonth"><option value="">未登録</option></select></label><label>誕生日<select id="customerBirthDay"><option value="">未登録</option></select></label><label>電話番号<input id="customerPhone" inputmode="tel"></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><div class="row"><button id="cancelCustomerEdit" class="secondary hidden">編集をやめる</button><button id="saveCustomer" class="primary">お客様登録</button></div></div><div id="customerList" class="list"></div></section>
 
-<section id="bottles" class="screen"><h2>ボトル管理</h2><div class="card"><div class="row3"><label>お客様<select id="bottleCustomer"></select></label><label>ボトル名<input id="bottleName"></label><label>残量<select id="bottleLevel"><option>満タン</option><option>75%</option><option>50%</option><option>25%</option><option>ほぼ空</option></select></label></div><label>保管場所<input id="bottlePlace"></label><button id="saveBottle" class="primary">ボトル登録</button></div><div id="bottleList" class="list"></div></section>
+<section id="bottles" class="screen"><h2>ボトル管理</h2><div class="card"><input id="bottleEditId" type="hidden"><div class="row3"><label>管理番号<input id="bottleNumber"></label><label>お客様<select id="bottleCustomer"></select></label><label>種類<select id="bottleCategory"><option value="whisky">ウイスキー</option><option value="brandy">ブランデー</option><option value="shochu">焼酎</option><option value="wine">ワイン</option><option value="sake">日本酒</option><option value="other">その他</option></select></label></div><div class="row3"><label>ボトル名<input id="bottleName"></label><label>担当<select id="bottleCast"></select></label><label>本数<input id="bottleQty" type="number" min="1" value="1"></label></div><label>状態<select id="bottleStatus"><option value="stored">保管中</option><option value="empty">空ボトル</option></select></label><div class="row"><button id="cancelBottleEdit" class="secondary hidden">編集をやめる</button><button id="saveBottle" class="primary">ボトル登録</button></div></div><div id="bottleList" class="list"></div></section>
 
 <section id="visits" class="screen"><h2>同伴・来店予定</h2><div class="card"><div class="row3"><label>担当<select id="visitCast"></select></label><label>お客様名<input id="visitCustomer"></label><label>日付<input id="visitDate" type="date"></label></div><div class="row3"><label>区分<select id="visitType"><option>同伴</option><option>来店予定</option><option>予約</option></select></label><label>時間<input id="visitTime" type="time"></label><label>人数<input id="visitPeople" type="number" min="1" value="1"></label></div><label>メモ<input id="visitMemo"></label><button id="saveVisit" class="primary">予定登録</button></div><div id="visitList" class="list"></div></section>
 
@@ -1133,7 +1134,7 @@ body.manager-mode .payroll-staff-settings{
     </div>
   </div>
 </div>
-<div id="seatModal" class="modal hidden"><div class="modal-card"><h2 id="seatModalTitle">入店登録</h2><label>お客様を検索<input id="seatCustomerName" list="customerNames" placeholder="登録名を入力・選択"></label><datalist id="customerNames"></datalist><div id="seatCustomerProfile" class="seat-customer-profile hidden"></div><p><b>ついている女の子</b></p><div id="seatCastChoices" class="seat-cast-grid"></div><div class="row" style="margin-top:14px"><button id="seatModalCancel" class="secondary">閉じる</button><button id="seatModalSave" class="primary">保存</button></div></div></div>
+<div id="seatModal" class="modal hidden"><div class="modal-card"><h2 id="seatModalTitle">入店登録</h2><label>お客様を検索<input id="seatCustomerName" list="customerNames" placeholder="登録名・ふりがなを入力"></label><datalist id="customerNames"></datalist><div id="seatCustomerKanaTabs" class="kana-tabs"></div><div id="seatCustomerPickList" class="customer-pick-list"></div><div id="seatCustomerProfile" class="seat-customer-profile hidden"></div><p><b>ついている女の子</b></p><div id="seatCastChoices" class="seat-cast-grid"></div><div class="row" style="margin-top:14px"><button id="seatModalCancel" class="secondary">閉じる</button><button id="seatModalSave" class="primary">保存</button></div></div></div>
 <div id="undoBar" class="undo hidden"><span id="undoText">注文を追加しました</span><button id="undoBtn" class="secondary">取り消す</button></div>
 <div id="shiftDayModal" class="modal hidden">
  <div class="modal-card">
@@ -1254,7 +1255,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v64-shift-detail-swipe-navigation';
+const APP_VERSION='v64-unified-customer-bottle-kana';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1342,6 +1343,32 @@ function persist(){localStorage.setItem(KEY,JSON.stringify(db))}
 function toast(t){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),1500)}
 function staffById(x){return db.staff.find(s=>s.id===x)}
 function customerById(x){return db.customers.find(c=>c.id===x)}
+const CUSTOMER_KANA_GROUPS=[['all','すべて'],['あ','あ'],['か','か'],['さ','さ'],['た','た'],['な','な'],['は','は'],['ま','ま'],['や','や'],['ら','ら'],['わ','わ'],['other','その他']];
+let customerKanaFilter='all',seatCustomerKanaFilter='all';
+function normalizeKanaText(value){return String(value||'').trim().toLowerCase().replace(/[ァ-ヶ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60))}
+function customerReading(c){
+ const kana=normalizeKanaText(c?.kana);
+ if(kana)return kana;
+ const name=normalizeKanaText(c?.name);
+ return /^[ぁ-ん]/.test(name)?name:'';
+}
+function customerKanaGroup(c){
+ const first=customerReading(c).charAt(0);
+ if(!first)return 'other';
+ if('あいうえお'.includes(first))return 'あ';
+ if('かきくけこがぎぐげご'.includes(first))return 'か';
+ if('さしすせそざじずぜぞ'.includes(first))return 'さ';
+ if('たちつてとだぢづでど'.includes(first))return 'た';
+ if('なにぬねの'.includes(first))return 'な';
+ if('はひふへほばびぶべぼぱぴぷぺぽ'.includes(first))return 'は';
+ if('まみむめも'.includes(first))return 'ま';
+ if('やゆよ'.includes(first))return 'や';
+ if('らりるれろ'.includes(first))return 'ら';
+ if('わをん'.includes(first))return 'わ';
+ return 'other';
+}
+function customerSortValue(c){return customerReading(c)||normalizeKanaText(c.name)}
+function kanaTabsHtml(active,handler){return CUSTOMER_KANA_GROUPS.map(([key,label])=>`<button type="button" class="${active===key?'active':''}" onclick="${handler}('${key}')">${label}</button>`).join('')}
 window.tinkerbellApplyCloudCustomers=customers=>{
   if(!Array.isArray(customers))return;
   db.customers=customers;
@@ -1402,10 +1429,12 @@ function fillSelect(el,arr,label='name',value='id',allowBlank=false){
 
 function refreshSelects(){
  fillSelect($('loginStaff'),db.staff);
- ['customerCast','visitCast'].forEach(x=>fillSelect($(x),db.staff.filter(s=>s.role==='cast')));
+ ['customerCast','visitCast','bottleCast'].forEach(x=>fillSelect($(x),db.staff.filter(s=>s.role==='cast')));
  fillSelect($('myAttendanceStaff'),db.staff);
  fillSelect($('bottleCustomer'),db.customers);
- $('customerNames').innerHTML=db.customers.map(c=>`<option value="${esc(c.name)}"></option>`).join('');
+ $('customerNames').innerHTML=db.customers.slice().sort((a,b)=>customerSortValue(a).localeCompare(customerSortValue(b),'ja')).map(c=>`<option value="${esc(c.name)}" label="${esc(c.kana||'')}"></option>`).join('');
+ if($('customerBirthMonth').options.length===1)$('customerBirthMonth').innerHTML+=[...Array(12)].map((_,i)=>`<option value="${i+1}">${i+1}月</option>`).join('');
+ if($('customerBirthDay').options.length===1)$('customerBirthDay').innerHTML+=[...Array(31)].map((_,i)=>`<option value="${i+1}">${i+1}日</option>`).join('');
 }
 
 function applyRole(){
@@ -2093,6 +2122,23 @@ function renderSeatCustomerProfile(applyAssignedCast=false){
  }
 }
 
+function renderSeatCustomerPickList(){
+ const q=normalizeKanaText($('seatCustomerName').value);
+ $('seatCustomerKanaTabs').innerHTML=kanaTabsHtml(seatCustomerKanaFilter,'setSeatCustomerKana');
+ const rows=db.customers.filter(c=>
+  (seatCustomerKanaFilter==='all'||customerKanaGroup(c)===seatCustomerKanaFilter)&&
+  (!q||normalizeKanaText(`${c.name} ${c.kana||''}`).includes(q))
+ ).sort((a,b)=>customerSortValue(a).localeCompare(customerSortValue(b),'ja'));
+ $('seatCustomerPickList').innerHTML=rows.length?rows.map(c=>`<button type="button" onclick="chooseSeatCustomer('${c.id}')">${esc(c.name)}<small>${esc(c.kana||'ふりがな未登録')}</small></button>`).join(''):'<div class="empty" style="grid-column:1/-1">該当するお客様はいません</div>';
+}
+window.setSeatCustomerKana=key=>{seatCustomerKanaFilter=key;$('seatCustomerName').value='';renderSeatCustomerPickList()};
+window.chooseSeatCustomer=customerId=>{
+ const customer=customerById(customerId);if(!customer)return;
+ $('seatCustomerName').value=customer.name;
+ renderSeatCustomerPickList();
+ renderSeatCustomerProfile(true);
+};
+
 function openSeatModal(sid){
  const s=db.seats.find(x=>x.id===sid);
  seatEditId=sid;
@@ -2100,6 +2146,8 @@ function openSeatModal(sid){
 
  $('seatModalTitle').textContent=s.customerName?`${s.name}を変更`:`${s.name}へ入店`;
  $('seatCustomerName').value=s.customerName||'';
+ seatCustomerKanaFilter='all';
+ renderSeatCustomerPickList();
  renderSeatCastChoices();
  renderSeatCustomerProfile(false);
  $('seatModal').classList.remove('hidden');
@@ -2110,8 +2158,8 @@ window.editSeat=openSeatModal;
 
 
 $('seatModalCancel').onclick=()=>$('seatModal').classList.add('hidden');
-$('seatCustomerName').oninput=()=>renderSeatCustomerProfile(true);
-$('seatCustomerName').onchange=()=>renderSeatCustomerProfile(true);
+$('seatCustomerName').oninput=()=>{renderSeatCustomerPickList();renderSeatCustomerProfile(true)};
+$('seatCustomerName').onchange=()=>{renderSeatCustomerPickList();renderSeatCustomerProfile(true)};
 
 $('seatModalSave').onclick=()=>{
  const name=$('seatCustomerName').value.trim();
@@ -2737,20 +2785,21 @@ $('saveCustomer').onclick=async()=>{
  const button=$('saveCustomer');
  const name=$('customerName').value.trim();
  if(!name)return toast('お客様名を入力');
+ const editId=$('customerEditId').value;
+ const birthMonth=$('customerBirthMonth').value,birthDay=$('customerBirthDay').value;
+ if((birthMonth&&!birthDay)||(!birthMonth&&birthDay))return toast('誕生日は月日両方を選択');
+ const beforeCustomers=JSON.parse(JSON.stringify(db.customers));
 
  button.disabled=true;
  button.textContent='保存中...';
 
- const customer={
-  id:id(),
-  name,
-  castId:$('customerCast').value,
-  phone:$('customerPhone').value.trim(),
-  memo:$('customerMemo').value.trim(),
-  visits:0
- };
-
- db.customers.push(customer);
+ let customer=db.customers.find(c=>c.id===editId);
+ if(customer){
+  Object.assign(customer,{name,kana:normalizeKanaText($('customerKana').value),birthMonth:Number(birthMonth)||'',birthDay:Number(birthDay)||'',castId:$('customerCast').value,cast:staffById($('customerCast').value)?.name||'',phone:$('customerPhone').value.trim(),memo:$('customerMemo').value.trim()});
+ }else{
+  customer={id:id(),name,kana:normalizeKanaText($('customerKana').value),birthMonth:Number(birthMonth)||'',birthDay:Number(birthDay)||'',castId:$('customerCast').value,cast:staffById($('customerCast').value)?.name||'',phone:$('customerPhone').value.trim(),memo:$('customerMemo').value.trim(),visits:0};
+  db.customers.push(customer);
+ }
  persist();
  refreshSelects();
  renderCustomers();
@@ -2760,24 +2809,39 @@ $('saveCustomer').onclick=async()=>{
    throw new Error('Firebase準備中');
   }
   await window.tinkerbellFirebase.saveCustomers(db.customers);
-  $('customerName').value='';
-  $('customerPhone').value='';
-  $('customerMemo').value='';
+  clearCustomerForm();
   toast('クラウド保存しました');
  }catch(error){
   console.error('Customer cloud save failed:',error);
-  db.customers=db.customers.filter(x=>x.id!==customer.id);
+  db.customers=beforeCustomers;
   persist();
   refreshSelects();
   renderCustomers();
   toast('クラウド保存に失敗しました');
  }finally{
   button.disabled=false;
-  button.textContent='お客様登録';
+  button.textContent=$('customerEditId').value?'お客様情報を更新':'お客様登録';
  }
 };
 
-function renderCustomers(){const q=$('customerSearch').value.toLowerCase();const a=db.customers.filter(c=>(c.name+c.phone+c.memo+(staffById(c.castId)?.name||'')).toLowerCase().includes(q));$('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)}</h3><div class="meta">担当 ${esc(staffById(c.castId)?.name||'未設定')}<br>電話 ${esc(c.phone||'未登録')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>`${esc(b.name)}(${esc(b.level)})`).join('、'):'なし'}</div><div class="item-actions"><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>'}
+function clearCustomerForm(){
+ $('customerEditId').value='';$('customerName').value='';$('customerKana').value='';$('customerBirthMonth').value='';$('customerBirthDay').value='';$('customerPhone').value='';$('customerMemo').value='';
+ $('saveCustomer').textContent='お客様登録';$('cancelCustomerEdit').classList.add('hidden');
+}
+window.editCustomer=customerId=>{
+ const c=customerById(customerId);if(!c)return;
+ $('customerEditId').value=c.id;$('customerName').value=c.name;$('customerKana').value=c.kana||'';$('customerBirthMonth').value=c.birthMonth||'';$('customerBirthDay').value=c.birthDay||'';$('customerCast').value=c.castId||db.staff.find(s=>s.name===c.cast)?.id||'';$('customerPhone').value=c.phone||'';$('customerMemo').value=c.memo||'';
+ $('saveCustomer').textContent='お客様情報を更新';$('cancelCustomerEdit').classList.remove('hidden');scrollTo(0,0);
+};
+$('cancelCustomerEdit').onclick=clearCustomerForm;
+window.setCustomerKana=key=>{customerKanaFilter=key;renderCustomers()};
+$('customerSearch').oninput=renderCustomers;
+function renderCustomers(){
+ const q=normalizeKanaText($('customerSearch').value);
+ $('customerKanaTabs').innerHTML=kanaTabsHtml(customerKanaFilter,'setCustomerKana');
+ const a=db.customers.filter(c=>(customerKanaFilter==='all'||customerKanaGroup(c)===customerKanaFilter)&&(!q||normalizeKanaText(`${c.name} ${c.kana||''} ${c.phone||''} ${c.memo||''} ${staffById(c.castId)?.name||''}`).includes(q))).sort((x,y)=>customerSortValue(x).localeCompare(customerSortValue(y),'ja'));
+ $('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)} <small class="meta">${esc(c.kana||'ふりがな未登録')}</small></h3><div class="meta">誕生日 ${c.birthMonth&&c.birthDay?`${c.birthMonth}月${c.birthDay}日`:'未登録'}<br>担当 ${esc(staffById(c.castId)?.name||c.cast||'未設定')}<br>電話 ${esc(c.phone||'未登録')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>esc(b.name)).join('、'):'なし'}</div><div class="item-actions"><button class="secondary" onclick="editCustomer('${c.id}')">編集</button><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>';
+}
 window.delCustomer=async x=>{
  if(!confirm('削除しますか？'))return;
  const beforeCustomers=[...db.customers];
@@ -2804,9 +2868,20 @@ window.delCustomer=async x=>{
  }
 }
 
-$('saveBottle').onclick=()=>{if(!$('bottleCustomer').value||!$('bottleName').value.trim())return toast('お客様とボトル名を入力');db.bottles.push({id:id(),customerId:$('bottleCustomer').value,name:$('bottleName').value.trim(),level:$('bottleLevel').value,place:$('bottlePlace').value});persist();$('bottleName').value='';$('bottlePlace').value='';renderBottles();renderCustomers();toast('ボトル登録')};
-function renderBottles(){$('bottleList').innerHTML=db.bottles.length?db.bottles.map(b=>`<div class="item"><h3>${esc(b.name)} <span class="tag">${esc(b.level)}</span></h3><div class="meta">${esc(customerById(b.customerId)?.name||'不明')} / ${esc(b.place||'保管場所未登録')}</div><div class="item-actions"><button class="secondary" onclick="changeBottle('${b.id}')">残量変更</button><button class="danger" onclick="delBottle('${b.id}')">削除</button></div></div>`).join(''):'<div class="empty">ボトルなし</div>'}
-window.changeBottle=x=>{const b=db.bottles.find(v=>v.id===x);const n=prompt('残量を入力（満タン・75%・50%・25%・ほぼ空）',b.level);if(n===null)return;b.level=n;persist();renderAll()}
+function bottleCategoryName(v){return {whisky:'ウイスキー',brandy:'ブランデー',shochu:'焼酎',wine:'ワイン',sake:'日本酒',other:'その他'}[v]||'その他'}
+function clearBottleForm(){$('bottleEditId').value='';$('bottleNumber').value='';$('bottleName').value='';$('bottleQty').value='1';$('bottleStatus').value='stored';$('bottleCategory').value='shochu';$('saveBottle').textContent='ボトル登録';$('cancelBottleEdit').classList.add('hidden')}
+$('cancelBottleEdit').onclick=clearBottleForm;
+$('saveBottle').onclick=()=>{
+ const number=$('bottleNumber').value.trim(),customerId=$('bottleCustomer').value,name=$('bottleName').value.trim(),editId=$('bottleEditId').value;
+ if(!number||!customerId||!name)return toast('管理番号・お客様・ボトル名を入力');
+ if(db.bottles.some(b=>String(b.number||'')===number&&b.id!==editId))return toast('同じ管理番号があります');
+ const customer=customerById(customerId),castId=$('bottleCast').value;
+ const obj={number,customerId,customer:customer?.name||'',category:$('bottleCategory').value,name,castId,cast:staffById(castId)?.name||'',qty:Math.max(1,Number($('bottleQty').value||1)),status:$('bottleStatus').value,emptyDate:$('bottleStatus').value==='empty'?today():''};
+ const existing=db.bottles.find(b=>b.id===editId);if(existing)Object.assign(existing,obj);else db.bottles.push({id:id(),...obj});
+ persist();clearBottleForm();renderBottles();renderCustomers();toast('ボトルを保存しました');
+};
+window.editBottle=x=>{const b=db.bottles.find(v=>v.id===x);if(!b)return;$('bottleEditId').value=b.id;$('bottleNumber').value=b.number||'';$('bottleCustomer').value=b.customerId||'';$('bottleCategory').value=b.category||'other';$('bottleName').value=b.name||'';$('bottleCast').value=b.castId||db.staff.find(s=>s.name===b.cast)?.id||'';$('bottleQty').value=b.qty||1;$('bottleStatus').value=b.status||'stored';$('saveBottle').textContent='ボトル情報を更新';$('cancelBottleEdit').classList.remove('hidden');scrollTo(0,0)};
+function renderBottles(){$('bottleList').innerHTML=db.bottles.length?db.bottles.slice().sort((a,b)=>String(a.number||'').localeCompare(String(b.number||''),'ja',{numeric:true})).map(b=>`<div class="item"><h3>No.${esc(b.number||'未登録')} ${esc(b.name)}</h3><div class="meta">${esc(customerById(b.customerId)?.name||b.customer||'不明')} / ${bottleCategoryName(b.category)} / 担当 ${esc(staffById(b.castId)?.name||b.cast||'未設定')} / ${Number(b.qty||1)}本 / ${b.status==='empty'?'空ボトル':'保管中'}</div><div class="item-actions"><button class="secondary" onclick="editBottle('${b.id}')">編集</button><button class="danger" onclick="delBottle('${b.id}')">削除</button></div></div>`).join(''):'<div class="empty">ボトルなし</div>'}
 window.delBottle=x=>{db.bottles=db.bottles.filter(v=>v.id!==x);persist();renderAll()}
 
 $('saveVisit').onclick=()=>{if(!$('visitCustomer').value.trim())return toast('お客様名を入力');db.visits.push({id:id(),castId:$('visitCast').value,customer:$('visitCustomer').value,date:$('visitDate').value,type:$('visitType').value,time:$('visitTime').value,people:$('visitPeople').value,memo:$('visitMemo').value});persist();saveSharedSchedulesFromPos();renderVisits();toast('予定登録')};
