@@ -1140,6 +1140,10 @@ body.manager-mode .payroll-staff-settings{
   <h2 id="shiftDayModalTitle">シフト詳細</h2>
   <div id="shiftDayModalSummary" class="summary"></div>
   <div id="shiftDayModalList" class="list"></div>
+  <div class="row" style="margin-top:12px">
+   <button id="shiftDayPrev" class="secondary">← 前の日</button>
+   <button id="shiftDayNext" class="primary">次の日 →</button>
+  </div>
   <button id="shiftDayModalClose" class="secondary" style="width:100%;margin-top:12px">閉じる</button>
  </div>
 </div>
@@ -1250,7 +1254,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v64-registered-customer-seat-profile';
+const APP_VERSION='v64-shift-detail-day-navigation';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1831,7 +1835,9 @@ function renderShifts(){
  db.staff.forEach(st=>{roster+=`<tr><td>${esc(st.name)}</td>`;for(let d=startDay;d<=endDay;d++){const r=shiftRecord(st.id,`${key}-${String(d).padStart(2,'0')}`),v=r?.status||(r?.time?'○':'');roster+=`<td class="${shiftStatusClass(v)}">${v||'・'}</td>`}roster+='</tr>'});roster+='</table>';$('shiftRoster').innerHTML=roster;
  const pub=db.shiftMeta.published[key];$('shiftPublishedNote').textContent=pub?`公開済み：${new Date(pub).toLocaleString('ja-JP')}`:'まだ公開されていません';
 }
+let shiftDetailDate='';
 window.openShiftDayDetail=date=>{
+ shiftDetailDate=date;
  const dt=new Date(`${date}T00:00:00`);
  const weekdays=['日','月','火','水','木','金','土'];
  const groups={'○':[],'△':[],'×':[],'未回答':[]};
@@ -1865,6 +1871,15 @@ window.openShiftDayDetail=date=>{
 
  $('shiftDayModal').classList.remove('hidden');
 };
+$('shiftDayPrev').onclick=()=>moveShiftDayDetail(-1);
+$('shiftDayNext').onclick=()=>moveShiftDayDetail(1);
+function moveShiftDayDetail(days){
+ if(!shiftDetailDate)return;
+ const dt=new Date(`${shiftDetailDate}T00:00:00`);
+ dt.setDate(dt.getDate()+days);
+ const next=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+ openShiftDayDetail(next);
+}
 $('shiftDayModalClose').onclick=()=>$('shiftDayModal').classList.add('hidden');
 
 window.selectShiftPerson=x=>{selectedShiftStaffId=x;renderShifts()};
