@@ -327,7 +327,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
  .invoice-amount{font-size:30px}
 }
 @media print{
- @page{size:A6 landscape;margin:7mm}
+ @page{size:A5 landscape;margin:10mm}
  body.invoice-print-mode *{visibility:hidden!important}
  body.invoice-print-mode #invoicePreviewPaper,
  body.invoice-print-mode #invoicePreviewPaper *{visibility:visible!important}
@@ -714,6 +714,9 @@ body.manager-mode .payroll-staff-settings{
  border-color:#d4af37;
 }
 
+
+.shift-sync-note{background:#eef8ff;border:1px solid #b9d9f2;color:#235f87;border-radius:12px;padding:10px 12px;font-weight:800}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -741,7 +744,7 @@ body.manager-mode .payroll-staff-settings{
  <div class="grid">
   <button class="tile" data-go="attendance"><span>🕒</span><b>出勤・退勤</b><small>勤怠を記録</small></button>
   <button class="tile" data-go="myAttendance"><span>📋</span><b>自分の実績</b><small>勤務時間・同伴・送迎</small></button>
-  <button class="tile" data-go="shifts"><span>📅</span><b>シフト</b><small>予定を確認・登録</small></button>
+  <button class="tile manager manager-tile" data-go="shifts"><span>📅</span><b>シフト管理</b><small>LINE提出分を一覧・修正</small></button>
   <button class="tile" data-go="customers"><span>👤</span><b>お客様</b><small>担当・履歴・メモ</small></button>
   <button class="tile" data-go="bottles"><span>🍾</span><b>ボトル</b><small>残量・保管場所</small></button>
   <button class="tile" data-go="visits"><span>🤝</span><b>同伴・来店予定</b><small>予約を共有</small></button>
@@ -788,32 +791,54 @@ body.manager-mode .payroll-staff-settings{
 </section>
 
 
-<section id="shifts" class="screen">
- <div class="shift-page-head"><h2 id="shiftScreenTitle">シフト入力</h2><p>全体一覧の日付をタップすると回答詳細を確認できます</p></div>
- <div id="shiftOverallCard" class="roster-card manager">
-  <h3>全体の回答状況</h3>
+<section id="shifts" class="screen manager">
+ <div class="shift-page-head">
+  <h2 id="shiftScreenTitle">シフト管理</h2>
+  <p>LINEで提出されたシフトを全体確認・修正できます</p>
+ </div>
+
+ <div id="shiftOverallCard" class="roster-card">
+  <h3>日別の全体状況</h3>
   <div id="shiftOverallList" class="shift-overall-list"></div>
  </div>
+
  <div class="shift-shell">
-  <div class="shift-banner staff-view">自分の予定を入力してください。日付をタップすると ○ → △ → × → 空欄 に切り替わります。</div>
-  <div class="shift-banner manager">従業員を選んで予定を編集できます。全員の入力状況も下で確認できます。</div>
-  <div id="shiftPersonPicker" class="shift-person-picker manager"></div>
-  <div class="shift-toolbar"><button id="prevShiftMonth" class="secondary">‹</button><div id="shiftMonthTitle" class="shift-month-title"></div><button id="nextShiftMonth" class="secondary">›</button></div>
+  <div class="shift-banner manager">LINEから提出された内容を確認し、必要な場合だけPOSで修正してください。修正内容はLINE側にも同期されます。</div>
+
+  <div id="shiftPersonPicker" class="shift-person-picker"></div>
+
+  <div class="shift-toolbar">
+   <button id="prevShiftMonth" class="secondary">‹</button>
+   <div id="shiftMonthTitle" class="shift-month-title"></div>
+   <button id="nextShiftMonth" class="secondary">›</button>
+  </div>
+
   <div id="shiftGrid"></div>
-  <div class="shift-legend"><span style="color:#248138">○ 出勤できる</span><span style="color:#e08a00">△ 遅れる・相談</span><span style="color:#d52e3d">× 休み</span><span>空欄 未回答</span></div>
-  <div id="myShiftState" class="my-entry-state staff-view"></div>
-  <div class="shift-actions staff-view"><button id="saveMyShift" class="shift-save wide">保存する</button></div>
-  <div id="shiftInputStatus" class="shift-status-card manager"></div>
-  <div class="shift-actions manager">
+
+  <div class="shift-legend">
+   <span style="color:#248138">○ 出勤できる</span>
+   <span style="color:#e08a00">△ 遅れる・相談</span>
+   <span style="color:#d52e3d">× 休み</span>
+   <span>空欄 未回答</span>
+  </div>
+
+  <div id="shiftInputStatus" class="shift-status-card"></div>
+
+  <div class="shift-actions">
    <button id="publishShift" class="shift-publish wide">全員に公開する</button>
    <button id="copyPrevShift" class="secondary">前月をコピー</button>
    <button id="printShift" class="secondary">印刷</button>
    <button id="exportShiftCsv" class="secondary wide">CSV出力</button>
   </div>
+
   <div id="shiftPublishedNote" class="published-note"></div>
-  <div class="shift-footnote">スタッフは自分の予定だけ変更できます。店長は全員分を変更できます。</div>
+  <div class="shift-footnote">従業員のシフト登録はLINEで行います。POSでは全員分の確認・修正を行います。</div>
  </div>
- <div class="roster-card"><h3>全員の予定</h3><div id="shiftRoster" class="roster-scroll"></div></div>
+
+ <div class="roster-card">
+  <h3>全員の予定</h3>
+  <div id="shiftRoster" class="roster-scroll"></div>
+ </div>
 </section>
 
 <section id="seats" class="screen"><h2>席管理</h2><div id="seatGrid" class="seat-grid"></div></section>
@@ -1212,7 +1237,7 @@ body.manager-mode .payroll-staff-settings{
     </div>
 
     <div id="invoicePreviewPaper" class="invoice-paper"></div>
-    <div class="invoice-print-note">※ 印刷にはインボイス登録番号（T＋13桁）が必要です。</div>
+    <div class="invoice-print-note">※ 横書き領収書です。A5横での印刷を想定しています。印刷にはインボイス登録番号（T＋13桁）が必要です。</div>
 
     <div id="invoicePrintError" class="invoice-print-error hidden"></div>
     <button id="invoicePreviewPrint" class="primary invoice-print-large">この領収書を印刷</button>
@@ -1223,7 +1248,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v60-manager-color-mode';
+const APP_VERSION='v63-pos-shift-management-only';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1417,7 +1442,7 @@ function lockManager(){
  toast('管理モードを終了しました');
 }
 
-const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance','payroll']);
+const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance','payroll','shifts']);
 
 function show(idn){
  if(MANAGER_SCREENS.has(idn)&&!managerUnlocked){
@@ -1698,6 +1723,8 @@ function posShiftToCloud(x){
  return {id:x.id||id(),staffId:x.staffId||st?.id||'',staffName:st?.name||'',date:x.date,status:x.status||(x.time?'○':'')};
 }
 function posCloudShifts(){return (db.shifts||[]).map(posShiftToCloud).filter(x=>x.staffId&&x.date&&x.status)}
+function posCloudShiftMeta(){ensureShiftMeta();return {submitted:{...(db.shiftMeta?.submitted||{})},published:{...(db.shiftMeta?.published||{})}}}
+window.tinkerbellGetLocalSharedShiftMeta=posCloudShiftMeta;
 function posScheduleToCloud(v){
  const main=db.staff.find(s=>s.id===v.castId);
  const extraIds=Array.isArray(v.extraCastIds)?v.extraCastIds:[];
@@ -1714,6 +1741,14 @@ window.tinkerbellApplyCloudShifts=rows=>{
  }).filter(x=>x.staffId&&x.date&&x.status);
  persist();renderShifts();
 };
+window.tinkerbellApplyCloudShiftMeta=meta=>{
+ if(!meta||typeof meta!=='object')return;
+ ensureShiftMeta();
+ db.shiftMeta.submitted={...(meta.submitted||{})};
+ db.shiftMeta.published={...(meta.published||{})};
+ persist();
+ renderShifts();
+};
 window.tinkerbellApplyCloudSchedules=rows=>{
  if(!Array.isArray(rows))return;
  db.visits=rows.map(x=>{
@@ -1724,6 +1759,7 @@ window.tinkerbellApplyCloudSchedules=rows=>{
  persist();renderVisits();
 };
 function saveSharedShiftsFromPos(){return window.tinkerbellFirebase?.saveSharedShifts?.(posCloudShifts()).catch(e=>{console.error(e);toast('シフト同期に失敗しました')})}
+function saveSharedShiftMetaFromPos(){return window.tinkerbellFirebase?.saveSharedShiftMeta?.(posCloudShiftMeta()).catch(e=>{console.error(e);toast('シフト提出状況の同期に失敗しました')})}
 function saveSharedSchedulesFromPos(){return window.tinkerbellFirebase?.saveSharedSchedules?.(posCloudSchedules()).catch(e=>{console.error(e);toast('予定同期に失敗しました')})}
 
 let shiftViewMonth=new Date();shiftViewMonth.setDate(1);
@@ -1733,13 +1769,13 @@ function shiftMonthKey(){return `${shiftViewMonth.getFullYear()}-${String(shiftV
 function ensureShiftMeta(){if(!db.shiftMeta)db.shiftMeta={submitted:{},published:{}};if(!db.shiftMeta.submitted)db.shiftMeta.submitted={};if(!db.shiftMeta.published)db.shiftMeta.published={}}
 function shiftStatusClass(v){return v==='○'?'status-ok':v==='△'?'status-late':v==='×'?'status-off':''}
 function shiftRecord(staffId,date){return db.shifts.find(x=>x.staffId===staffId&&x.date===date)}
-window.cycleShift=(staffId,date)=>{if(!current||(staffId!==current.id&&!isManager()))return;let r=shiftRecord(staffId,date),now=r?.status||(r?.time?'○':''),next=shiftStatuses[(shiftStatuses.indexOf(now)+1)%shiftStatuses.length];if(next){if(r){r.status=next;delete r.time}else db.shifts.push({id:id(),staffId,date,status:next})}else if(r){db.shifts=db.shifts.filter(x=>x.id!==r.id)}ensureShiftMeta();delete db.shiftMeta.submitted[`${shiftMonthKey()}:${staffId}`];persist();saveSharedShiftsFromPos();renderShifts()}
+window.cycleShift=(staffId,date)=>{if(!isManager())return;let r=shiftRecord(staffId,date),now=r?.status||(r?.time?'○':''),next=shiftStatuses[(shiftStatuses.indexOf(now)+1)%shiftStatuses.length];if(next){if(r){r.status=next;delete r.time}else db.shifts.push({id:id(),staffId,date,status:next})}else if(r){db.shifts=db.shifts.filter(x=>x.id!==r.id)}ensureShiftMeta();delete db.shiftMeta.submitted[`${shiftMonthKey()}:${staffId}`];persist();saveSharedShiftsFromPos();saveSharedShiftMetaFromPos();renderShifts()}
 function monthShiftCount(staffId,key){return db.shifts.filter(x=>x.staffId===staffId&&x.date.startsWith(key)).length}
 function renderShifts(){
  ensureShiftMeta();
  const y=shiftViewMonth.getFullYear(),m=shiftViewMonth.getMonth(),days=new Date(y,m+1,0).getDate(),todayStr=today(),key=shiftMonthKey();
  if(!selectedShiftStaffId||!staffById(selectedShiftStaffId))selectedShiftStaffId=current?.id||db.staff[0]?.id;
- const targetId=isManager()?selectedShiftStaffId:current?.id,target=staffById(targetId);
+ const targetId=selectedShiftStaffId||db.staff[0]?.id,target=staffById(targetId);
  $('shiftMonthTitle').textContent=`${y}年${m+1}月`;
 
  if(isManager()){
@@ -1766,20 +1802,17 @@ function renderShifts(){
   $('shiftOverallList').innerHTML=overall;
  }
 
- $('shiftScreenTitle').textContent=isManager()?'シフト管理（店長）':'シフト入力';
+ $('shiftScreenTitle').textContent='シフト管理';
  $('shiftPersonPicker').innerHTML=db.staff.map(st=>`<button class="${st.id===targetId?'active':''}" onclick="selectShiftPerson('${st.id}')">${esc(st.name)}</button>`).join('');
  const weekdays=['日','月','火','水','木','金','土'],firstDow=new Date(y,m,1).getDay();
  let cal='<div class="month-calendar">'+weekdays.map((w,i)=>`<div class="dow ${i===0?'sun':i===6?'sat':''}">${w}</div>`).join('');
  for(let i=0;i<firstDow;i++)cal+='<div class="month-day blank"></div>';
  for(let d=1;d<=days;d++){
-   const dt=new Date(y,m,d),dow=dt.getDay(),ds=`${key}-${String(d).padStart(2,'0')}`,r=shiftRecord(targetId,ds),v=r?.status||(r?.time?'○':''),canEdit=isManager()||targetId===current?.id;
+   const dt=new Date(y,m,d),dow=dt.getDay(),ds=`${key}-${String(d).padStart(2,'0')}`,r=shiftRecord(targetId,ds),v=r?.status||(r?.time?'○':''),canEdit=true;
    cal+=`<button class="month-day ${dow===0?'sun':dow===6?'sat':''} ${shiftStatusClass(v)} ${ds===todayStr?'today':''} ${canEdit?'editable':''}" ${canEdit?`onclick="cycleShift('${targetId}','${ds}')"`:''}><span class="num">${d}</span><span class="mark">${v}</span></button>`;
  }
  cal+='</div>';$('shiftGrid').innerHTML=cal;
- qsa('.staff-view').forEach(x=>x.classList.toggle('hidden',isManager()));
- const mine=db.shiftMeta.submitted[`${key}:${current?.id}`],count=current?monthShiftCount(current.id,key):0;
- $('myShiftState').innerHTML=mine?`あなたの入力状況： <b>保存済み</b><br><small>最終保存 ${new Date(mine).toLocaleString('ja-JP')}・入力 ${count}日</small>`:`あなたの入力状況： <span class="unsubmitted">未保存</span><br><small>予定を入力して「保存する」を押してください</small>`;
- $('shiftInputStatus').innerHTML=`<b>${esc(target?.name||'')}を編集中</b><div style="height:8px"></div><b>入力状況</b>`+db.staff.map(st=>{const t=db.shiftMeta.submitted[`${key}:${st.id}`];return `<div class="shift-status-row"><span>${esc(st.name)}</span><span class="${t?'submitted':'unsubmitted'}">${t?'● 入力済み':'● 未入力'}</span></div>`}).join('');
+ $('shiftInputStatus').innerHTML=`<b>${esc(target?.name||'')}を修正中</b><div style="height:8px"></div><b>LINE提出状況</b>`+db.staff.map(st=>{const t=db.shiftMeta.submitted[`${key}:${st.id}`];return `<div class="shift-status-row"><span>${esc(st.name)}</span><span class="${t?'submitted':'unsubmitted'}">${t?'● LINE提出済み':'● 未提出'}</span></div>`}).join('');
  const startDay=1,endDay=Math.min(days,14);let roster='<table class="roster-mini"><tr><th>名前</th>';
  for(let d=startDay;d<=endDay;d++)roster+=`<th>${d}</th>`;roster+='</tr>';
  db.staff.forEach(st=>{roster+=`<tr><td>${esc(st.name)}</td>`;for(let d=startDay;d<=endDay;d++){const r=shiftRecord(st.id,`${key}-${String(d).padStart(2,'0')}`),v=r?.status||(r?.time?'○':'');roster+=`<td class="${shiftStatusClass(v)}">${v||'・'}</td>`}roster+='</tr>'});roster+='</table>';$('shiftRoster').innerHTML=roster;
@@ -1824,9 +1857,8 @@ $('shiftDayModalClose').onclick=()=>$('shiftDayModal').classList.add('hidden');
 window.selectShiftPerson=x=>{if(!isManager())return;selectedShiftStaffId=x;renderShifts()};
 $('prevShiftMonth').onclick=()=>{shiftViewMonth.setMonth(shiftViewMonth.getMonth()-1);renderShifts()};
 $('nextShiftMonth').onclick=()=>{shiftViewMonth.setMonth(shiftViewMonth.getMonth()+1);renderShifts()};
-$('saveMyShift').onclick=()=>{ensureShiftMeta();db.shiftMeta.submitted[`${shiftMonthKey()}:${current.id}`]=nowISO();persist();saveSharedShiftsFromPos();renderShifts();toast('シフトを保存しました')};
-$('publishShift').onclick=()=>{if(!isManager())return;ensureShiftMeta();db.shiftMeta.published[shiftMonthKey()]=nowISO();persist();saveSharedShiftsFromPos();renderShifts();toast('全員に公開しました')};
-$('copyPrevShift').onclick=()=>{if(!isManager())return;const key=shiftMonthKey(),prev=new Date(shiftViewMonth);prev.setMonth(prev.getMonth()-1);const pkey=`${prev.getFullYear()}-${String(prev.getMonth()+1).padStart(2,'0')}`;if(!confirm('前月の予定を今月へコピーしますか？'))return;db.staff.forEach(st=>{for(let d=1;d<=new Date(shiftViewMonth.getFullYear(),shiftViewMonth.getMonth()+1,0).getDate();d++){const target=`${key}-${String(d).padStart(2,'0')}`;if(shiftRecord(st.id,target))continue;const source=`${pkey}-${String(Math.min(d,new Date(prev.getFullYear(),prev.getMonth()+1,0).getDate())).padStart(2,'0')}`,r=shiftRecord(st.id,source);if(r)db.shifts.push({id:id(),staffId:st.id,date:target,status:r.status||(r.time?'○':'')})}});persist();saveSharedShiftsFromPos();renderShifts();toast('前月からコピーしました')};
+$('publishShift').onclick=()=>{if(!isManager())return;ensureShiftMeta();db.shiftMeta.published[shiftMonthKey()]=nowISO();persist();saveSharedShiftsFromPos();saveSharedShiftMetaFromPos();renderShifts();toast('全員に公開しました')};
+$('copyPrevShift').onclick=()=>{if(!isManager())return;const key=shiftMonthKey(),prev=new Date(shiftViewMonth);prev.setMonth(prev.getMonth()-1);const pkey=`${prev.getFullYear()}-${String(prev.getMonth()+1).padStart(2,'0')}`;if(!confirm('前月の予定を今月へコピーしますか？'))return;db.staff.forEach(st=>{for(let d=1;d<=new Date(shiftViewMonth.getFullYear(),shiftViewMonth.getMonth()+1,0).getDate();d++){const target=`${key}-${String(d).padStart(2,'0')}`;if(shiftRecord(st.id,target))continue;const source=`${pkey}-${String(Math.min(d,new Date(prev.getFullYear(),prev.getMonth()+1,0).getDate())).padStart(2,'0')}`,r=shiftRecord(st.id,source);if(r)db.shifts.push({id:id(),staffId:st.id,date:target,status:r.status||(r.time?'○':'')})}});persist();saveSharedShiftsFromPos();saveSharedShiftMetaFromPos();renderShifts();toast('前月からコピーしました')};
 $('printShift').onclick=()=>window.print();
 $('exportShiftCsv').onclick=()=>{const key=shiftMonthKey(),days=new Date(shiftViewMonth.getFullYear(),shiftViewMonth.getMonth()+1,0).getDate();let rows=[['名前',...Array.from({length:days},(_,i)=>`${i+1}日`)]];db.staff.forEach(st=>rows.push([st.name,...Array.from({length:days},(_,i)=>shiftRecord(st.id,`${key}-${String(i+1).padStart(2,'0')}`)?.status||'')]));const csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tinkerbell_shift_${key}.csv`;a.click();URL.revokeObjectURL(a.href)};
 
@@ -3805,48 +3837,52 @@ function buildInvoicePreview(){
  const no=`${new Date(x.closedAt).toLocaleDateString('sv-SE').replaceAll('-','')}-${String(x.id).slice(-6).toUpperCase()}`;
 
  $('invoicePreviewPaper').innerHTML=`
-  <div class="receipt-photo-layout">
-    <div class="receipt-head">
-      <div class="receipt-spacer"></div>
-      <div class="receipt-title">領 収 証</div>
-      <div class="receipt-no">No. ${esc(no)}</div>
+  <div class="invoice-landscape">
+    <div class="invoice-head-row">
+      <div>
+        <div class="invoice-doc-title">領 収 証</div>
+        <div class="invoice-number">No. ${esc(no)}</div>
+      </div>
+      <div class="invoice-head-right">
+        <div>発行日<br>${new Date(x.closedAt).toLocaleDateString('ja-JP')}</div>
+      </div>
     </div>
 
-    <div class="receipt-date-row">
-      <div class="receipt-date-line">発行日　${new Date(x.closedAt).toLocaleDateString('ja-JP')}</div>
+    <div class="invoice-customer-row">
+      <div class="invoice-customer-name">${esc(name||'　　　　　　　　　　　')} ${esc(suffix)}</div>
     </div>
 
-    <div class="receipt-name-row">
-      <div class="receipt-name-line">${esc(name||'　　　　　　　　　　　　　　')} ${esc(suffix)}</div>
-    </div>
+    <div class="invoice-main-row">
+      <div class="invoice-main-left">
+        <div class="invoice-amount-label">金額</div>
+        <div class="invoice-amount">${yen(x.total)}</div>
 
-    <div class="receipt-amount-label">金 額</div>
-    <div class="receipt-amount-box">${yen(x.total)}</div>
-
-    <div class="receipt-proviso-row">
-      <span class="receipt-proviso-label">但し</span>
-      <span class="receipt-proviso-line">${esc(proviso)}</span>
-    </div>
-
-    <div class="receipt-payment-row">支払方法　${esc(payment)}</div>
-
-    <div class="receipt-bottom-grid">
-      <div class="receipt-left-block">
-        <div class="receipt-block-title">内 訳</div>
-        <div class="receipt-breakdown-row"><span>税抜金額</span><span>${yen(obj.net)}</span></div>
-        <div class="receipt-breakdown-row"><span>消費税額（10％）</span><span>${yen(obj.tax)}</span></div>
+        <div class="invoice-proviso">但し　${esc(proviso)}</div>
+        <div class="invoice-payment">支払方法　${esc(payment)}</div>
       </div>
 
-      <div class="receipt-right-block">
-        <div class="receipt-shop-name">${esc(issuer)}</div>
-        <div class="receipt-shop-line">${esc(INVOICE_ADDRESS)}</div>
-        <div class="receipt-shop-line">TEL ${INVOICE_PHONE}</div>
-        <div class="receipt-shop-line">登録番号 ${esc(registration||DEFAULT_INVOICE_REG)}</div>
+      <div class="invoice-tax-box">
+        <div class="invoice-tax-heading">内訳</div>
+        <div class="invoice-tax-row"><span>税抜金額</span><span>${yen(obj.net)}</span></div>
+        <div class="invoice-tax-row"><span>消費税額（10％）</span><span>${yen(obj.tax)}</span></div>
+        <div class="invoice-tax-row"><span>税込合計</span><span>${yen(x.total)}</span></div>
+      </div>
+    </div>
+
+    <div class="invoice-footer-row">
+      <div class="invoice-note">
+        上記正に領収いたしました。
+      </div>
+
+      <div class="invoice-shop">
+        <div><b>${esc(issuer)}</b></div>
+        <div>${esc(INVOICE_ADDRESS)}</div>
+        <div>TEL ${INVOICE_PHONE}</div>
+        <div>登録番号 ${esc(registration||DEFAULT_INVOICE_REG)}</div>
       </div>
     </div>
   </div>`;
 }
-
 $('printInvoiceBtn').onclick=()=>{
  const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
  if(!x)return;
@@ -4383,6 +4419,10 @@ async function saveSharedShiftsToFirebase(sharedShifts){
  firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
  await setDoc(doc(firestoreDb,"app","data"),{sharedShifts,sharedShiftsUpdatedAt:new Date().toISOString()},{merge:true});
 }
+async function saveSharedShiftMetaToFirebase(sharedShiftMeta){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ await setDoc(doc(firestoreDb,"app","data"),{sharedShiftMeta,sharedShiftMetaUpdatedAt:new Date().toISOString()},{merge:true});
+}
 async function saveSharedSchedulesToFirebase(sharedSchedules){
  firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
  await setDoc(doc(firestoreDb,"app","data"),{sharedSchedules,sharedSchedulesUpdatedAt:new Date().toISOString()},{merge:true});
@@ -4393,6 +4433,7 @@ function startSharedShiftScheduleSync(){
  return onSnapshot(ref,snap=>{
   if(!snap.exists())return;const d=snap.data()||{};
   if(Array.isArray(d.sharedShifts))window.tinkerbellApplyCloudShifts?.(d.sharedShifts);
+  if(d.sharedShiftMeta&&typeof d.sharedShiftMeta==='object')window.tinkerbellApplyCloudShiftMeta?.(d.sharedShiftMeta);
   if(Array.isArray(d.sharedSchedules))window.tinkerbellApplyCloudSchedules?.(d.sharedSchedules);
  },e=>console.error('POS shared shift/schedule sync failed:',e));
 }
@@ -4407,10 +4448,13 @@ async function initializeSharedShiftSchedule(){
    const cloudShifts=Array.isArray(d.sharedShifts)?d.sharedShifts:[];
    const shiftMap=new Map(cloudShifts.map(x=>[`${x.staffId||x.staffName}|${x.date}`,x]));
    localShifts.forEach(x=>{const k=`${x.staffId||x.staffName}|${x.date}`;if(!shiftMap.has(k))shiftMap.set(k,x)});
+   const localMeta=window.tinkerbellGetLocalSharedShiftMeta?.()||{submitted:{},published:{}};
+   const cloudMeta=(d.sharedShiftMeta&&typeof d.sharedShiftMeta==='object')?d.sharedShiftMeta:{submitted:{},published:{}};
+   const mergedMeta={submitted:{...(localMeta.submitted||{}),...(cloudMeta.submitted||{})},published:{...(localMeta.published||{}),...(cloudMeta.published||{})}};
    const cloudSchedules=Array.isArray(d.sharedSchedules)?d.sharedSchedules:[];
    const scheduleMap=new Map(cloudSchedules.map(x=>[x.id,x]));
    localSchedules.forEach(x=>{if(!scheduleMap.has(x.id))scheduleMap.set(x.id,x)});
-   tx.set(ref,{sharedShifts:[...shiftMap.values()],sharedSchedules:[...scheduleMap.values()],sharedSyncInitializedAt:new Date().toISOString()},{merge:true});
+   tx.set(ref,{sharedShifts:[...shiftMap.values()],sharedShiftMeta:mergedMeta,sharedSchedules:[...scheduleMap.values()],sharedSyncInitializedAt:new Date().toISOString()},{merge:true});
   });
  }catch(e){console.error('POS shared initialize failed:',e)}
 }
@@ -4426,6 +4470,7 @@ window.tinkerbellFirebase = {
   saveAdminPasscode: saveAdminPasscodeToFirebase,
   saveCheckouts: saveCheckoutsToFirebase,
   saveSharedShifts: saveSharedShiftsToFirebase,
+  saveSharedShiftMeta: saveSharedShiftMetaToFirebase,
   saveSharedSchedules: saveSharedSchedulesToFirebase,
   savePayrollAdjustments: savePayrollAdjustmentsToFirebase,
   reloadCheckouts: ()=>startCheckoutRealtimeSync()
