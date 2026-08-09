@@ -542,6 +542,19 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
  .split-pay-grid{grid-template-columns:1fr}
 }
 
+
+.split-output-card{margin-top:14px;border:2px solid #d8c6a8;background:#fffaf1}
+.split-output-list{display:grid;gap:10px;margin-top:12px}
+.split-output-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px;border:1px solid #e3d9ca;border-radius:12px;background:#fff}
+.split-output-row.current{border-color:#b88a35;background:#fff6df}
+.split-output-actions{display:flex;flex-wrap:wrap;gap:7px}
+.split-output-actions button{min-width:74px}
+@media(max-width:640px){
+ .split-output-row{display:block}
+ .split-output-actions{margin-top:10px}
+ .split-output-actions button{flex:1}
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -966,6 +979,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
   <div class="modal-card">
     <h2 id="checkoutDetailTitle">会計詳細</h2>
     <div id="checkoutDetailBody"></div>
+    <div id="splitCheckoutActions" class="hidden"></div>
     <div class="row" style="margin-top:14px">
       <button id="checkoutDetailClose" class="secondary">閉じる</button>
       <button id="printReceiptBtn" class="primary">会計明細を印刷</button>
@@ -1008,7 +1022,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v50-split-checkout';
+const APP_VERSION='v51-split-multi-output';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2098,6 +2112,7 @@ $('seatCheckoutConfirm').onclick=async()=>{
 
  renderAll();
  openCheckoutDetail(createdCheckouts[0].id);
+ if(mode==='split')renderSplitCheckoutActions(createdCheckouts[0]);
  toast(mode==='split'?`分割会計を${createdCheckouts.length}件保存しました`:'会計を確定しました');
 };
 
@@ -3025,6 +3040,71 @@ function renderReports(){
  }).join('');
 }
 
+
+function splitGroupMembers(checkout){
+ if(!checkout?.splitGroupId)return [];
+ return db.checkouts
+  .filter(x=>x.splitGroupId===checkout.splitGroupId)
+  .sort((a,b)=>Number(a.splitPartIndex||0)-Number(b.splitPartIndex||0));
+}
+
+window.openSplitCheckoutPart=idn=>{
+ openCheckoutDetail(idn);
+};
+
+window.printSplitReceipt=idn=>{
+ selectedCheckoutId=idn;
+ const x=db.checkouts.find(c=>c.id===idn);
+ if(!x)return;
+ printWindowHtml('レシート',receiptHtml(x));
+ recordPrint('receipt').catch(e=>console.error(e));
+};
+
+window.printSplitInvoice=idn=>{
+ selectedCheckoutId=idn;
+ const x=db.checkouts.find(c=>c.id===idn);
+ if(!x)return;
+ $('invoicePreviewName').value=x.customerName||'';
+ $('invoicePreviewProviso').value='飲食代として';
+ $('invoicePreviewSuffix').value='御中';
+ $('invoicePaymentMethod').value=x.paymentMethod||'現金';
+ $('invoicePreviewRegistration').value=getInvoiceRegistrationNumber();
+ $('invoiceIssuerName').value=localStorage.getItem(INVOICE_ISSUER_KEY)||'ティンカーベル';
+ buildInvoicePreview();
+ $('invoicePreviewModal').classList.remove('hidden');
+};
+
+function renderSplitCheckoutActions(checkout){
+ const box=$('splitCheckoutActions');
+ if(!box)return;
+ const members=splitGroupMembers(checkout);
+ if(!checkout?.splitGroupId||members.length<2){
+  box.classList.add('hidden');
+  box.innerHTML='';
+  return;
+ }
+ box.classList.remove('hidden');
+ box.innerHTML=`
+  <div class="card split-output-card">
+   <h3>分割会計の発行</h3>
+   <div class="meta">分けた会計ごとに明細と領収書を発行できます。</div>
+   <div class="split-output-list">
+    ${members.map(m=>`
+     <div class="split-output-row ${m.id===checkout.id?'current':''}">
+      <div>
+       <b>分割 ${m.splitPartIndex}/${m.splitPartCount}　${esc(m.customerName||m.splitLabel||'')}</b>
+       <div class="meta">${esc(m.paymentMethod||'未登録')} / ${yen(m.total)}</div>
+      </div>
+      <div class="split-output-actions">
+       <button class="secondary" onclick="openSplitCheckoutPart('${m.id}')">詳細</button>
+       <button class="primary" onclick="printSplitReceipt('${m.id}')">明細</button>
+       <button class="primary" onclick="printSplitInvoice('${m.id}')">領収書</button>
+      </div>
+     </div>`).join('')}
+   </div>
+  </div>`;
+}
+
 window.openCheckoutDetail=idn=>{
  const x=db.checkouts.find(c=>c.id===idn);
  if(!x)return;
@@ -3096,6 +3176,7 @@ window.openCheckoutDetail=idn=>{
   ${orderSection}
   ${x.status==='cancelled'?`<div class="card checkout-cancelled-box"><b>取消済み</b><div class="meta">${esc(x.cancelReason||'理由なし')} / ${x.cancelledAt?new Date(x.cancelledAt).toLocaleString('ja-JP'):''}</div></div>`:''}
   <div class="meta">レシート発行 ${Number(x.receiptPrintCount||0)}回 / 領収書発行 ${Number(x.invoicePrintCount||0)}回</div>`;
+ renderSplitCheckoutActions(x);
  $('cancelCheckoutBtn').classList.toggle('hidden',x.status==='cancelled');
  $('checkoutDetailModal').classList.remove('hidden');
 };
