@@ -912,7 +912,7 @@ body.manager-mode .payroll-staff-settings{
   <label>対象月<input id="payrollMonth" type="month"></label>
   <div class="payroll-month-total"><small>全員の支給額合計</small><b id="payrollGrandTotal">¥0</b></div>
  </div>
- <div class="meta">勤務時間・キャストドリンク・ボトル・同伴・送迎を自動集計。その他手当と控除は月ごとに入力できます。</div>
+ <div class="meta">勤務時間・キャストドリンク・ボトル・同伴・送迎を自動集計。退勤登録が完了した勤務から給与に反映されます。その他手当と控除は月ごとに入力できます。</div>
 </div>
 <div id="payrollList"></div>
 </section>
@@ -1248,7 +1248,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v63-pos-shift-management-only';
+const APP_VERSION='v64-payroll-attendance-refresh-fix';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1534,6 +1534,7 @@ $('attendanceConfirmYes').onclick=()=>{
   $('attendanceModal').classList.add('hidden');
   $('attendancePickCard').classList.add('hidden');
   renderAttendance();
+  renderPayroll();
   toast(`${staff.name}を出勤登録しました`);
   return;
  }
@@ -1612,6 +1613,9 @@ $('attendanceModalSave').onclick=()=>{
  $('attendanceModal').classList.add('hidden');
  $('attendancePickCard').classList.add('hidden');
  renderAttendance();
+ renderMyAttendance();
+ renderAdminAttendance();
+ renderPayroll();
  toast(`${staff.name}を退勤登録しました`);
 };
 
@@ -4078,7 +4082,7 @@ function renderBackupStatus(){
    : 'まだバックアップを作成していません';
  }
 }
-function renderAll(){renderAttendance();renderMyAttendance();renderAdminAttendance();renderInventory();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderBackupStatus()}
+function renderAll(){renderAttendance();renderMyAttendance();renderAdminAttendance();renderInventory();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderPayroll();renderBackupStatus()}
 
 $('changeAdminPasscode').onclick=async()=>{
  const currentCode=$('currentAdminPasscode').value.trim();
