@@ -1262,7 +1262,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v67-customer-bottle-edit-sync';
+const APP_VERSION='v68-customer-link-repair';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1357,8 +1357,11 @@ window.tinkerbellApplyCloudCustomers=customers=>{
   pending.forEach(c=>{if(!map.has(c.id))map.set(c.id,c)});
   db.customers=[...map.values()];
   persist();
+  reconcileCustomerLinks();
   refreshSelects();
   renderCustomers();
+  renderBottles();
+  renderSeats();
   setCustomerCloudStatus(pending.length?'pending':'synced');
 };
 window.tinkerbellGetLocalCustomers=()=>Array.isArray(db.customers)?db.customers:[];
@@ -1373,6 +1376,7 @@ window.tinkerbellApplyCloudBottles=bottles=>{
  });
  db.bottles=[...localMap.values()];
  persist();
+ reconcileCustomerLinks();
  renderBottles();
  renderCustomers();
  renderSeats();
@@ -4337,7 +4341,54 @@ function renderBackupStatus(){
    : 'まだバックアップを作成していません';
  }
 }
-function renderAll(){renderAttendance();renderMyAttendance();renderAdminAttendance();renderInventory();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderPayroll();renderBackupStatus()}
+
+function reconcileCustomerLinks(){
+ let changed=false;
+
+ // 既存の席データで customerId が無い/壊れている場合、名前から顧客IDを補修
+ db.seats.forEach(s=>{
+  if(!s.customerName)return;
+  const valid=s.customerId && db.customers.some(c=>c.id===s.customerId);
+  if(valid)return;
+
+  const n=normalizeCustomerNameForMatch(s.customerName);
+  const c=db.customers.find(x=>normalizeCustomerNameForMatch(x.name)===n);
+  if(c){
+   s.customerId=c.id;
+   s.customerName=c.name;
+   changed=true;
+  }
+ });
+
+ // 既存のボトルデータで customerId が無い/壊れている場合、保存されている顧客名から補修
+ db.bottles.forEach(b=>{
+  const valid=b.customerId && db.customers.some(c=>c.id===b.customerId);
+  if(valid){
+   const c=customerById(b.customerId);
+   if(c && b.customer!==c.name){
+    b.customer=c.name;
+    changed=true;
+   }
+   return;
+  }
+
+  const legacyName=(b.customer||'').trim();
+  if(!legacyName)return;
+
+  const n=normalizeCustomerNameForMatch(legacyName);
+  const c=db.customers.find(x=>normalizeCustomerNameForMatch(x.name)===n);
+  if(c){
+   b.customerId=c.id;
+   b.customer=c.name;
+   changed=true;
+  }
+ });
+
+ if(changed)persist();
+ return changed;
+}
+
+function renderAll(){reconcileCustomerLinks();renderAttendance();renderMyAttendance();renderAdminAttendance();renderInventory();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderPayroll();renderBackupStatus()}
 
 $('changeAdminPasscode').onclick=async()=>{
  const currentCode=$('currentAdminPasscode').value.trim();
