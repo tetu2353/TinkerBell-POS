@@ -1262,7 +1262,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v65-customer-cloud-safe-save';
+const APP_VERSION='v66-seat-customer-bottle-link-fix';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1942,6 +1942,9 @@ window.openSeatDetail=sid=>{
  const castNames=seatCastNames(s);
 
  $('seatDetailTitle').textContent=`${s.name}の詳細`;
+ const customer=s.customerId?customerById(s.customerId):db.customers.find(c=>normalizeCustomerNameForMatch(c.name)===normalizeCustomerNameForMatch(s.customerName));
+ const customerBottles=customer?db.bottles.filter(b=>b.customerId===customer.id):[];
+
  $('seatDetailBody').innerHTML=`
   <div class="card">
    <div class="meta">お客様</div>
@@ -1951,6 +1954,16 @@ window.openSeatDetail=sid=>{
     ${castNames.length?castNames.map(esc).join('・'):'なし'}
    </div>
   </div>
+
+  <div class="card">
+   <div class="meta">お預かりボトル</div>
+   <div style="font-size:18px;font-weight:900;margin-top:6px">
+    ${customerBottles.length
+      ?customerBottles.map(b=>`${esc(b.name)} <span class="tag">${esc(b.level)}</span>`).join('<br>')
+      :'なし'}
+   </div>
+  </div>
+
   <div class="card">
    <div class="meta">注文 ${s.orders.length}件</div>
    <h2 style="margin:4px 0 0">${yen(seatTotal(s))}</h2>
@@ -2044,13 +2057,34 @@ window.editSeat=openSeatModal;
 
 $('seatModalCancel').onclick=()=>$('seatModal').classList.add('hidden');
 
-$('seatModalSave').onclick=()=>{
+$('seatModalSave').onclick=async()=>{
  const name=$('seatCustomerName').value.trim();
  if(!name)return toast('お客様名を入力');
 
  const s=db.seats.find(x=>x.id===seatEditId);
- const c=db.customers.find(x=>x.name===name);
  if(!s)return toast('席が見つかりません');
+
+ const normalized=normalizeCustomerNameForMatch(name);
+
+ // 顧客管理と必ず紐付ける。
+ // 同名の既存顧客がいればそのIDを使用し、いなければ自動作成。
+ let c=db.customers.find(x=>normalizeCustomerNameForMatch(x.name)===normalized);
+ let createdCustomer=false;
+
+ if(!c){
+  c={
+   id:id(),
+   name,
+   castId:seatCastSelected[0]||'',
+   phone:'',
+   memo:'',
+   visits:0,
+   cloudPending:true,
+   createdAt:nowISO()
+  };
+  db.customers.push(c);
+  createdCustomer=true;
+ }
 
  // 選択されたキャストは、他の席から外してこの席へ移動する。
  seatCastSelected.forEach(castId=>{
@@ -2060,8 +2094,8 @@ $('seatModalSave').onclick=()=>{
   });
  });
 
- s.customerId=c?.id||'';
- s.customerName=name;
+ s.customerId=c.id;
+ s.customerName=c.name;
  s.openedAt=s.openedAt||nowISO();
  s.casts=[...seatCastSelected];
 
@@ -2069,7 +2103,26 @@ $('seatModalSave').onclick=()=>{
  persist();
  refreshSelects();
  renderAll();
- toast('席を登録しました');
+
+ // 新規顧客を席から作った時だけクラウドへ同期。
+ // 失敗しても端末側の顧客・席リンクは残す。
+ if(createdCustomer){
+  try{
+   if(window.tinkerbellFirebase?.saveCustomers){
+    const cloudRows=db.customers.map(({cloudPending,...row})=>row);
+    await window.tinkerbellFirebase.saveCustomers(cloudRows);
+    c.cloudPending=false;
+    persist();
+    renderCustomers();
+    setCustomerCloudStatus('synced');
+   }
+  }catch(error){
+   console.error('Seat-created customer cloud save failed:',error);
+   setCustomerCloudStatus('error',error?.code||error?.message||'不明');
+  }
+ }
+
+ toast(createdCustomer?'席を登録し、お客様も顧客管理へ追加しました':'席を登録しました');
 };
 
 function normalizeCustomerNameForMatch(v){
