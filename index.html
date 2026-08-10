@@ -53,11 +53,6 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .seat-cast-option{display:flex;align-items:center;gap:10px;border:2px solid var(--line);background:#fff;border-radius:14px;padding:14px;font-weight:900;cursor:pointer}
 .seat-cast-option input{width:22px;height:22px;margin:0;accent-color:#a77b2b}
 .seat-cast-option.selected{border-color:#b98c35;background:#fff3d4;box-shadow:0 0 0 2px #ecd79e inset}
-.companion-cast-list{display:grid;grid-template-columns:1fr;gap:7px;margin-top:9px;max-height:260px;overflow:auto}
-.companion-cast-list .seat-cast-option{padding:11px 13px;border-width:1px;border-radius:11px}
-.seat-customer-profile{margin:10px 0 14px;padding:13px;border:2px solid #d8c6a0;border-radius:14px;background:#fffaf0}
-.seat-customer-profile h3{margin:0 0 9px;color:#684816}.seat-customer-profile .profile-row{padding:6px 0;border-bottom:1px solid #eadfc8;line-height:1.5}.seat-customer-profile .profile-row:last-child{border-bottom:0}.seat-customer-profile .profile-label{display:block;font-size:11px;color:#7a6c78;font-weight:800}.seat-customer-profile .history-line{font-size:13px;margin-top:4px}
-.kana-tabs{display:flex;gap:7px;overflow-x:auto;padding:4px 0 10px;-webkit-overflow-scrolling:touch}.kana-tabs button{flex:0 0 auto;min-width:42px;border:1px solid #d7ccdb;background:#fff;border-radius:999px;padding:9px 11px;font-weight:900;color:#5f5261}.kana-tabs button.active{background:#7d68ae;color:#fff;border-color:#7d68ae}.customer-pick-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:210px;overflow:auto;margin-bottom:12px}.customer-pick-list button{text-align:left;border:1px solid #ddd2e2;background:#fff;border-radius:11px;padding:10px;font-weight:900}.customer-pick-list small{display:block;color:#817584;font-weight:700;margin-top:3px}
 .management-heading{margin:22px 0 10px;padding-top:16px;border-top:3px solid #d8bc78;color:#76531c}
 .management-grid{padding:12px;background:#fff8e8;border:2px solid #d8bc78;border-radius:18px}
 .manager-tile{border:2px solid #c79b43!important;background:linear-gradient(145deg,#fffaf0,#fff)!important}
@@ -73,7 +68,6 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .order-menu-button b{display:block;font-size:19px;line-height:1.3}
 .order-menu-button small{display:block;font-size:17px;font-weight:900;color:#9b6920;margin-top:7px}
 .order-menu-button:active{transform:scale(.97);background:#ffe8a9}
-.order-quick-note{margin-top:9px;padding:9px 11px;border-radius:11px;background:#fff3d4;color:#715019;font-size:13px;font-weight:800}
 .selected-order-summary{border:3px solid #7f5a1c}
 .order-total{font-size:26px;color:#8d5d13}
 .order-line{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
@@ -723,6 +717,14 @@ body.manager-mode .payroll-staff-settings{
 
 .shift-sync-note{background:#eef8ff;border:1px solid #b9d9f2;color:#235f87;border-radius:12px;padding:10px 12px;font-weight:800}
 
+
+.customer-cloud-status{margin:10px 0;padding:10px 12px;border-radius:10px;background:#f3f3f3;font-weight:900}
+.customer-cloud-status.synced{background:#e9f7ed;color:#237a3c}
+.customer-cloud-status.pending{background:#fff4d9;color:#8a5a00}
+.customer-cloud-status.error{background:#fdeaea;color:#a82727}
+.customer-pending-tag{background:#fff0c8;color:#8a5b00;border:1px solid #e0bb60;font-size:11px}
+#retryCustomerCloudSync{width:100%;margin-top:4px}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -750,7 +752,7 @@ body.manager-mode .payroll-staff-settings{
  <div class="grid">
   <button class="tile" data-go="attendance"><span>🕒</span><b>出勤・退勤</b><small>勤怠を記録</small></button>
   <button class="tile" data-go="myAttendance"><span>📋</span><b>自分の実績</b><small>勤務時間・同伴・送迎</small></button>
-  <button class="tile" data-go="shifts"><span>📅</span><b>全員のシフト</b><small>LINE提出分を確認</small></button>
+  <button class="tile manager manager-tile" data-go="shifts"><span>📅</span><b>シフト管理</b><small>LINE提出分を一覧・修正</small></button>
   <button class="tile" data-go="customers"><span>👤</span><b>お客様</b><small>担当・履歴・メモ</small></button>
   <button class="tile" data-go="bottles"><span>🍾</span><b>ボトル</b><small>残量・保管場所</small></button>
   <button class="tile" data-go="visits"><span>🤝</span><b>同伴・来店予定</b><small>予約を共有</small></button>
@@ -797,7 +799,7 @@ body.manager-mode .payroll-staff-settings{
 </section>
 
 
-<section id="shifts" class="screen">
+<section id="shifts" class="screen manager">
  <div class="shift-page-head">
   <h2 id="shiftScreenTitle">シフト管理</h2>
   <p>LINEで提出されたシフトを全体確認・修正できます</p>
@@ -861,7 +863,6 @@ body.manager-mode .payroll-staff-settings{
 <div id="orderWorkspace">
   <div class="card order-step-card">
     <b class="order-step-title">商品をタップ</b>
-    <div id="orderQuickNote" class="order-quick-note">よく出る商品を表示中。ほかの商品は下の種類を押してください。</div>
     <div id="orderCategories" class="category-row" style="margin-top:10px"></div>
     <div id="tapMenuGrid" class="order-menu-grid" style="margin-top:12px"></div>
   </div>
@@ -873,11 +874,17 @@ body.manager-mode .payroll-staff-settings{
 </div>
 </section>
 
-<section id="customers" class="screen"><h2>お客様管理</h2><div class="card"><div class="meta">お客様とボトルは同じお客様IDで連携し、席・同伴予約にも表示します。</div></div><div class="card"><label>検索<input id="customerSearch" placeholder="名前・ふりがな・担当・メモ"></label><div id="customerKanaTabs" class="kana-tabs"></div></div><div class="card"><input id="customerEditId" type="hidden"><div class="row3"><label>お客様名<input id="customerName"></label><label>ふりがな<input id="customerKana" placeholder="ひらがなで入力"></label><label>担当キャスト<select id="customerCast"></select></label></div><div class="row"><label>誕生月<select id="customerBirthMonth"><option value="">未登録</option></select></label><label>誕生日<select id="customerBirthDay"><option value="">未登録</option></select></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><div class="card" style="background:#fffaf0;border:2px solid #d8c6a0"><h3>ボトルも一緒に登録（任意）</h3><div class="row3"><label>管理番号<input id="customerBottleNumber"></label><label>ボトル名<input id="customerBottleName"></label><label>種類<select id="customerBottleCategory"><option value="whisky">ウイスキー</option><option value="brandy">ブランデー</option><option value="shochu">焼酎</option><option value="wine">ワイン</option><option value="sake">日本酒</option><option value="other">その他</option></select></label></div><div class="row"><label>本数<input id="customerBottleQty" type="number" min="1" value="1"></label><label>状態<select id="customerBottleStatus"><option value="stored">保管中</option><option value="empty">空ボトル</option></select></label></div><div class="meta">既存のお客様を編集して新しいボトルを追加することもできます。</div></div><div class="row"><button id="cancelCustomerEdit" class="secondary hidden">編集をやめる</button><button id="saveCustomer" class="primary">お客様登録</button></div></div><div id="customerList" class="list"></div></section>
+<section id="customers" class="screen"><h2>お客様管理</h2>
+<div class="card">
+ <div class="meta">お客様データはFirebaseとリアルタイム同期します。</div>
+ <div id="customerCloudStatus" class="customer-cloud-status">クラウド状態を確認中...</div>
+ <button id="retryCustomerCloudSync" class="secondary" type="button">お客様データを再同期</button>
+</div>
+<div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・メモ"></label></div><div class="card"><div class="row3"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label><label>電話番号<input id="customerPhone" inputmode="tel"></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><button id="saveCustomer" class="primary">お客様登録</button></div><div id="customerList" class="list"></div></section>
 
-<section id="bottles" class="screen"><h2>ボトル管理</h2><div class="card"><input id="bottleEditId" type="hidden"><div class="row3"><label>管理番号<input id="bottleNumber"></label><label>お客様<select id="bottleCustomer"></select></label><label>種類<select id="bottleCategory"><option value="whisky">ウイスキー</option><option value="brandy">ブランデー</option><option value="shochu">焼酎</option><option value="wine">ワイン</option><option value="sake">日本酒</option><option value="other">その他</option></select></label></div><div class="row3"><label>ボトル名<input id="bottleName"></label><label>担当<select id="bottleCast"></select></label><label>本数<input id="bottleQty" type="number" min="1" value="1"></label></div><label>状態<select id="bottleStatus"><option value="stored">保管中</option><option value="empty">空ボトル</option></select></label><div class="row"><button id="cancelBottleEdit" class="secondary hidden">編集をやめる</button><button id="saveBottle" class="primary">ボトル登録</button></div></div><div id="bottleList" class="list"></div></section>
+<section id="bottles" class="screen"><h2>ボトル管理</h2><div class="card"><div class="row3"><label>お客様<select id="bottleCustomer"></select></label><label>ボトル名<input id="bottleName"></label><label>残量<select id="bottleLevel"><option>満タン</option><option>75%</option><option>50%</option><option>25%</option><option>ほぼ空</option></select></label></div><label>保管場所<input id="bottlePlace"></label><button id="saveBottle" class="primary">ボトル登録</button></div><div id="bottleList" class="list"></div></section>
 
-<section id="visits" class="screen"><h2>同伴・来店予定</h2><div class="card"><div class="row3"><label>担当<select id="visitCast"></select></label><label>登録済みのお客様<select id="visitCustomerId"></select></label><label>日付<input id="visitDate" type="date"></label></div><div id="visitCustomerBottles" class="seat-customer-profile hidden"></div><div class="row3"><label>区分<select id="visitType"><option>同伴</option><option>来店予定</option><option>予約</option></select></label><label>時間<input id="visitTime" type="time"></label><label>人数<input id="visitPeople" type="number" min="1" value="1"></label></div><label>メモ<input id="visitMemo"></label><button id="saveVisit" class="primary">予定登録</button></div><div id="visitList" class="list"></div></section>
+<section id="visits" class="screen"><h2>同伴・来店予定</h2><div class="card"><div class="row3"><label>担当<select id="visitCast"></select></label><label>お客様名<input id="visitCustomer"></label><label>日付<input id="visitDate" type="date"></label></div><div class="row3"><label>区分<select id="visitType"><option>同伴</option><option>来店予定</option><option>予約</option></select></label><label>時間<input id="visitTime" type="time"></label><label>人数<input id="visitPeople" type="number" min="1" value="1"></label></div><label>メモ<input id="visitMemo"></label><button id="saveVisit" class="primary">予定登録</button></div><div id="visitList" class="list"></div></section>
 
 <section id="notices" class="screen"><h2>お知らせ</h2><div class="card manager"><label>タイトル<input id="noticeTitle"></label><label>本文<textarea id="noticeBody" rows="4"></textarea></label><button id="saveNotice" class="primary">投稿</button></div><div id="noticeList" class="list"></div></section>
 
@@ -942,7 +949,6 @@ body.manager-mode .payroll-staff-settings{
         <option>セット</option>
         <option>ドリンク</option>
         <option>キャストドリンク</option>
-        <option>同伴</option>
         <option>チャージ</option>
         <option>ボトル</option>
         <option>備品・割物</option>
@@ -959,9 +965,6 @@ body.manager-mode .payroll-staff-settings{
     </label>
     <label>注文画面への表示
       <select id="menuVisible"><option value="true">表示する</option><option value="false">非表示</option></select>
-    </label>
-    <label>注文画面の最初に表示
-      <select id="menuQuickAccess"><option value="false">種類を押した時だけ表示</option><option value="true">よく出る商品として表示</option></select>
     </label>
   </div>
   <div class="row3">
@@ -1007,16 +1010,6 @@ body.manager-mode .payroll-staff-settings{
 <h2>売上・勤怠集計</h2>
 <div id="metrics" class="summary"></div>
 <div class="card">
-  <div class="sectionHead"><h3>1日の売上詳細</h3></div>
-  <div class="row3">
-    <button id="dailySalesPrev" class="secondary">← 前の日</button>
-    <label>日付<input id="dailySalesDate" type="date"></label>
-    <button id="dailySalesNext" class="secondary">次の日 →</button>
-  </div>
-  <div id="dailySalesMetrics" class="summary"></div>
-  <div id="dailySalesBreakdown"></div>
-</div>
-<div class="card">
   <div class="sectionHead"><h3>会計履歴</h3><button id="syncCheckoutHistory" class="secondary">クラウド再読込</button></div>
   <div id="checkoutHistory"></div>
 </div>
@@ -1057,7 +1050,7 @@ body.manager-mode .payroll-staff-settings{
 
 <div class="card">
   <h3 style="margin-top:0">保存方式</h3>
-  <p>端末内へ保存しながら、お客様・ボトル・売上・会計履歴・使用中の席と途中注文をFirebaseへ個別同期します。通信切断中の変更は永続キャッシュに保持し、接続復旧後に再同期します。</p>
+  <p>現在の保存先は、この端末のブラウザ内です。Firebaseへの接続確認だけ追加してあり、既存データの保存方法はまだ変更していません。</p>
 </div>
 
 <div class="card">
@@ -1152,17 +1145,13 @@ body.manager-mode .payroll-staff-settings{
     </div>
   </div>
 </div>
-<div id="seatModal" class="modal hidden"><div class="modal-card"><h2 id="seatModalTitle">入店登録</h2><input id="seatCustomerId" type="hidden"><label>お客様を検索<input id="seatCustomerName" list="customerNames" placeholder="登録名・ふりがなを入力"></label><datalist id="customerNames"></datalist><div id="seatCustomerKanaTabs" class="kana-tabs"></div><div id="seatCustomerPickList" class="customer-pick-list"></div><div id="seatCustomerProfile" class="seat-customer-profile hidden"></div><p><b>ついている女の子</b></p><div id="seatCastChoices" class="seat-cast-grid"></div><div class="row" style="margin-top:14px"><button id="seatModalCancel" class="secondary">閉じる</button><button id="seatModalSave" class="primary">保存</button></div></div></div>
+<div id="seatModal" class="modal hidden"><div class="modal-card"><h2 id="seatModalTitle">入店登録</h2><label>お客様名<input id="seatCustomerName" list="customerNames" placeholder="名前を入力"></label><datalist id="customerNames"></datalist><p><b>ついている女の子</b></p><div id="seatCastChoices" class="seat-cast-grid"></div><div class="row" style="margin-top:14px"><button id="seatModalCancel" class="secondary">閉じる</button><button id="seatModalSave" class="primary">保存</button></div></div></div>
 <div id="undoBar" class="undo hidden"><span id="undoText">注文を追加しました</span><button id="undoBtn" class="secondary">取り消す</button></div>
 <div id="shiftDayModal" class="modal hidden">
  <div class="modal-card">
   <h2 id="shiftDayModalTitle">シフト詳細</h2>
   <div id="shiftDayModalSummary" class="summary"></div>
   <div id="shiftDayModalList" class="list"></div>
-  <div class="row" style="margin-top:12px">
-   <button id="shiftDayPrev" class="secondary">← 前の日</button>
-   <button id="shiftDayNext" class="primary">次の日 →</button>
-  </div>
   <button id="shiftDayModalClose" class="secondary" style="width:100%;margin-top:12px">閉じる</button>
  </div>
 </div>
@@ -1184,11 +1173,11 @@ body.manager-mode .payroll-staff-settings{
             <option value="split">分割会計</option>
           </select>
         </label>
-        <div id="seatCheckoutCompanionArea" class="hidden" style="flex:1;min-width:240px">
-          <b>同伴した女の子（複数選択可）</b>
-          <div class="meta">会計に同伴が入っているため選択してください</div>
-          <div id="seatCheckoutCompanions" class="companion-cast-list"></div>
-        </div>
+        <label>同伴キャスト
+          <select id="seatCheckoutCompanion">
+            <option value="">同伴なし</option>
+          </select>
+        </label>
       </div>
 
       <div id="singleCheckoutArea">
@@ -1222,7 +1211,6 @@ body.manager-mode .payroll-staff-settings{
       </div>
     </div>
 
-    <div id="seatCheckoutError" class="hidden" style="margin:10px 0;padding:12px;border:2px solid #d84a55;border-radius:12px;background:#fff0f1;color:#9d2130;font-weight:900"></div>
     <button id="seatCheckoutConfirm" class="primary checkout-confirm-large">会計を確定する</button>
   </div>
 </div>
@@ -1274,7 +1262,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v73-checkout-cloud-fallback';
+const APP_VERSION='v65-customer-cloud-safe-save';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1345,7 +1333,6 @@ db.menu=db.menu.map((item,index)=>({
   reorderPoint:Number.isFinite(Number(item.reorderPoint))?Number(item.reorderPoint):0,
   type:item.name==='キャストドリンク'&&item.type==='ドリンク'?'キャストドリンク':item.type,
   visible:item.visible!==false,
-  quickAccess:item.quickAccess===true,
   sortOrder:Number.isFinite(Number(item.sortOrder))?Number(item.sortOrder):index
 }));
 db.staff=Array.isArray(db.staff)?db.staff.map(s=>({...s,
@@ -1359,60 +1346,22 @@ db.staff=Array.isArray(db.staff)?db.staff.map(s=>({...s,
  dependents:Number.isFinite(Number(s.dependents))?Number(s.dependents):0
 })):[];
 localStorage.setItem(KEY,JSON.stringify(db));
-let suppressActiveSeatCloudSave=false,activeSeatCloudTimer=null;
-function persist(){
- localStorage.setItem(KEY,JSON.stringify(db));
- if(!suppressActiveSeatCloudSave){
-  clearTimeout(activeSeatCloudTimer);
-  activeSeatCloudTimer=setTimeout(()=>window.tinkerbellFirebase?.saveActiveSeats?.(db.seats).catch(error=>console.error('Active seat cloud save failed:',error)),500);
- }
-}
+function persist(){localStorage.setItem(KEY,JSON.stringify(db))}
 function toast(t){$('toast').textContent=t;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),1500)}
 function staffById(x){return db.staff.find(s=>s.id===x)}
 function customerById(x){return db.customers.find(c=>c.id===x)}
-const CUSTOMER_KANA_GROUPS=[['all','すべて'],['あ','あ'],['か','か'],['さ','さ'],['た','た'],['な','な'],['は','は'],['ま','ま'],['や','や'],['ら','ら'],['わ','わ'],['other','その他']];
-let customerKanaFilter='all',seatCustomerKanaFilter='all';
-function normalizeKanaText(value){return String(value||'').trim().toLowerCase().replace(/[ァ-ヶ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60))}
-function customerReading(c){
- const kana=normalizeKanaText(c?.kana);
- if(kana)return kana;
- const name=normalizeKanaText(c?.name);
- return /^[ぁ-ん]/.test(name)?name:'';
-}
-function customerKanaGroup(c){
- const first=customerReading(c).charAt(0);
- if(!first)return 'other';
- if('あいうえお'.includes(first))return 'あ';
- if('かきくけこがぎぐげご'.includes(first))return 'か';
- if('さしすせそざじずぜぞ'.includes(first))return 'さ';
- if('たちつてとだぢづでど'.includes(first))return 'た';
- if('なにぬねの'.includes(first))return 'な';
- if('はひふへほばびぶべぼぱぴぷぺぽ'.includes(first))return 'は';
- if('まみむめも'.includes(first))return 'ま';
- if('やゆよ'.includes(first))return 'や';
- if('らりるれろ'.includes(first))return 'ら';
- if('わをん'.includes(first))return 'わ';
- return 'other';
-}
-function customerSortValue(c){return customerReading(c)||normalizeKanaText(c.name)}
-function kanaTabsHtml(active,handler){return CUSTOMER_KANA_GROUPS.map(([key,label])=>`<button type="button" class="${active===key?'active':''}" onclick="${handler}('${key}')">${label}</button>`).join('')}
 window.tinkerbellApplyCloudCustomers=customers=>{
   if(!Array.isArray(customers))return;
-  db.customers=customers;
+  const pending=(db.customers||[]).filter(c=>c.cloudPending);
+  const map=new Map(customers.map(c=>[c.id,{...c,cloudPending:false}]));
+  pending.forEach(c=>{if(!map.has(c.id))map.set(c.id,c)});
+  db.customers=[...map.values()];
   persist();
   refreshSelects();
   renderCustomers();
+  setCustomerCloudStatus(pending.length?'pending':'synced');
 };
 window.tinkerbellGetLocalCustomers=()=>Array.isArray(db.customers)?db.customers:[];
-window.tinkerbellApplyCloudBottles=bottles=>{
-  if(!Array.isArray(bottles))return;
-  db.bottles=bottles;
-  persist();
-  refreshSelects();
-  renderBottles();
-  renderCustomers();
-};
-window.tinkerbellGetLocalBottles=()=>Array.isArray(db.bottles)?db.bottles:[];
 window.tinkerbellApplyCloudStaff=staff=>{
   if(!Array.isArray(staff))return;
   db.staff=staff;
@@ -1429,7 +1378,6 @@ window.tinkerbellApplyCloudMenu=menu=>{
     stock:Number.isFinite(Number(item.stock))?Number(item.stock):0,
     reorderPoint:Number.isFinite(Number(item.reorderPoint))?Number(item.reorderPoint):0,
     visible:item.visible!==false,
-    quickAccess:item.quickAccess===true,
     sortOrder:Number.isFinite(Number(item.sortOrder))?Number(item.sortOrder):index
   }));
   persist();
@@ -1454,16 +1402,6 @@ window.tinkerbellApplyCloudCheckoutEvents=events=>{
   persist();
 };
 window.tinkerbellGetLocalCheckoutEvents=()=>Array.isArray(db.checkoutEvents)?db.checkoutEvents:[];
-window.tinkerbellApplyCloudActiveSeats=seats=>{
- if(!Array.isArray(seats)||!seats.length)return;
- const cloudById=new Map(seats.map(s=>[String(s.id),s]));
- suppressActiveSeatCloudSave=true;
- db.seats=db.seats.map(local=>cloudById.has(String(local.id))?{...local,...cloudById.get(String(local.id)),orders:Array.isArray(cloudById.get(String(local.id))?.orders)?cloudById.get(String(local.id)).orders:[]}:local);
- localStorage.setItem(KEY,JSON.stringify(db));
- suppressActiveSeatCloudSave=false;
- renderSeats();renderOrders();
-};
-window.tinkerbellGetLocalActiveSeats=()=>Array.isArray(db.seats)?db.seats:[];
 
 let managerUnlocked=sessionStorage.getItem('tb_manager_unlocked')==='1';
 
@@ -1476,13 +1414,10 @@ function fillSelect(el,arr,label='name',value='id',allowBlank=false){
 
 function refreshSelects(){
  fillSelect($('loginStaff'),db.staff);
- ['customerCast','visitCast','bottleCast'].forEach(x=>fillSelect($(x),db.staff.filter(s=>s.role==='cast')));
+ ['customerCast','visitCast'].forEach(x=>fillSelect($(x),db.staff.filter(s=>s.role==='cast')));
  fillSelect($('myAttendanceStaff'),db.staff);
  fillSelect($('bottleCustomer'),db.customers);
- fillSelect($('visitCustomerId'),db.customers.slice().sort((a,b)=>customerSortValue(a).localeCompare(customerSortValue(b),'ja')),'name','id',true);
- $('customerNames').innerHTML=db.customers.slice().sort((a,b)=>customerSortValue(a).localeCompare(customerSortValue(b),'ja')).map(c=>`<option value="${esc(c.name)}" label="${esc(c.kana||'')}"></option>`).join('');
- if($('customerBirthMonth').options.length===1)$('customerBirthMonth').innerHTML+=[...Array(12)].map((_,i)=>`<option value="${i+1}">${i+1}月</option>`).join('');
- if($('customerBirthDay').options.length===1)$('customerBirthDay').innerHTML+=[...Array(31)].map((_,i)=>`<option value="${i+1}">${i+1}日</option>`).join('');
+ $('customerNames').innerHTML=db.customers.map(c=>`<option value="${esc(c.name)}"></option>`).join('');
 }
 
 function applyRole(){
@@ -1525,7 +1460,7 @@ function lockManager(){
  toast('管理モードを終了しました');
 }
 
-const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance','payroll']);
+const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttendance','payroll','shifts']);
 
 function show(idn){
  if(MANAGER_SCREENS.has(idn)&&!managerUnlocked){
@@ -1841,8 +1776,7 @@ window.tinkerbellApplyCloudSchedules=rows=>{
  db.visits=rows.map(x=>{
   const main=db.staff.find(s=>s.id===x.castId)||db.staff.find(s=>s.name===x.castName);
   const extraIds=Array.isArray(x.extraCastIds)&&x.extraCastIds.length?x.extraCastIds:(x.extraCastNames||[]).map(n=>db.staff.find(s=>s.name===n)?.id).filter(Boolean);
-  const customer=db.customers.find(c=>c.id===x.customerId)||db.customers.find(c=>normalizeCustomerNameForMatch(c.name)===normalizeCustomerNameForMatch(x.customer));
-  return {id:x.id||id(),castId:main?.id||x.castId||'',customerId:customer?.id||x.customerId||'',customer:customer?.name||x.customer||'',date:x.date,type:x.type==='companion'?'同伴':'予約',time:x.time||'',people:x.people??1,memo:x.memo||'',extraCastIds:extraIds};
+  return {id:x.id||id(),castId:main?.id||x.castId||'',customerId:x.customerId||'',customer:x.customer||'',date:x.date,type:x.type==='companion'?'同伴':'予約',time:x.time||'',people:x.people??1,memo:x.memo||'',extraCastIds:extraIds};
  });
  persist();renderVisits();
 };
@@ -1866,7 +1800,7 @@ function renderShifts(){
  const targetId=selectedShiftStaffId||db.staff[0]?.id,target=staffById(targetId);
  $('shiftMonthTitle').textContent=`${y}年${m+1}月`;
 
- {
+ if(isManager()){
   const weekdayNames=['日','月','火','水','木','金','土'];
   let overall='';
   for(let d=1;d<=days;d++){
@@ -1890,32 +1824,23 @@ function renderShifts(){
   $('shiftOverallList').innerHTML=overall;
  }
 
- $('shiftScreenTitle').textContent=isManager()?'シフト管理':'全員のシフト';
- $('shifts').querySelector('.shift-page-head p').textContent=isManager()
-  ?'LINEで提出されたシフトを全体確認・修正できます'
-  :'LINEで提出された全員のシフトを確認できます';
- $('shifts').querySelector('.shift-banner').textContent=isManager()
-  ?'LINEから提出された内容を確認し、必要な場合だけPOSで修正してください。修正内容はLINE側にも同期されます。'
-  :'閲覧専用です。シフトの登録はLINEから行い、修正は管理者がPOSで行います。';
- $('shifts').querySelector('.shift-actions').classList.toggle('hidden',!isManager());
+ $('shiftScreenTitle').textContent='シフト管理';
  $('shiftPersonPicker').innerHTML=db.staff.map(st=>`<button class="${st.id===targetId?'active':''}" onclick="selectShiftPerson('${st.id}')">${esc(st.name)}</button>`).join('');
  const weekdays=['日','月','火','水','木','金','土'],firstDow=new Date(y,m,1).getDay();
  let cal='<div class="month-calendar">'+weekdays.map((w,i)=>`<div class="dow ${i===0?'sun':i===6?'sat':''}">${w}</div>`).join('');
  for(let i=0;i<firstDow;i++)cal+='<div class="month-day blank"></div>';
  for(let d=1;d<=days;d++){
-   const dt=new Date(y,m,d),dow=dt.getDay(),ds=`${key}-${String(d).padStart(2,'0')}`,r=shiftRecord(targetId,ds),v=r?.status||(r?.time?'○':''),canEdit=isManager();
+   const dt=new Date(y,m,d),dow=dt.getDay(),ds=`${key}-${String(d).padStart(2,'0')}`,r=shiftRecord(targetId,ds),v=r?.status||(r?.time?'○':''),canEdit=true;
    cal+=`<button class="month-day ${dow===0?'sun':dow===6?'sat':''} ${shiftStatusClass(v)} ${ds===todayStr?'today':''} ${canEdit?'editable':''}" ${canEdit?`onclick="cycleShift('${targetId}','${ds}')"`:''}><span class="num">${d}</span><span class="mark">${v}</span></button>`;
  }
  cal+='</div>';$('shiftGrid').innerHTML=cal;
- $('shiftInputStatus').innerHTML=`<b>${esc(target?.name||'')}${isManager()?'を修正中':'のシフト'}</b><div style="height:8px"></div><b>LINE提出状況</b>`+db.staff.map(st=>{const t=db.shiftMeta.submitted[`${key}:${st.id}`];return `<div class="shift-status-row"><span>${esc(st.name)}</span><span class="${t?'submitted':'unsubmitted'}">${t?'● LINE提出済み':'● 未提出'}</span></div>`}).join('');
+ $('shiftInputStatus').innerHTML=`<b>${esc(target?.name||'')}を修正中</b><div style="height:8px"></div><b>LINE提出状況</b>`+db.staff.map(st=>{const t=db.shiftMeta.submitted[`${key}:${st.id}`];return `<div class="shift-status-row"><span>${esc(st.name)}</span><span class="${t?'submitted':'unsubmitted'}">${t?'● LINE提出済み':'● 未提出'}</span></div>`}).join('');
  const startDay=1,endDay=Math.min(days,14);let roster='<table class="roster-mini"><tr><th>名前</th>';
  for(let d=startDay;d<=endDay;d++)roster+=`<th>${d}</th>`;roster+='</tr>';
  db.staff.forEach(st=>{roster+=`<tr><td>${esc(st.name)}</td>`;for(let d=startDay;d<=endDay;d++){const r=shiftRecord(st.id,`${key}-${String(d).padStart(2,'0')}`),v=r?.status||(r?.time?'○':'');roster+=`<td class="${shiftStatusClass(v)}">${v||'・'}</td>`}roster+='</tr>'});roster+='</table>';$('shiftRoster').innerHTML=roster;
  const pub=db.shiftMeta.published[key];$('shiftPublishedNote').textContent=pub?`公開済み：${new Date(pub).toLocaleString('ja-JP')}`:'まだ公開されていません';
 }
-let shiftDetailDate='';
 window.openShiftDayDetail=date=>{
- shiftDetailDate=date;
  const dt=new Date(`${date}T00:00:00`);
  const weekdays=['日','月','火','水','木','金','土'];
  const groups={'○':[],'△':[],'×':[],'未回答':[]};
@@ -1949,31 +1874,9 @@ window.openShiftDayDetail=date=>{
 
  $('shiftDayModal').classList.remove('hidden');
 };
-$('shiftDayPrev').onclick=()=>moveShiftDayDetail(-1);
-$('shiftDayNext').onclick=()=>moveShiftDayDetail(1);
-function moveShiftDayDetail(days){
- if(!shiftDetailDate)return;
- const dt=new Date(`${shiftDetailDate}T00:00:00`);
- dt.setDate(dt.getDate()+days);
- const next=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
- openShiftDayDetail(next);
-}
-let shiftDaySwipeStartX=0,shiftDaySwipeStartY=0;
-$('shiftDayModal').addEventListener('touchstart',e=>{
- const touch=e.changedTouches[0];
- shiftDaySwipeStartX=touch.clientX;
- shiftDaySwipeStartY=touch.clientY;
-},{passive:true});
-$('shiftDayModal').addEventListener('touchend',e=>{
- const touch=e.changedTouches[0];
- const dx=touch.clientX-shiftDaySwipeStartX;
- const dy=touch.clientY-shiftDaySwipeStartY;
- if(Math.abs(dx)<55||Math.abs(dx)<=Math.abs(dy))return;
- moveShiftDayDetail(dx<0?1:-1);
-},{passive:true});
 $('shiftDayModalClose').onclick=()=>$('shiftDayModal').classList.add('hidden');
 
-window.selectShiftPerson=x=>{selectedShiftStaffId=x;renderShifts()};
+window.selectShiftPerson=x=>{if(!isManager())return;selectedShiftStaffId=x;renderShifts()};
 $('prevShiftMonth').onclick=()=>{shiftViewMonth.setMonth(shiftViewMonth.getMonth()-1);renderShifts()};
 $('nextShiftMonth').onclick=()=>{shiftViewMonth.setMonth(shiftViewMonth.getMonth()+1);renderShifts()};
 $('publishShift').onclick=()=>{if(!isManager())return;ensureShiftMeta();db.shiftMeta.published[shiftMonthKey()]=nowISO();persist();saveSharedShiftsFromPos();saveSharedShiftMetaFromPos();renderShifts();toast('全員に公開しました')};
@@ -1996,7 +1899,7 @@ function renderSeats(){
   const typeClass=isBox?'seat-box':'seat-counter';
   const statusClass=s.customerName?'seat-inuse':'seat-empty';
 
-  return `<div class="seat ${typeClass} ${statusClass}" data-seat-id="${esc(s.id)}">
+  return `<div class="seat ${typeClass} ${statusClass}" onclick="${s.customerName?`openSeatOrder('${s.id}')`:`openSeat('${s.id}')`}">
    <div class="seat-topline">
     <div class="seat-number">${esc(s.name)}</div>
     <div class="seat-status">${s.customerName?'使用中':'空席'}</div>
@@ -2009,47 +1912,23 @@ function renderSeats(){
     <div class="seat-total">${yen(seatTotal(s))}</div>
     <div class="seat-order-count">注文 ${s.orders.length}件</div>
     <div class="item-actions seat-actions">
-      <button type="button" class="secondary" data-seat-action="detail" data-seat-target="${esc(s.id)}">詳細</button>
-      <button type="button" class="primary" data-seat-action="order" data-seat-target="${esc(s.id)}">注文</button>
-      <button type="button" class="danger" data-seat-action="checkout" data-seat-target="${esc(s.id)}">会計</button>
+      <button class="secondary" onclick="event.stopPropagation();openSeatDetail('${s.id}')">詳細</button>
+      <button class="primary" onclick="event.stopPropagation();openSeatOrder('${s.id}')">注文</button>
+      <button class="danger" onclick="event.stopPropagation();checkoutSeat('${s.id}')">会計</button>
     </div>
    `:`
     <div class="seat-empty-text">空席</div>
     <div class="item-actions seat-actions">
-      <button type="button" class="primary" data-seat-action="open" data-seat-target="${esc(s.id)}">入店登録</button>
+      <button class="primary">入店登録</button>
     </div>
    `}
   </div>`;
-  }).join('');
- bindSeatActionButtons();
-}
-
-function bindSeatActionButtons(){
- qsa('#seatGrid button[data-seat-action]').forEach(button=>{
-  button.onclick=event=>{
-   event.preventDefault();
-   event.stopPropagation();
-   const sid=button.dataset.seatTarget;
-   const action=button.dataset.seatAction;
-   if(action==='detail')window.openSeatDetail(sid);
-   else if(action==='order')window.openSeatOrder(sid);
-   else if(action==='checkout')window.checkoutSeat(sid);
-   else if(action==='open')window.openSeat(sid);
-  };
- });
- qsa('#seatGrid [data-seat-id]').forEach(seat=>{
-  seat.onclick=event=>{
-   if(event.target.closest('button[data-seat-action]'))return;
-   const row=db.seats.find(s=>String(s.id)===String(seat.dataset.seatId));
-   if(!row)return;
-   row.customerName?window.openSeatOrder(row.id):window.openSeat(row.id);
-  };
- });
+ }).join('');
 }
 
 window.openSeatOrder=sid=>{
  selectedOrderSeat=sid;
- selectedCategory='よく出る';
+ selectedCategory='すべて';
  pendingMenu='';
  show('orders');
 };
@@ -2148,83 +2027,14 @@ function renderSeatCastChoices(){
  });
 }
 
-function findRegisteredSeatCustomer(name){
- const normalized=normalizeCustomerNameForMatch(name);
- return db.customers.find(c=>normalizeCustomerNameForMatch(c.name)===normalized)||null;
-}
-
-function customerVisitHistory(customer){
- if(!customer)return [];
- const matched=db.checkouts.filter(x=>
-  x.status!=='cancelled' &&
-  ((customer.id&&x.customerId===customer.id)||
-   normalizeCustomerNameForMatch(x.groupCustomerName||x.customerName)===normalizeCustomerNameForMatch(customer.name))
- ).sort((a,b)=>String(b.closedAt||'').localeCompare(String(a.closedAt||'')));
- const unique=new Map();
- matched.forEach(x=>{const key=x.splitGroupId||x.id;if(!unique.has(key))unique.set(key,x)});
- return [...unique.values()];
-}
-
-function formatCustomerVisitDate(value){
- if(!value)return '記録なし';
- const d=new Date(value);
- return Number.isNaN(d.getTime())?'記録なし':d.toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric'});
-}
-
-function renderSeatCustomerProfile(applyAssignedCast=false){
- const customer=findRegisteredSeatCustomer($('seatCustomerName').value);
- const box=$('seatCustomerProfile');
- if(!customer){box.classList.add('hidden');box.innerHTML='';return}
-
- const history=customerVisitHistory(customer);
- const bottles=db.bottles.filter(b=>b.customerId===customer.id);
- const assigned=staffById(customer.castId);
- box.innerHTML=`
-  <h3>登録済みのお客様です</h3>
-  <div class="profile-row"><span class="profile-label">お客様名</span><b>${esc(customer.name)}</b></div>
-  <div class="profile-row"><span class="profile-label">担当キャスト</span><b>${esc(assigned?.name||'未設定')}</b></div>
-  <div class="profile-row"><span class="profile-label">前回来店日</span><b>${esc(formatCustomerVisitDate(history[0]?.closedAt))}</b></div>
-  <div class="profile-row"><span class="profile-label">キープボトル</span><b>${bottles.length?bottles.map(b=>esc(b.name)).join('、'):'なし'}</b></div>
-  <div class="profile-row"><span class="profile-label">メモ・好み・注意事項</span>${esc(customer.memo||'登録なし')}</div>
-  <div class="profile-row"><span class="profile-label">最近の来店履歴</span>${history.length?history.slice(0,3).map(x=>`<div class="history-line">${esc(formatCustomerVisitDate(x.closedAt))}　${esc(x.seat||'')}</div>`).join(''):'記録なし'}</div>`;
- box.classList.remove('hidden');
-
- if(applyAssignedCast&&assigned&&assigned.role==='cast'&&!seatCastSelected.length){
-  seatCastSelected=[assigned.id];
-  renderSeatCastChoices();
- }
-}
-
-function renderSeatCustomerPickList(){
- const q=normalizeKanaText($('seatCustomerName').value);
- $('seatCustomerKanaTabs').innerHTML=kanaTabsHtml(seatCustomerKanaFilter,'setSeatCustomerKana');
- const rows=db.customers.filter(c=>
-  (seatCustomerKanaFilter==='all'||customerKanaGroup(c)===seatCustomerKanaFilter)&&
-  (!q||normalizeKanaText(`${c.name} ${c.kana||''}`).includes(q))
- ).sort((a,b)=>customerSortValue(a).localeCompare(customerSortValue(b),'ja'));
- $('seatCustomerPickList').innerHTML=rows.length?rows.map(c=>`<button type="button" onclick="chooseSeatCustomer('${c.id}')">${esc(c.name)}<small>${esc(c.kana||'ふりがな未登録')}</small></button>`).join(''):'<div class="empty" style="grid-column:1/-1">該当するお客様はいません</div>';
-}
-window.setSeatCustomerKana=key=>{seatCustomerKanaFilter=key;$('seatCustomerName').value='';renderSeatCustomerPickList()};
-window.chooseSeatCustomer=customerId=>{
- const customer=customerById(customerId);if(!customer)return;
- $('seatCustomerId').value=customer.id;
- $('seatCustomerName').value=customer.name;
- renderSeatCustomerPickList();
- renderSeatCustomerProfile(true);
-};
-
 function openSeatModal(sid){
  const s=db.seats.find(x=>x.id===sid);
  seatEditId=sid;
  seatCastSelected=Array.isArray(s.casts)?[...s.casts]:[];
 
  $('seatModalTitle').textContent=s.customerName?`${s.name}を変更`:`${s.name}へ入店`;
- $('seatCustomerId').value=s.customerId||'';
  $('seatCustomerName').value=s.customerName||'';
- seatCustomerKanaFilter='all';
- renderSeatCustomerPickList();
  renderSeatCastChoices();
- renderSeatCustomerProfile(false);
  $('seatModal').classList.remove('hidden');
 }
 
@@ -2233,16 +2043,13 @@ window.editSeat=openSeatModal;
 
 
 $('seatModalCancel').onclick=()=>$('seatModal').classList.add('hidden');
-$('seatCustomerName').oninput=()=>{$('seatCustomerId').value='';renderSeatCustomerPickList();renderSeatCustomerProfile(true)};
-$('seatCustomerName').onchange=()=>{renderSeatCustomerPickList();renderSeatCustomerProfile(true)};
 
 $('seatModalSave').onclick=()=>{
  const name=$('seatCustomerName').value.trim();
  if(!name)return toast('お客様名を入力');
 
  const s=db.seats.find(x=>x.id===seatEditId);
- const selectedCustomer=customerById($('seatCustomerId').value);
- const c=selectedCustomer&&normalizeCustomerNameForMatch(selectedCustomer.name)===normalizeCustomerNameForMatch(name)?selectedCustomer:findRegisteredSeatCustomer(name);
+ const c=db.customers.find(x=>x.name===name);
  if(!s)return toast('席が見つかりません');
 
  // 選択されたキャストは、他の席から外してこの席へ移動する。
@@ -2274,7 +2081,7 @@ function findCompanionVisitForSeat(seat){
  return (db.visits||[]).slice().reverse().find(v=>
   v.type==='同伴' &&
   String(v.date||'')===date &&
-  ((seat?.customerId&&v.customerId===seat.customerId)||normalizeCustomerNameForMatch(v.customer)===customer)
+  normalizeCustomerNameForMatch(v.customer)===customer
  );
 }
 function orderCastName(order){
@@ -2366,60 +2173,21 @@ function resetSplitCheckoutDraft(){
 }
 
 let pendingCheckoutSeatId='';
-let seatCheckoutCompanionIds=[];
-
-function showSeatCheckoutError(message){
- const box=$('seatCheckoutError');
- box.textContent=message||'';
- box.classList.toggle('hidden',!message);
- if(message)box.scrollIntoView?.({behavior:'smooth',block:'center'});
-}
-
-function seatHasCompanionCharge(seat){
- return Boolean(seat&&(seat.orders||[]).some(order=>{
-  const menu=db.menu.find(m=>String(m.id)===String(order.menuId));
-  const type=String(order.menuType||menu?.type||'').trim();
-  const name=String(order.name||menu?.name||'').trim();
-  return type==='同伴'||name.includes('同伴');
- }));
-}
-
-function renderSeatCheckoutCompanions(){
- const casts=db.staff.filter(x=>x.role==='cast');
- $('seatCheckoutCompanions').innerHTML=casts.length?casts.map(c=>`
-  <label class="seat-cast-option ${seatCheckoutCompanionIds.includes(c.id)?'selected':''}">
-   <input type="checkbox" value="${esc(c.id)}" ${seatCheckoutCompanionIds.includes(c.id)?'checked':''}>
-   <span>${esc(c.name)}</span>
-  </label>`).join(''):'<div class="empty">キャストが登録されていません</div>';
-}
-
-$('seatCheckoutCompanions').addEventListener('change',e=>{
- const input=e.target.closest('input[type="checkbox"]');
- if(!input)return;
- if(input.checked){
-  if(!seatCheckoutCompanionIds.includes(input.value))seatCheckoutCompanionIds.push(input.value);
- }else{
-  seatCheckoutCompanionIds=seatCheckoutCompanionIds.filter(cid=>cid!==input.value);
- }
- input.closest('.seat-cast-option')?.classList.toggle('selected',input.checked);
-});
 
 window.checkoutSeat=sid=>{
  const s=db.seats.find(x=>x.id===sid);
  if(!s)return;
  pendingCheckoutSeatId=sid;
- showSeatCheckoutError('');
  $('seatCheckoutPayment').value='';
  $('seatCheckoutMode').value='single';
  $('splitCheckoutCount').value='2';
  splitCheckoutDraft=buildDefaultSplitDraft(seatBilling(s).total,2,s.customerName||'');
 
- const hasCompanionCharge=seatHasCompanionCharge(s);
- $('seatCheckoutCompanionArea').classList.toggle('hidden',!hasCompanionCharge);
- const companionVisit=hasCompanionCharge?findCompanionVisitForSeat(s):null;
- seatCheckoutCompanionIds=companionVisit?[companionVisit.castId,...(Array.isArray(companionVisit.extraCastIds)?companionVisit.extraCastIds:[])].filter(Boolean):[];
- seatCheckoutCompanionIds=[...new Set(seatCheckoutCompanionIds)];
- renderSeatCheckoutCompanions();
+ const casts=db.staff.filter(x=>x.role==='cast');
+ $('seatCheckoutCompanion').innerHTML='<option value="">同伴なし</option>'+casts.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+ const companionVisit=findCompanionVisitForSeat(s);
+ $('seatCheckoutCompanion').value='';
+ if(companionVisit?.castId)$('seatCheckoutCompanion').value=companionVisit.castId;
 
  $('seatCheckoutBody').innerHTML=`
   <div class="card">
@@ -2451,7 +2219,6 @@ $('seatCheckoutClose').onclick=()=>{
 };
 
 $('seatCheckoutMode').onchange=renderSplitCheckoutUI;
-$('seatCheckoutPayment').onchange=()=>showSeatCheckoutError('');
 $('splitCheckoutCount').onchange=resetSplitCheckoutDraft;
 $('splitCheckoutEven').onclick=resetSplitCheckoutDraft;
 $('splitCheckoutRows').addEventListener('input',e=>{
@@ -2477,12 +2244,8 @@ $('seatCheckoutConfirm').onclick=async()=>{
  if(!s)return;
 
  const mode=$('seatCheckoutMode').value||'single';
- const hasCompanionCharge=seatHasCompanionCharge(s);
- const companionCastIds=hasCompanionCharge?[...new Set(seatCheckoutCompanionIds)].filter(cid=>staffById(cid)):[];
- if(hasCompanionCharge&&!companionCastIds.length){showSeatCheckoutError('同伴した女の子を選択してください');return toast('同伴した女の子を選択してください')}
- const companionCastNames=companionCastIds.map(cid=>staffById(cid)?.name).filter(Boolean);
- const companionCastId=companionCastIds[0]||'';
- const companionCastName=companionCastNames.join('・');
+ const companionCastId=$('seatCheckoutCompanion').value||'';
+ const companionCastName=staffById(companionCastId)?.name||'';
  const seatCastIds=Array.isArray(s.casts)?[...s.casts]:[];
  const seatCastNamesSnapshot=seatCastIds.map(cid=>staffById(cid)?.name).filter(Boolean);
  const billing=seatBilling(s);
@@ -2506,8 +2269,6 @@ $('seatCheckoutConfirm').onclick=async()=>{
    if(!paymentMethod){
     button.disabled=false;
     button.textContent='会計を確定する';
-    showSeatCheckoutError('支払方法を選択してください');
-    $('seatCheckoutPayment').focus();
     return toast('支払方法を選択してください');
    }
 
@@ -2523,8 +2284,6 @@ $('seatCheckoutConfirm').onclick=async()=>{
     paymentMethod,
     companionCastId,
     companionCastName,
-    companionCastIds,
-    companionCastNames,
     seatCastIds,
     seatCastNames:seatCastNamesSnapshot,
     orders:ordersSnapshot,
@@ -2589,8 +2348,6 @@ $('seatCheckoutConfirm').onclick=async()=>{
      paymentMethod:row.paymentMethod,
      companionCastId,
      companionCastName,
-     companionCastIds,
-     companionCastNames,
      seatCastIds,
      seatCastNames:seatCastNamesSnapshot,
      orders:ordersSnapshot,
@@ -2643,7 +2400,6 @@ $('seatCheckoutConfirm').onclick=async()=>{
   persist();
   button.disabled=false;
   button.textContent='会計を確定する';
-  showSeatCheckoutError('クラウド保存に失敗したため、会計を確定できませんでした。接続を確認してもう一度押してください。');
   return toast('会計のクラウド保存に失敗しました');
  }
 
@@ -2666,11 +2422,11 @@ $('seatCheckoutConfirm').onclick=async()=>{
  toast(mode==='split'?`分割会計を${createdCheckouts.length}件保存しました`:'会計を確定しました');
 };
 
-let selectedOrderSeat='',selectedCategory='よく出る',pendingMenu='',lastOrder=null,undoTimer=null;
+let selectedOrderSeat='',selectedCategory='すべて',pendingMenu='',lastOrder=null,undoTimer=null;
 
 window.selectOrderSeat=sid=>{
  selectedOrderSeat=sid;
- selectedCategory='よく出る';
+ selectedCategory='すべて';
  pendingMenu='';
  renderOrders();
 };
@@ -2734,26 +2490,20 @@ function renderTapOrders(){
   .filter(m=>m.visible!==false)
   .sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
 
- const cats=['よく出る',...new Set(visibleMenu.map(m=>m.type).filter(Boolean))];
+ const cats=['すべて',...new Set(visibleMenu.map(m=>m.type))];
 
  $('orderCategories').innerHTML=cats.map(c=>`
   <button class="${c===selectedCategory?'primary':'secondary'}" onclick="setCategory('${esc(c)}')">
    ${esc(c)}
   </button>`).join('');
 
- const items=visibleMenu.filter(m=>selectedCategory==='よく出る'?m.quickAccess===true:m.type===selectedCategory);
-
- $('orderQuickNote').textContent=selectedCategory==='よく出る'
-  ?'よく出る商品を表示中。ほかの商品は種類を押してください。'
-  :`${selectedCategory}の商品を表示中`;
+ const items=visibleMenu.filter(m=>selectedCategory==='すべて'||m.type===selectedCategory);
 
  $('tapMenuGrid').innerHTML=items.length?items.map(m=>`
   <button class="order-menu-button" onclick="tapMenu('${m.id}')">
    <b>${esc(m.name)}</b>
    <small>${yen(m.price)}</small>
-  </button>`).join(''):(selectedCategory==='よく出る'
-   ?'<div class="empty">商品管理で「よく出る商品として表示」を設定してください。<br>ほかの商品は上の種類から選べます。</div>'
-   :'<div class="empty">この種類の商品はありません</div>');
+  </button>`).join(''):'<div class="empty">この分類の商品はありません</div>';
 
  $('castPicker').classList.add('hidden');
 }
@@ -2918,103 +2668,103 @@ $('saveCustomer').onclick=async()=>{
  const button=$('saveCustomer');
  const name=$('customerName').value.trim();
  if(!name)return toast('お客様名を入力');
- const editId=$('customerEditId').value;
- const birthMonth=$('customerBirthMonth').value,birthDay=$('customerBirthDay').value;
- if((birthMonth&&!birthDay)||(!birthMonth&&birthDay))return toast('誕生日は月日両方を選択');
- const beforeCustomers=JSON.parse(JSON.stringify(db.customers));
- const beforeBottles=JSON.parse(JSON.stringify(db.bottles));
- const beforeVisits=JSON.parse(JSON.stringify(db.visits));
- const beforeSeats=JSON.parse(JSON.stringify(db.seats));
- const bottleNumber=$('customerBottleNumber').value.trim();
- const bottleName=$('customerBottleName').value.trim();
- const hasBottleInput=Boolean(bottleNumber||bottleName);
- if(hasBottleInput&&(!bottleNumber||!bottleName))return toast('ボトルの管理番号とボトル名を入力');
- if(hasBottleInput&&db.bottles.some(b=>String(b.number||'')===bottleNumber))return toast('同じボトル管理番号があります');
 
  button.disabled=true;
  button.textContent='保存中...';
 
- let customer=db.customers.find(c=>c.id===editId);
- if(customer){
-  Object.assign(customer,{name,kana:normalizeKanaText($('customerKana').value),birthMonth:Number(birthMonth)||'',birthDay:Number(birthDay)||'',castId:$('customerCast').value,cast:staffById($('customerCast').value)?.name||'',memo:$('customerMemo').value.trim()});
-  db.bottles.filter(b=>b.customerId===customer.id).forEach(b=>b.customer=name);
-  db.visits.filter(v=>v.customerId===customer.id).forEach(v=>v.customer=name);
-  db.seats.filter(s=>s.customerId===customer.id).forEach(s=>s.customerName=name);
- }else{
-  customer={id:id(),name,kana:normalizeKanaText($('customerKana').value),birthMonth:Number(birthMonth)||'',birthDay:Number(birthDay)||'',castId:$('customerCast').value,cast:staffById($('customerCast').value)?.name||'',memo:$('customerMemo').value.trim(),visits:0};
-  db.customers.push(customer);
- }
- if(hasBottleInput){
-  const castId=$('customerCast').value;
-  db.bottles.push({
-   id:id(),number:bottleNumber,customerId:customer.id,customer:customer.name,
-   category:$('customerBottleCategory').value,name:bottleName,castId,
-   cast:staffById(castId)?.name||'',qty:Math.max(1,Number($('customerBottleQty').value||1)),
-   status:$('customerBottleStatus').value,emptyDate:$('customerBottleStatus').value==='empty'?today():''
-  });
- }
+ const customer={
+  id:id(),
+  name,
+  castId:$('customerCast').value,
+  phone:$('customerPhone').value.trim(),
+  memo:$('customerMemo').value.trim(),
+  visits:0,
+  cloudPending:true,
+  createdAt:nowISO()
+ };
+
+ // 先に端末へ確実に保存。クラウドエラーでも消さない。
+ db.customers.push(customer);
  persist();
  refreshSelects();
  renderCustomers();
- renderBottles();
- renderVisits();
+
+ $('customerName').value='';
+ $('customerPhone').value='';
+ $('customerMemo').value='';
 
  try{
   if(!window.tinkerbellFirebase?.saveCustomers){
    throw new Error('Firebase準備中');
   }
-  await window.tinkerbellFirebase.saveCustomers(db.customers);
-  await window.tinkerbellFirebase.saveBottles(db.bottles);
-  await saveSharedSchedulesFromPos();
-  clearCustomerForm();
-  toast('クラウド保存しました');
+
+  // cloudPendingはクラウドには送らず、通常データのみ送る
+  const cloudRows=db.customers.map(({cloudPending,...c})=>c);
+  await window.tinkerbellFirebase.saveCustomers(cloudRows);
+
+  db.customers=db.customers.map(c=>({...c,cloudPending:false}));
+  persist();
+  renderCustomers();
+  setCustomerCloudStatus('synced');
+  toast('お客様を保存しました');
  }catch(error){
   console.error('Customer cloud save failed:',error);
-  db.customers=beforeCustomers;
-  db.bottles=beforeBottles;
-  db.visits=beforeVisits;
-  db.seats=beforeSeats;
-  persist();
-  refreshSelects();
-  renderCustomers();
-  renderBottles();
-  renderVisits();
-  toast('クラウド保存に失敗しました');
+  const code=error?.code||error?.message||'不明';
+  setCustomerCloudStatus('error',code);
+  toast('端末に保存しました。クラウドは同期待ちです');
  }finally{
   button.disabled=false;
-  button.textContent=$('customerEditId').value?'お客様情報を更新':'お客様登録';
+  button.textContent='お客様登録';
  }
 };
+function setCustomerCloudStatus(state,detail=''){
+ const el=$('customerCloudStatus');
+ if(!el)return;
+ if(state==='synced'){
+  el.className='customer-cloud-status synced';
+  el.textContent='● クラウド同期済み';
+ }else if(state==='pending'){
+  el.className='customer-cloud-status pending';
+  el.textContent='● 端末保存済み・クラウド同期待ち';
+ }else if(state==='error'){
+  el.className='customer-cloud-status error';
+  el.textContent=`● クラウド同期エラー：${detail}`;
+ }else{
+  el.className='customer-cloud-status';
+  el.textContent='クラウド状態を確認中...';
+ }
+}
 
-function clearCustomerForm(){
- $('customerEditId').value='';$('customerName').value='';$('customerKana').value='';$('customerBirthMonth').value='';$('customerBirthDay').value='';$('customerMemo').value='';
- $('customerBottleNumber').value='';$('customerBottleName').value='';$('customerBottleCategory').value='shochu';$('customerBottleQty').value='1';$('customerBottleStatus').value='stored';
- $('saveCustomer').textContent='お客様登録';$('cancelCustomerEdit').classList.add('hidden');
+async function retryCustomerCloudSync(){
+ const button=$('retryCustomerCloudSync');
+ if(button){button.disabled=true;button.textContent='同期中...'}
+ try{
+  if(!window.tinkerbellFirebase?.saveCustomers)throw new Error('Firebase準備中');
+  const cloudRows=db.customers.map(({cloudPending,...c})=>c);
+  await window.tinkerbellFirebase.saveCustomers(cloudRows);
+  db.customers=db.customers.map(c=>({...c,cloudPending:false}));
+  persist();
+  renderCustomers();
+  setCustomerCloudStatus('synced');
+  toast('お客様データをクラウド同期しました');
+ }catch(error){
+  console.error('Customer retry sync failed:',error);
+  setCustomerCloudStatus('error',error?.code||error?.message||'不明');
+  toast('クラウド同期に失敗しました。端末データは残っています');
+ }finally{
+  if(button){button.disabled=false;button.textContent='お客様データを再同期'}
+ }
 }
-window.editCustomer=customerId=>{
- const c=customerById(customerId);if(!c)return;
- $('customerEditId').value=c.id;$('customerName').value=c.name;$('customerKana').value=c.kana||'';$('customerBirthMonth').value=c.birthMonth||'';$('customerBirthDay').value=c.birthDay||'';$('customerCast').value=c.castId||db.staff.find(s=>s.name===c.cast)?.id||'';$('customerMemo').value=c.memo||'';
- $('customerBottleNumber').value='';$('customerBottleName').value='';$('customerBottleCategory').value='shochu';$('customerBottleQty').value='1';$('customerBottleStatus').value='stored';
- $('saveCustomer').textContent='お客様情報を更新';$('cancelCustomerEdit').classList.remove('hidden');scrollTo(0,0);
-};
-$('cancelCustomerEdit').onclick=clearCustomerForm;
-window.setCustomerKana=key=>{customerKanaFilter=key;renderCustomers()};
-$('customerSearch').oninput=renderCustomers;
-function renderCustomers(){
- const q=normalizeKanaText($('customerSearch').value);
- $('customerKanaTabs').innerHTML=kanaTabsHtml(customerKanaFilter,'setCustomerKana');
- const a=db.customers.filter(c=>(customerKanaFilter==='all'||customerKanaGroup(c)===customerKanaFilter)&&(!q||normalizeKanaText(`${c.name} ${c.kana||''} ${c.memo||''} ${staffById(c.castId)?.name||''}`).includes(q))).sort((x,y)=>customerSortValue(x).localeCompare(customerSortValue(y),'ja'));
- $('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)} <small class="meta">${esc(c.kana||'ふりがな未登録')}</small></h3><div class="meta">誕生日 ${c.birthMonth&&c.birthDay?`${c.birthMonth}月${c.birthDay}日`:'未登録'}<br>担当 ${esc(staffById(c.castId)?.name||c.cast||'未設定')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>esc(b.name)).join('、'):'なし'}</div><div class="item-actions"><button class="secondary" onclick="editCustomer('${c.id}')">編集</button><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>';
-}
+window.retryCustomerCloudSync=retryCustomerCloudSync;
+
+function renderCustomers(){const q=$('customerSearch').value.toLowerCase();const a=db.customers.filter(c=>(c.name+c.phone+c.memo+(staffById(c.castId)?.name||'')).toLowerCase().includes(q));$('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)} ${c.cloudPending?'<span class="tag customer-pending-tag">同期待ち</span>':''}</h3><div class="meta">担当 ${esc(staffById(c.castId)?.name||'未設定')}<br>電話 ${esc(c.phone||'未登録')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>`${esc(b.name)}(${esc(b.level)})`).join('、'):'なし'}</div><div class="item-actions"><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>'}
 window.delCustomer=async x=>{
  if(!confirm('削除しますか？'))return;
  const beforeCustomers=[...db.customers];
  const beforeBottles=[...db.bottles];
- const beforeVisits=[...db.visits];
 
  db.customers=db.customers.filter(v=>v.id!==x);
  db.bottles=db.bottles.filter(v=>v.customerId!==x);
- db.visits=db.visits.filter(v=>v.customerId!==x);
  persist();
  refreshSelects();
  renderAll();
@@ -3022,14 +2772,11 @@ window.delCustomer=async x=>{
  try{
   if(!window.tinkerbellFirebase?.saveCustomers)throw new Error('Firebase準備中');
   await window.tinkerbellFirebase.saveCustomers(db.customers);
-  await window.tinkerbellFirebase.saveBottles(db.bottles);
-  await saveSharedSchedulesFromPos();
   toast('クラウドから削除しました');
  }catch(error){
   console.error('Customer cloud delete failed:',error);
   db.customers=beforeCustomers;
   db.bottles=beforeBottles;
-  db.visits=beforeVisits;
   persist();
   refreshSelects();
   renderAll();
@@ -3037,34 +2784,13 @@ window.delCustomer=async x=>{
  }
 }
 
-function bottleCategoryName(v){return {whisky:'ウイスキー',brandy:'ブランデー',shochu:'焼酎',wine:'ワイン',sake:'日本酒',other:'その他'}[v]||'その他'}
-function clearBottleForm(){$('bottleEditId').value='';$('bottleNumber').value='';$('bottleName').value='';$('bottleQty').value='1';$('bottleStatus').value='stored';$('bottleCategory').value='shochu';$('saveBottle').textContent='ボトル登録';$('cancelBottleEdit').classList.add('hidden')}
-$('cancelBottleEdit').onclick=clearBottleForm;
-$('saveBottle').onclick=async()=>{
- const number=$('bottleNumber').value.trim(),customerId=$('bottleCustomer').value,name=$('bottleName').value.trim(),editId=$('bottleEditId').value;
- if(!number||!customerId||!name)return toast('管理番号・お客様・ボトル名を入力');
- if(db.bottles.some(b=>String(b.number||'')===number&&b.id!==editId))return toast('同じ管理番号があります');
- const customer=customerById(customerId),castId=$('bottleCast').value;
- const obj={number,customerId,customer:customer?.name||'',category:$('bottleCategory').value,name,castId,cast:staffById(castId)?.name||'',qty:Math.max(1,Number($('bottleQty').value||1)),status:$('bottleStatus').value,emptyDate:$('bottleStatus').value==='empty'?today():''};
- const existing=db.bottles.find(b=>b.id===editId);if(existing)Object.assign(existing,obj);else db.bottles.push({id:id(),...obj});
- persist();clearBottleForm();renderBottles();renderCustomers();
- try{if(!window.tinkerbellFirebase?.saveBottles)throw new Error('Firebase準備中');await window.tinkerbellFirebase.saveBottles(db.bottles);toast('ボトルを同期しました')}catch(e){console.error(e);toast('ボトルの同期に失敗しました')}
-};
-window.editBottle=x=>{const b=db.bottles.find(v=>v.id===x);if(!b)return;$('bottleEditId').value=b.id;$('bottleNumber').value=b.number||'';$('bottleCustomer').value=b.customerId||'';$('bottleCategory').value=b.category||'other';$('bottleName').value=b.name||'';$('bottleCast').value=b.castId||db.staff.find(s=>s.name===b.cast)?.id||'';$('bottleQty').value=b.qty||1;$('bottleStatus').value=b.status||'stored';$('saveBottle').textContent='ボトル情報を更新';$('cancelBottleEdit').classList.remove('hidden');scrollTo(0,0)};
-function renderBottles(){$('bottleList').innerHTML=db.bottles.length?db.bottles.slice().sort((a,b)=>String(a.number||'').localeCompare(String(b.number||''),'ja',{numeric:true})).map(b=>`<div class="item"><h3>No.${esc(b.number||'未登録')} ${esc(b.name)}</h3><div class="meta">${esc(customerById(b.customerId)?.name||b.customer||'不明')} / ${bottleCategoryName(b.category)} / 担当 ${esc(staffById(b.castId)?.name||b.cast||'未設定')} / ${Number(b.qty||1)}本 / ${b.status==='empty'?'空ボトル':'保管中'}</div><div class="item-actions"><button class="secondary" onclick="editBottle('${b.id}')">編集</button><button class="danger" onclick="delBottle('${b.id}')">削除</button></div></div>`).join(''):'<div class="empty">ボトルなし</div>'}
-window.delBottle=async x=>{db.bottles=db.bottles.filter(v=>v.id!==x);persist();renderAll();try{await window.tinkerbellFirebase?.saveBottles?.(db.bottles)}catch(e){console.error(e);toast('ボトル削除の同期に失敗しました')}}
+$('saveBottle').onclick=()=>{if(!$('bottleCustomer').value||!$('bottleName').value.trim())return toast('お客様とボトル名を入力');db.bottles.push({id:id(),customerId:$('bottleCustomer').value,name:$('bottleName').value.trim(),level:$('bottleLevel').value,place:$('bottlePlace').value});persist();$('bottleName').value='';$('bottlePlace').value='';renderBottles();renderCustomers();toast('ボトル登録')};
+function renderBottles(){$('bottleList').innerHTML=db.bottles.length?db.bottles.map(b=>`<div class="item"><h3>${esc(b.name)} <span class="tag">${esc(b.level)}</span></h3><div class="meta">${esc(customerById(b.customerId)?.name||'不明')} / ${esc(b.place||'保管場所未登録')}</div><div class="item-actions"><button class="secondary" onclick="changeBottle('${b.id}')">残量変更</button><button class="danger" onclick="delBottle('${b.id}')">削除</button></div></div>`).join(''):'<div class="empty">ボトルなし</div>'}
+window.changeBottle=x=>{const b=db.bottles.find(v=>v.id===x);const n=prompt('残量を入力（満タン・75%・50%・25%・ほぼ空）',b.level);if(n===null)return;b.level=n;persist();renderAll()}
+window.delBottle=x=>{db.bottles=db.bottles.filter(v=>v.id!==x);persist();renderAll()}
 
-function renderVisitCustomerBottles(){
- const customer=customerById($('visitCustomerId').value);
- const box=$('visitCustomerBottles');
- if(!customer){box.classList.add('hidden');box.innerHTML='';return}
- const bottles=db.bottles.filter(b=>b.customerId===customer.id&&b.status!=='empty');
- box.innerHTML=`<h3>${esc(customer.name)}様の登録情報</h3><div class="profile-row"><span class="profile-label">キープボトル</span><b>${bottles.length?bottles.map(b=>`${esc(b.name)}（${Number(b.qty||1)}本）`).join('、'):'なし'}</b></div>`;
- box.classList.remove('hidden');
-}
-$('visitCustomerId').onchange=renderVisitCustomerBottles;
-$('saveVisit').onclick=()=>{const customer=customerById($('visitCustomerId').value);if(!customer)return toast('登録済みのお客様を選択');db.visits.push({id:id(),castId:$('visitCast').value,customerId:customer.id,customer:customer.name,date:$('visitDate').value,type:$('visitType').value,time:$('visitTime').value,people:$('visitPeople').value,memo:$('visitMemo').value});persist();saveSharedSchedulesFromPos();renderVisits();renderVisitCustomerBottles();toast('予定登録')};
-function renderVisits(){const a=db.visits.sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));$('visitList').innerHTML=a.length?a.map(v=>{const customer=customerById(v.customerId);const bottles=customer?db.bottles.filter(b=>b.customerId===customer.id&&b.status!=='empty'):[];return `<div class="item"><h3>${esc(customer?.name||v.customer)} <span class="tag">${esc(v.type)}</span></h3><div class="meta">${esc(v.date)} ${esc(v.time)} / ${esc(v.people)}名<br>担当 ${esc(staffById(v.castId)?.name||'')}${bottles.length?`<br>キープボトル ${bottles.map(b=>esc(b.name)).join('、')}`:''}${v.type==='同伴'&&v.extraCastIds?.length?`<br>同行 ${(v.extraCastIds||[]).map(cid=>esc(staffById(cid)?.name||'')).filter(Boolean).join('・')}`:''}<br>${esc(v.memo||'')}</div><div class="item-actions"><button class="danger" onclick="delVisit('${v.id}')">削除</button></div></div>`}).join(''):'<div class="empty">予定なし</div>'}
+$('saveVisit').onclick=()=>{if(!$('visitCustomer').value.trim())return toast('お客様名を入力');db.visits.push({id:id(),castId:$('visitCast').value,customer:$('visitCustomer').value,date:$('visitDate').value,type:$('visitType').value,time:$('visitTime').value,people:$('visitPeople').value,memo:$('visitMemo').value});persist();saveSharedSchedulesFromPos();renderVisits();toast('予定登録')};
+function renderVisits(){const a=db.visits.sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));$('visitList').innerHTML=a.length?a.map(v=>`<div class="item"><h3>${esc(v.customer)} <span class="tag">${esc(v.type)}</span></h3><div class="meta">${esc(v.date)} ${esc(v.time)} / ${esc(v.people)}名<br>担当 ${esc(staffById(v.castId)?.name||'')}${v.type==='同伴'&&v.extraCastIds?.length?`<br>同行 ${(v.extraCastIds||[]).map(cid=>esc(staffById(cid)?.name||'')).filter(Boolean).join('・')}`:''}<br>${esc(v.memo||'')}</div><div class="item-actions"><button class="danger" onclick="delVisit('${v.id}')">削除</button></div></div>`).join(''):'<div class="empty">予定なし</div>'}
 window.delVisit=x=>{db.visits=db.visits.filter(v=>v.id!==x);persist();saveSharedSchedulesFromPos();renderVisits()}
 
 $('saveNotice').onclick=()=>{db.notices.unshift({id:id(),title:$('noticeTitle').value,body:$('noticeBody').value,date:today()});persist();renderNotices();toast('投稿しました')};
@@ -3228,7 +2954,6 @@ function clearMenuForm(){
  $('menuBack').value='0';
  $('menuTax').value='10';
  $('menuVisible').value='true';
- $('menuQuickAccess').value='false';
  $('menuStockEnabled').value='false';
  $('menuStock').value='0';
  $('menuReorderPoint').value='0';
@@ -3263,7 +2988,6 @@ $('saveMenu').onclick=async()=>{
   back:backValue,
   tax:Number($('menuTax').value),
   visible:$('menuVisible').value==='true',
-  quickAccess:$('menuQuickAccess').value==='true',
   stockEnabled:$('menuStockEnabled').value==='true',
   stock:Math.max(0,Number($('menuStock').value||0)),
   reorderPoint:Math.max(0,Number($('menuReorderPoint').value||0))
@@ -3282,7 +3006,6 @@ $('saveMenu').onclick=async()=>{
    item.back=data.back;
    item.tax=data.tax;
    item.visible=data.visible;
-   item.quickAccess=data.quickAccess;
    item.stockEnabled=data.stockEnabled;
    item.stock=data.stock;
    item.reorderPoint=data.reorderPoint;
@@ -3356,7 +3079,7 @@ function renderInventory(){
 function renderMenu(){
  const list=[...db.menu].sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
  $('menuList').innerHTML=list.length?list.map((m,index)=>`<div class="item" style="${m.visible===false?'opacity:.55':''}">
-  <h3>${esc(m.name)} <span class="tag">${esc(m.type)}</span> ${m.quickAccess===true?'<span class="tag">よく出る</span>':''} ${m.visible===false?'<span class="tag">非表示</span>':''}</h3>
+  <h3>${esc(m.name)} <span class="tag">${esc(m.type)}</span> ${m.visible===false?'<span class="tag">非表示</span>':''}</h3>
   <div class="meta">${yen(m.price)} / バック ${yen(m.back)} / 税 ${m.tax}% ${m.stockEnabled?`/ 在庫 ${Number(m.stock||0)} / 発注 ${Number(m.reorderPoint||0)}以下`:''}</div>
   <div class="item-actions">
    <button class="secondary" onclick="moveMenu('${m.id}',-1)" ${index===0?'disabled':''}>↑</button>
@@ -3378,7 +3101,6 @@ window.editMenu=idn=>{
  $('menuBack').value=Number(m.back??0);
  $('menuTax').value=String(m.tax??10);
  $('menuVisible').value=m.visible===false?'false':'true';
- $('menuQuickAccess').value=m.quickAccess===true?'true':'false';
  $('menuStockEnabled').value=m.stockEnabled===true?'true':'false';
  $('menuStock').value=Number(m.stock||0);
  $('menuReorderPoint').value=Number(m.reorderPoint||0);
@@ -3627,16 +3349,6 @@ function checkoutStatusLabel(x){
  return '確定';
 }
 
-function checkoutCompanionIds(checkout){
- const ids=Array.isArray(checkout?.companionCastIds)?checkout.companionCastIds:[];
- return [...new Set([...ids,checkout?.companionCastId].filter(Boolean).map(String))];
-}
-
-function checkoutCompanionLabel(checkout){
- const names=Array.isArray(checkout?.companionCastNames)?checkout.companionCastNames.filter(Boolean):[];
- return names.length?names.join('・'):(checkout?.companionCastName||'なし');
-}
-
 
 function payrollAdjustment(month,staffId){
  let row=db.payrollAdjustments.find(x=>x.month===month&&x.staffId===staffId);
@@ -3649,13 +3361,7 @@ function payrollForStaff(staff,month){
  const hours=records.reduce((sum,r)=>sum+attendanceHours(r),0);
 
  const autoHourlyPay=Math.round(hours*Number(staff.wage||0));
- const attendanceCompanionCount=records.filter(r=>r.companionStatus==='yes').length;
- const checkoutCompanionGroups=new Set(
-  (db.checkouts||[])
-   .filter(c=>c.status!=='cancelled'&&String(c.closedAt||'').slice(0,7)===month&&checkoutCompanionIds(c).includes(String(staff.id)))
-   .map(c=>c.splitGroupId||c.id)
- );
- const companionCount=Math.max(attendanceCompanionCount,checkoutCompanionGroups.size);
+ const companionCount=records.filter(r=>r.companionStatus==='yes').length;
  const transportCount=records.filter(r=>r.transportStatus==='yes').length;
 
  let drinkCount=0,bottleCount=0;
@@ -3907,83 +3613,6 @@ window.clearPayrollCorrection=async staffId=>{
  toast('手動修正を解除しました');
 };
 
-function localDateKey(value){
- const d=new Date(value);
- if(Number.isNaN(d.getTime()))return '';
- return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-
-function dailyCheckoutGroups(rows){
- const groups=new Map();
- rows.forEach(checkout=>{
-  const key=checkout.splitGroupId||checkout.id;
-  if(!groups.has(key))groups.set(key,checkout);
- });
- return [...groups.values()];
-}
-
-function renderDailySales(){
- const input=$('dailySalesDate');
- if(!input.value)input.value=today();
- const date=input.value;
- const rows=db.checkouts
-  .filter(x=>x.status!=='cancelled'&&localDateKey(x.closedAt)===date)
-  .sort((a,b)=>String(a.closedAt||'').localeCompare(String(b.closedAt||'')));
- const groups=dailyCheckoutGroups(rows);
- const sales=rows.reduce((sum,x)=>sum+Number(x.total||0),0);
- const orderQty=groups.reduce((sum,x)=>sum+(x.orders||[]).reduce((n,o)=>n+Number(o.qty||1),0),0);
- const average=groups.length?Math.round(sales/groups.length):0;
- const paymentTotals=new Map();
- rows.forEach(x=>paymentTotals.set(x.paymentMethod||'未登録',(paymentTotals.get(x.paymentMethod||'未登録')||0)+Number(x.total||0)));
- const productTotals=new Map();
- groups.forEach(x=>(x.orders||[]).forEach(o=>{
-  const key=`${o.menuId||o.name}|${Number(o.price||0)}`;
-  const current=productTotals.get(key)||{name:o.name||'商品名なし',qty:0,amount:0};
-  current.qty+=Number(o.qty||1);
-  current.amount+=Number(o.price||0)*Number(o.qty||1);
-  productTotals.set(key,current);
- }));
- const subtotal=groups.reduce((sum,x)=>sum+Number((x.splitGroupId?x.sourceOrderSubtotal:x.subtotal)||0),0);
- const tax=groups.reduce((sum,x)=>sum+Number((x.splitGroupId?x.sourceTaxAmount:x.taxAmount)||0),0);
- const roundUp=groups.reduce((sum,x)=>sum+Number((x.splitGroupId?x.sourceRoundUpAmount:x.roundUpAmount)||0),0);
-
- $('dailySalesMetrics').innerHTML=`
-  <div class="metric"><small>売上合計</small><b>${yen(sales)}</b></div>
-  <div class="metric"><small>来店会計数</small><b>${groups.length}組</b></div>
-  <div class="metric"><small>注文数</small><b>${orderQty}点</b></div>
-  <div class="metric"><small>1組平均</small><b>${yen(average)}</b></div>`;
-
- $('dailySalesBreakdown').innerHTML=rows.length?`
-  <div class="row" style="margin-top:12px">
-   <div>
-    <h3>支払方法別</h3>
-    ${[...paymentTotals.entries()].map(([name,amount])=>`<div class="checkout-detail-line"><span>${esc(name)}</span><b>${yen(amount)}</b></div>`).join('')}
-   </div>
-   <div>
-    <h3>売上内訳</h3>
-    <div class="checkout-detail-line"><span>注文合計</span><b>${yen(subtotal)}</b></div>
-    <div class="checkout-detail-line"><span>消費税</span><b>${yen(tax)}</b></div>
-    <div class="checkout-detail-line"><span>切り上げ</span><b>${yen(roundUp)}</b></div>
-    <div class="checkout-detail-line"><span>売上合計</span><b>${yen(sales)}</b></div>
-   </div>
-  </div>
-  <h3 style="margin-top:18px">商品別集計</h3>
-  <div style="overflow:auto"><table><thead><tr><th>商品</th><th>数量</th><th>金額</th></tr></thead><tbody>
-   ${[...productTotals.values()].sort((a,b)=>b.qty-a.qty).map(item=>`<tr><td>${esc(item.name)}</td><td>${item.qty}</td><td>${yen(item.amount)}</td></tr>`).join('')||'<tr><td colspan="3">商品明細なし</td></tr>'}
-  </tbody></table></div>
-  <h3 style="margin-top:18px">会計ごとの詳細</h3>
-  ${rows.map(x=>`<button class="checkout-history-row" onclick="openCheckoutDetail('${x.id}')"><div><b>${new Date(x.closedAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}　${esc(x.customerName||'')}</b><div class="meta">${esc(x.seat||'')} / ${esc(x.paymentMethod||'未登録')}${x.splitGroupId?` / 分割 ${x.splitPartIndex}/${x.splitPartCount}`:''}</div></div><b>${yen(x.total)}</b></button>`).join('')}`
-  :'<div class="empty">この日の会計はありません</div>';
-}
-
-function shiftDailySalesDate(days){
- const input=$('dailySalesDate');
- const base=new Date(`${input.value||today()}T12:00:00`);
- base.setDate(base.getDate()+days);
- input.value=localDateKey(base);
- renderDailySales();
-}
-
 function renderReports(){
  const activeCheckouts=db.checkouts.filter(x=>x.status!=='cancelled');
  const sales=activeCheckouts.reduce((a,x)=>a+Number(x.total||0),0);
@@ -3996,8 +3625,6 @@ function renderReports(){
   <div class="metric"><small>未会計</small><b>${yen(open)}</b></div>
   <div class="metric"><small>会計件数</small><b>${activeCheckouts.length}</b></div>
   <div class="metric"><small>注文数</small><b>${orders}</b></div>`;
-
- renderDailySales();
 
  $('checkoutHistory').innerHTML=db.checkouts.length
   ?db.checkouts.slice().reverse().map(x=>`
@@ -4191,7 +3818,7 @@ window.openCheckoutDetail=idn=>{
     <div class="checkout-payment-line">支払方法：<b>${esc(x.paymentMethod||'未登録')}</b></div>
     ${splitInfo}
     <div class="checkout-attribution">
-      <div><span>同伴：</span><b>${esc(checkoutCompanionLabel(x))}</b></div>
+      <div><span>同伴：</span><b>${esc(x.companionCastName||'なし')}</b></div>
       <div><span>席についていたキャスト：</span><b>${(x.seatCastNames||[]).length?(x.seatCastNames||[]).map(esc).join('・'):'なし'}</b></div>
     </div>
   </div>
@@ -4241,7 +3868,7 @@ function receiptHtml(x){
    <div class="center">${esc(x.customerName||'')} ${esc(x.seat)}</div>
    <div class="center">支払方法：${esc(x.paymentMethod||'未登録')}</div>
    ${isSplit?`<div class="center">分割会計 ${x.splitPartIndex}/${x.splitPartCount}　${esc(x.splitLabel||'')}</div>`:''}
-   <div class="center">同伴：${esc(checkoutCompanionLabel(x))}</div>
+   <div class="center">同伴：${esc(x.companionCastName||'なし')}</div>
    <div class="center">席担当：${(x.seatCastNames||[]).length?(x.seatCastNames||[]).map(esc).join('・'):'なし'}</div>
    <hr>
    ${isSplit
@@ -4427,9 +4054,6 @@ $('syncCheckoutHistory').onclick=()=>{
 };
 
 $('attendanceReportMonth').onchange=renderReports;
-$('dailySalesDate').onchange=renderDailySales;
-$('dailySalesPrev').onclick=()=>shiftDailySalesDate(-1);
-$('dailySalesNext').onclick=()=>shiftDailySalesDate(1);
 $('payrollMonth').onchange=renderPayroll;
 
 const BACKUP_VERSION='tinkerbell-backup-v1';
@@ -4562,6 +4186,10 @@ $('saveInvoiceSettings').onclick=()=>{
  toast('インボイス登録番号を保存しました');
 };
 
+$('retryCustomerCloudSync')?.addEventListener('click',retryCustomerCloudSync);
+window.addEventListener('online',()=>{
+ if(db.customers.some(c=>c.cloudPending))retryCustomerCloudSync();
+});
 $('visitDate').value=today();
 $('myAttendanceMonth').value=today().slice(0,7);
 $('payrollMonth').value=today().slice(0,7);
@@ -4577,7 +4205,7 @@ if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, writeBatch, doc, getDoc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCUGu1dEan0D0-kfXXiiag7eKKwdmkg_TQ",
@@ -4594,50 +4222,6 @@ const retryBtn = document.getElementById("retryFirebaseConnection");
 let firebaseApp;
 let firestoreDb;
 
-function ensureFirebase(){
- firebaseApp ||= initializeApp(firebaseConfig);
- if(!firestoreDb){
-  try{firestoreDb=initializeFirestore(firebaseApp,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})})}
-  catch(error){console.warn('Persistent Firestore cache unavailable; using memory cache.',error);firestoreDb=getFirestore(firebaseApp)}
- }
- return firestoreDb;
-}
-
-function cleanCloudRow(row){return JSON.parse(JSON.stringify({...row,cloudUpdatedAt:new Date().toISOString()}))}
-
-async function replaceCloudCollection(collectionName,rows){
- ensureFirebase();
- const safeRows=(Array.isArray(rows)?rows:[]).filter(row=>row&&row.id).map(cleanCloudRow);
- const existing=await getDocs(collection(firestoreDb,collectionName));
- const wanted=new Set(safeRows.map(row=>String(row.id)));
- const operations=[];
- safeRows.forEach(row=>operations.push({type:'set',ref:doc(firestoreDb,collectionName,String(row.id)),data:row}));
- existing.docs.filter(item=>!wanted.has(item.id)).forEach(item=>operations.push({type:'delete',ref:item.ref}));
- for(let i=0;i<operations.length;i+=350){
-  const batch=writeBatch(firestoreDb);
-  operations.slice(i,i+350).forEach(op=>op.type==='set'?batch.set(op.ref,op.data,{merge:true}):batch.delete(op.ref));
-  await batch.commit();
- }
-}
-
-async function ensureCloudCollection(collectionName,legacyKey,localRows){
- ensureFirebase();
- const legacyRef=doc(firestoreDb,'app','data');
- const [items,legacySnap]=await Promise.all([getDocs(collection(firestoreDb,collectionName)),getDoc(legacyRef)]);
- const legacy=legacySnap.exists()?legacySnap.data():{};
- const migrations=legacy.collectionMigrations&&typeof legacy.collectionMigrations==='object'?legacy.collectionMigrations:{};
- if(!migrations[collectionName]){
-  const source=items.empty?(Array.isArray(legacy[legacyKey])?legacy[legacyKey]:(Array.isArray(localRows)?localRows:[])):[];
-  if(source.length)await replaceCloudCollection(collectionName,source);
-  await setDoc(legacyRef,{collectionMigrations:{...migrations,[collectionName]:true},collectionSchemaVersion:2,collectionMigratedAt:new Date().toISOString()},{merge:true});
- }
-}
-
-function listenCloudCollection(collectionName,apply,errorLabel){
- ensureFirebase();
- return onSnapshot(collection(firestoreDb,collectionName),snapshot=>apply(snapshot.docs.map(item=>item.data())),error=>{console.error(`${errorLabel} sync failed:`,error);setStatus(`${errorLabel}のクラウド同期エラー：${error?.code||error?.message||'不明'}`)});
-}
-
 function setStatus(message, ok = false) {
   if (!statusEl) return;
   statusEl.textContent = message;
@@ -4648,7 +4232,8 @@ function setStatus(message, ok = false) {
 async function checkFirebaseConnection() {
   setStatus("Firebaseへ接続確認中...");
   try {
-    ensureFirebase();
+    firebaseApp ||= initializeApp(firebaseConfig);
+    firestoreDb ||= getFirestore(firebaseApp);
 
     const snap = await getDoc(doc(firestoreDb, "app", "data"));
     if (snap.exists()) {
@@ -4667,17 +4252,25 @@ async function checkFirebaseConnection() {
 }
 
 async function saveCustomersToFirebase(customers) {
-  await replaceCloudCollection('customers',customers);
-}
-
-async function saveBottlesToFirebase(bottles) {
-  await replaceCloudCollection('bottles',bottles);
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  await setDoc(
+    doc(firestoreDb, "app", "data"),
+    {
+      customers,
+      customersUpdatedAt: new Date().toISOString()
+    },
+    { merge: true }
+  );
 }
 
 async function loadCustomersFromFirebase() {
-  ensureFirebase();
-  const snap=await getDocs(collection(firestoreDb,'customers'));
-  return snap.docs.map(item=>item.data());
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  const snap = await getDoc(doc(firestoreDb, "app", "data"));
+  if (!snap.exists()) return null;
+  const customers = snap.data()?.customers;
+  return Array.isArray(customers) ? customers : null;
 }
 
 
@@ -4764,33 +4357,30 @@ function startStaffRealtimeSync() {
 
 
 async function saveCheckoutsToFirebase(checkouts,checkoutEvents) {
-  try{
-   await replaceCloudCollection('checkouts',checkouts);
-   await replaceCloudCollection('checkoutEvents',checkoutEvents);
-  }catch(collectionError){
-   console.warn('Individual checkout collection save failed; using app/data fallback.',collectionError);
-   ensureFirebase();
-   await setDoc(doc(firestoreDb,'app','data'),{checkouts,checkoutEvents,checkoutsUpdatedAt:new Date().toISOString(),checkoutStorageMode:'app-data-fallback'},{merge:true});
-   setStatus('売上は互換クラウド保存で同期中（個別保存ルールの更新が必要）',true);
-  }
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  await setDoc(
+    doc(firestoreDb, "app", "data"),
+    {
+      checkouts,
+      checkoutEvents,
+      checkoutsUpdatedAt: new Date().toISOString()
+    },
+    { merge: true }
+  );
 }
 
-async function startCheckoutRealtimeSync() {
-  try{
-   await ensureCloudCollection('checkouts','checkouts',window.tinkerbellGetLocalCheckouts?.()||[]);
-   await ensureCloudCollection('checkoutEvents','checkoutEvents',window.tinkerbellGetLocalCheckoutEvents?.()||[]);
-   listenCloudCollection('checkouts',rows=>window.tinkerbellApplyCloudCheckouts?.(rows),'売上');
-   listenCloudCollection('checkoutEvents',rows=>window.tinkerbellApplyCloudCheckoutEvents?.(rows),'会計履歴');
-  }catch(collectionError){
-   console.warn('Checkout collection sync unavailable; listening to app/data fallback.',collectionError);
-   ensureFirebase();
-   return onSnapshot(doc(firestoreDb,'app','data'),snap=>{
+function startCheckoutRealtimeSync() {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  const ref=doc(firestoreDb,"app","data");
+
+  return onSnapshot(ref,snap=>{
     if(!snap.exists())return;
-    const data=snap.data()||{};
-    if(Array.isArray(data.checkouts))window.tinkerbellApplyCloudCheckouts?.(data.checkouts);
-    if(Array.isArray(data.checkoutEvents))window.tinkerbellApplyCloudCheckoutEvents?.(data.checkoutEvents);
-   },error=>console.error('Checkout fallback sync failed:',error));
-  }
+    const d=snap.data()||{};
+    if(Array.isArray(d.checkouts))window.tinkerbellApplyCloudCheckouts?.(d.checkouts);
+    if(Array.isArray(d.checkoutEvents))window.tinkerbellApplyCloudCheckoutEvents?.(d.checkoutEvents);
+  },error=>console.error("Checkout sync failed:",error));
 }
 
 async function saveMenuToFirebase(menu) {
@@ -4843,22 +4433,48 @@ function startMenuRealtimeSync() {
   );
 }
 
-async function startCustomerRealtimeSync() {
-  try{
-   await ensureCloudCollection('customers','customers',window.tinkerbellGetLocalCustomers?.()||[]);
-   await ensureCloudCollection('bottles','bottles',window.tinkerbellGetLocalBottles?.()||[]);
-   listenCloudCollection('customers',rows=>{window.tinkerbellApplyCloudCustomers?.(rows);setStatus(`Firebase接続：成功（お客様 ${rows.length}件を個別同期）`,true)},'お客様');
-   listenCloudCollection('bottles',rows=>window.tinkerbellApplyCloudBottles?.(rows),'ボトル');
-  }catch(error){
-   console.error('Customer collection initialization failed:',error);
-   setStatus(`お客様・ボトルのクラウド初期化エラー：${error?.code||error?.message||'不明'}`);
-  }
-}
+function startCustomerRealtimeSync() {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
 
-async function saveActiveSeatsToFirebase(seats){await replaceCloudCollection('activeSeats',seats)}
-async function startActiveSeatRealtimeSync(){
- await ensureCloudCollection('activeSeats','activeSeats',window.tinkerbellGetLocalActiveSeats?.()||[]);
- return listenCloudCollection('activeSeats',rows=>window.tinkerbellApplyCloudActiveSeats?.(rows),'席・途中注文');
+  const ref = doc(firestoreDb, "app", "data");
+
+  return onSnapshot(
+    ref,
+    async snap => {
+      if (!snap.exists()) {
+        await setDoc(ref, { customers: [], customersUpdatedAt: new Date().toISOString() }, { merge: true });
+        setStatus("Firebase接続：成功（お客様0件）", true);
+        return;
+      }
+
+      const cloudCustomers = snap.data()?.customers;
+
+      if (Array.isArray(cloudCustomers)) {
+        window.tinkerbellApplyCloudCustomers?.(cloudCustomers);
+        setStatus(`Firebase接続：成功（お客様 ${cloudCustomers.length}件をリアルタイム同期）`, true);
+      } else {
+        const localCustomers = window.tinkerbellGetLocalCustomers?.() || [];
+        await setDoc(
+          ref,
+          {
+            customers: localCustomers,
+            customersUpdatedAt: new Date().toISOString()
+          },
+          { merge: true }
+        );
+        setStatus(`Firebase接続：成功（端末のお客様 ${localCustomers.length}件を初回送信）`, true);
+      }
+    },
+    error => {
+      console.error("Customer realtime sync failed:", error);
+      if (error?.code === "permission-denied") {
+        setStatus("Firebase接続済み。Firestoreルールで同期が拒否されています");
+      } else {
+        setStatus(`Firebase同期エラー：${error?.code || error?.message || "不明"}`);
+      }
+    }
+  );
 }
 
 retryBtn?.addEventListener("click", checkFirebaseConnection);
@@ -4923,13 +4539,11 @@ window.tinkerbellFirebase = {
   get db() { return firestoreDb; },
   checkConnection: checkFirebaseConnection,
   saveCustomers: saveCustomersToFirebase,
-  saveBottles: saveBottlesToFirebase,
   loadCustomers: loadCustomersFromFirebase,
   saveStaff: saveStaffToFirebase,
   saveMenu: saveMenuToFirebase,
   saveAdminPasscode: saveAdminPasscodeToFirebase,
   saveCheckouts: saveCheckoutsToFirebase,
-  saveActiveSeats: saveActiveSeatsToFirebase,
   saveSharedShifts: saveSharedShiftsToFirebase,
   saveSharedShiftMeta: saveSharedShiftMetaToFirebase,
   saveSharedSchedules: saveSharedSchedulesToFirebase,
@@ -4937,12 +4551,11 @@ window.tinkerbellFirebase = {
   reloadCheckouts: ()=>startCheckoutRealtimeSync()
 };
 
-startCustomerRealtimeSync().catch(error=>console.error('Customer sync startup failed:',error));
+startCustomerRealtimeSync();
 startStaffRealtimeSync();
 startMenuRealtimeSync();
 startAdminPasscodeSync();
-startCheckoutRealtimeSync().catch(error=>console.error('Checkout sync startup failed:',error));
-startActiveSeatRealtimeSync().catch(error=>console.error('Active seat sync startup failed:',error));
+startCheckoutRealtimeSync();
 startSharedShiftScheduleSync();
 startPayrollAdjustmentsSync();
 initializeSharedShiftSchedule();
