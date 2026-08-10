@@ -880,9 +880,9 @@ body.manager-mode .payroll-staff-settings{
  <div id="customerCloudStatus" class="customer-cloud-status">クラウド状態を確認中...</div>
  <button id="retryCustomerCloudSync" class="secondary" type="button">お客様データを再同期</button>
 </div>
-<div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・メモ"></label></div><div class="card"><div class="row3"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label><label>電話番号<input id="customerPhone" inputmode="tel"></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><button id="saveCustomer" class="primary">お客様登録</button></div><div id="customerList" class="list"></div></section>
+<div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・メモ"></label></div><div class="card"><input id="customerEditId" type="hidden"><div class="row3"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label><label>電話番号<input id="customerPhone" inputmode="tel"></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><div class="row"><button id="saveCustomer" class="primary">お客様登録</button><button id="cancelCustomerEdit" class="secondary hidden">編集をやめる</button></div></div><div id="customerList" class="list"></div></section>
 
-<section id="bottles" class="screen"><h2>ボトル管理</h2><div class="card"><div class="row3"><label>お客様<select id="bottleCustomer"></select></label><label>ボトル名<input id="bottleName"></label><label>残量<select id="bottleLevel"><option>満タン</option><option>75%</option><option>50%</option><option>25%</option><option>ほぼ空</option></select></label></div><label>保管場所<input id="bottlePlace"></label><button id="saveBottle" class="primary">ボトル登録</button></div><div id="bottleList" class="list"></div></section>
+<section id="bottles" class="screen"><h2>ボトル管理</h2><div class="card"><input id="bottleEditId" type="hidden"><div class="row3"><label>お客様<select id="bottleCustomer"></select></label><label>ボトル名<input id="bottleName"></label><label>残量<select id="bottleLevel"><option>満タン</option><option>75%</option><option>50%</option><option>25%</option><option>ほぼ空</option></select></label></div><label>保管場所<input id="bottlePlace"></label><div class="row"><button id="saveBottle" class="primary">ボトル登録</button><button id="cancelBottleEdit" class="secondary hidden">編集をやめる</button></div></div><div id="bottleList" class="list"></div></section>
 
 <section id="visits" class="screen"><h2>同伴・来店予定</h2><div class="card"><div class="row3"><label>担当<select id="visitCast"></select></label><label>お客様名<input id="visitCustomer"></label><label>日付<input id="visitDate" type="date"></label></div><div class="row3"><label>区分<select id="visitType"><option>同伴</option><option>来店予定</option><option>予約</option></select></label><label>時間<input id="visitTime" type="time"></label><label>人数<input id="visitPeople" type="number" min="1" value="1"></label></div><label>メモ<input id="visitMemo"></label><button id="saveVisit" class="primary">予定登録</button></div><div id="visitList" class="list"></div></section>
 
@@ -1262,7 +1262,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v66-seat-customer-bottle-link-fix';
+const APP_VERSION='v67-customer-bottle-edit-sync';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1362,6 +1362,23 @@ window.tinkerbellApplyCloudCustomers=customers=>{
   setCustomerCloudStatus(pending.length?'pending':'synced');
 };
 window.tinkerbellGetLocalCustomers=()=>Array.isArray(db.customers)?db.customers:[];
+window.tinkerbellApplyCloudBottles=bottles=>{
+ if(!Array.isArray(bottles))return;
+ const localMap=new Map((db.bottles||[]).map(b=>[b.id,b]));
+ const cloudMap=new Map(bottles.map(b=>[b.id,b]));
+ // cloud wins for same ID, but preserve any fields not sent by the other client
+ cloudMap.forEach((b,idn)=>{
+  const local=localMap.get(idn)||{};
+  localMap.set(idn,{...local,...b});
+ });
+ db.bottles=[...localMap.values()];
+ persist();
+ renderBottles();
+ renderCustomers();
+ renderSeats();
+};
+window.tinkerbellGetLocalBottles=()=>Array.isArray(db.bottles)?db.bottles:[];
+
 window.tinkerbellApplyCloudStaff=staff=>{
   if(!Array.isArray(staff))return;
   db.staff=staff;
@@ -2717,59 +2734,96 @@ window.delOrder=(sid,oid)=>{
  renderOrders();
 };
 
+
+function clearCustomerEdit(){
+ $('customerEditId').value='';
+ $('customerName').value='';
+ $('customerPhone').value='';
+ $('customerMemo').value='';
+ $('saveCustomer').textContent='お客様登録';
+ $('cancelCustomerEdit').classList.add('hidden');
+}
+window.editCustomer=idn=>{
+ const c=db.customers.find(x=>x.id===idn);
+ if(!c)return;
+ $('customerEditId').value=c.id;
+ $('customerName').value=c.name||'';
+ $('customerCast').value=c.castId||'';
+ $('customerPhone').value=c.phone||'';
+ $('customerMemo').value=c.memo||'';
+ $('saveCustomer').textContent='変更を保存';
+ $('cancelCustomerEdit').classList.remove('hidden');
+ show('customers');
+ scrollTo(0,0);
+};
+$('cancelCustomerEdit').onclick=clearCustomerEdit;
+
 $('saveCustomer').onclick=async()=>{
  const button=$('saveCustomer');
  const name=$('customerName').value.trim();
  if(!name)return toast('お客様名を入力');
 
+ const editId=$('customerEditId').value;
+ const existing=editId?db.customers.find(c=>c.id===editId):null;
+
  button.disabled=true;
  button.textContent='保存中...';
 
- const customer={
+ const customer=existing||{
   id:id(),
-  name,
-  castId:$('customerCast').value,
-  phone:$('customerPhone').value.trim(),
-  memo:$('customerMemo').value.trim(),
   visits:0,
   cloudPending:true,
   createdAt:nowISO()
  };
 
- // 先に端末へ確実に保存。クラウドエラーでも消さない。
- db.customers.push(customer);
+ Object.assign(customer,{
+  name,
+  castId:$('customerCast').value,
+  phone:$('customerPhone').value.trim(),
+  memo:$('customerMemo').value.trim(),
+  cloudPending:true,
+  updatedAt:nowISO()
+ });
+
+ if(!existing)db.customers.push(customer);
+
+ // 顧客名を変更した時は、席とボトル側の表示名も崩れないように追従
+ db.seats.forEach(s=>{
+  if(s.customerId===customer.id)s.customerName=customer.name;
+ });
+ db.bottles.forEach(b=>{
+  if(b.customerId===customer.id)b.customer=customer.name;
+ });
+
  persist();
  refreshSelects();
  renderCustomers();
-
- $('customerName').value='';
- $('customerPhone').value='';
- $('customerMemo').value='';
+ renderBottles();
+ renderSeats();
 
  try{
-  if(!window.tinkerbellFirebase?.saveCustomers){
-   throw new Error('Firebase準備中');
-  }
-
-  // cloudPendingはクラウドには送らず、通常データのみ送る
+  if(!window.tinkerbellFirebase?.saveCustomers)throw new Error('Firebase準備中');
   const cloudRows=db.customers.map(({cloudPending,...c})=>c);
   await window.tinkerbellFirebase.saveCustomers(cloudRows);
+  if(window.tinkerbellFirebase?.saveBottles)await window.tinkerbellFirebase.saveBottles(db.bottles);
 
-  db.customers=db.customers.map(c=>({...c,cloudPending:false}));
+  customer.cloudPending=false;
   persist();
-  renderCustomers();
   setCustomerCloudStatus('synced');
-  toast('お客様を保存しました');
+  toast(existing?'お客様を修正しました':'お客様を保存しました');
+  clearCustomerEdit();
+  renderCustomers();
  }catch(error){
   console.error('Customer cloud save failed:',error);
-  const code=error?.code||error?.message||'不明';
-  setCustomerCloudStatus('error',code);
+  setCustomerCloudStatus('error',error?.code||error?.message||'不明');
   toast('端末に保存しました。クラウドは同期待ちです');
+  clearCustomerEdit();
  }finally{
   button.disabled=false;
   button.textContent='お客様登録';
  }
 };
+
 function setCustomerCloudStatus(state,detail=''){
  const el=$('customerCloudStatus');
  if(!el)return;
@@ -2810,7 +2864,7 @@ async function retryCustomerCloudSync(){
 }
 window.retryCustomerCloudSync=retryCustomerCloudSync;
 
-function renderCustomers(){const q=$('customerSearch').value.toLowerCase();const a=db.customers.filter(c=>(c.name+c.phone+c.memo+(staffById(c.castId)?.name||'')).toLowerCase().includes(q));$('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)} ${c.cloudPending?'<span class="tag customer-pending-tag">同期待ち</span>':''}</h3><div class="meta">担当 ${esc(staffById(c.castId)?.name||'未設定')}<br>電話 ${esc(c.phone||'未登録')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>`${esc(b.name)}(${esc(b.level)})`).join('、'):'なし'}</div><div class="item-actions"><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>'}
+function renderCustomers(){const q=$('customerSearch').value.toLowerCase();const a=db.customers.filter(c=>(c.name+c.phone+c.memo+(staffById(c.castId)?.name||'')).toLowerCase().includes(q));$('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)} ${c.cloudPending?'<span class="tag customer-pending-tag">同期待ち</span>':''}</h3><div class="meta">担当 ${esc(staffById(c.castId)?.name||'未設定')}<br>電話 ${esc(c.phone||'未登録')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>`${esc(b.name)}(${esc(b.level)})`).join('、'):'なし'}</div><div class="item-actions"><button class="secondary" onclick="editCustomer('${c.id}')">編集</button><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>'}
 window.delCustomer=async x=>{
  if(!confirm('削除しますか？'))return;
  const beforeCustomers=[...db.customers];
@@ -2825,6 +2879,7 @@ window.delCustomer=async x=>{
  try{
   if(!window.tinkerbellFirebase?.saveCustomers)throw new Error('Firebase準備中');
   await window.tinkerbellFirebase.saveCustomers(db.customers);
+  if(window.tinkerbellFirebase?.saveBottles)await window.tinkerbellFirebase.saveBottles(db.bottles);
   toast('クラウドから削除しました');
  }catch(error){
   console.error('Customer cloud delete failed:',error);
@@ -2837,10 +2892,90 @@ window.delCustomer=async x=>{
  }
 }
 
-$('saveBottle').onclick=()=>{if(!$('bottleCustomer').value||!$('bottleName').value.trim())return toast('お客様とボトル名を入力');db.bottles.push({id:id(),customerId:$('bottleCustomer').value,name:$('bottleName').value.trim(),level:$('bottleLevel').value,place:$('bottlePlace').value});persist();$('bottleName').value='';$('bottlePlace').value='';renderBottles();renderCustomers();toast('ボトル登録')};
-function renderBottles(){$('bottleList').innerHTML=db.bottles.length?db.bottles.map(b=>`<div class="item"><h3>${esc(b.name)} <span class="tag">${esc(b.level)}</span></h3><div class="meta">${esc(customerById(b.customerId)?.name||'不明')} / ${esc(b.place||'保管場所未登録')}</div><div class="item-actions"><button class="secondary" onclick="changeBottle('${b.id}')">残量変更</button><button class="danger" onclick="delBottle('${b.id}')">削除</button></div></div>`).join(''):'<div class="empty">ボトルなし</div>'}
-window.changeBottle=x=>{const b=db.bottles.find(v=>v.id===x);const n=prompt('残量を入力（満タン・75%・50%・25%・ほぼ空）',b.level);if(n===null)return;b.level=n;persist();renderAll()}
-window.delBottle=x=>{db.bottles=db.bottles.filter(v=>v.id!==x);persist();renderAll()}
+function clearBottleEdit(){
+ $('bottleEditId').value='';
+ $('bottleName').value='';
+ $('bottlePlace').value='';
+ $('bottleLevel').value='満タン';
+ $('saveBottle').textContent='ボトル登録';
+ $('cancelBottleEdit').classList.add('hidden');
+}
+window.editBottle=idn=>{
+ const b=db.bottles.find(x=>x.id===idn);
+ if(!b)return;
+ $('bottleEditId').value=b.id;
+ $('bottleCustomer').value=b.customerId||'';
+ $('bottleName').value=b.name||'';
+ $('bottleLevel').value=b.level||'満タン';
+ $('bottlePlace').value=b.place||'';
+ $('saveBottle').textContent='変更を保存';
+ $('cancelBottleEdit').classList.remove('hidden');
+ show('bottles');
+ scrollTo(0,0);
+};
+$('cancelBottleEdit').onclick=clearBottleEdit;
+
+async function saveBottlesCloudSafe(){
+ try{
+  if(window.tinkerbellFirebase?.saveBottles){
+   await window.tinkerbellFirebase.saveBottles(db.bottles);
+  }
+ }catch(error){
+  console.error('Bottle cloud save failed:',error);
+  toast('ボトルは端末保存済み。クラウドは同期待ちです');
+ }
+}
+
+$('saveBottle').onclick=async()=>{
+ const cid=$('bottleCustomer').value;
+ const name=$('bottleName').value.trim();
+ if(!cid||!name)return toast('お客様とボトル名を入力');
+
+ const editId=$('bottleEditId').value;
+ const existing=editId?db.bottles.find(b=>b.id===editId):null;
+ const customer=customerById(cid);
+
+ const obj=existing||{id:id()};
+ Object.assign(obj,{
+  customerId:cid,
+  customer:customer?.name||obj.customer||'',
+  name,
+  level:$('bottleLevel').value,
+  place:$('bottlePlace').value,
+  updatedAt:nowISO()
+ });
+ if(!existing)db.bottles.push(obj);
+
+ persist();
+ renderBottles();
+ renderCustomers();
+ renderSeats();
+ clearBottleEdit();
+ await saveBottlesCloudSafe();
+ toast(existing?'ボトルを修正しました':'ボトル登録');
+};
+
+function renderBottles(){
+ $('bottleList').innerHTML=db.bottles.length?db.bottles.map(b=>`<div class="item"><h3>${esc(b.name)} <span class="tag">${esc(b.level||'未設定')}</span></h3><div class="meta">${esc(customerById(b.customerId)?.name||b.customer||'不明')} / ${esc(b.place||'保管場所未登録')}</div><div class="item-actions"><button class="secondary" onclick="editBottle('${b.id}')">編集</button><button class="secondary" onclick="changeBottle('${b.id}')">残量変更</button><button class="danger" onclick="delBottle('${b.id}')">削除</button></div></div>`).join(''):'<div class="empty">ボトルなし</div>';
+}
+window.changeBottle=async x=>{
+ const b=db.bottles.find(v=>v.id===x);
+ if(!b)return;
+ const n=prompt('残量を入力（満タン・75%・50%・25%・ほぼ空）',b.level||'満タン');
+ if(n===null)return;
+ b.level=n;
+ b.updatedAt=nowISO();
+ persist();
+ renderAll();
+ await saveBottlesCloudSafe();
+};
+window.delBottle=async x=>{
+ if(!confirm('このボトルを削除しますか？'))return;
+ db.bottles=db.bottles.filter(v=>v.id!==x);
+ persist();
+ renderAll();
+ await saveBottlesCloudSafe();
+};
 
 $('saveVisit').onclick=()=>{if(!$('visitCustomer').value.trim())return toast('お客様名を入力');db.visits.push({id:id(),castId:$('visitCast').value,customer:$('visitCustomer').value,date:$('visitDate').value,type:$('visitType').value,time:$('visitTime').value,people:$('visitPeople').value,memo:$('visitMemo').value});persist();saveSharedSchedulesFromPos();renderVisits();toast('予定登録')};
 function renderVisits(){const a=db.visits.sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));$('visitList').innerHTML=a.length?a.map(v=>`<div class="item"><h3>${esc(v.customer)} <span class="tag">${esc(v.type)}</span></h3><div class="meta">${esc(v.date)} ${esc(v.time)} / ${esc(v.people)}名<br>担当 ${esc(staffById(v.castId)?.name||'')}${v.type==='同伴'&&v.extraCastIds?.length?`<br>同行 ${(v.extraCastIds||[]).map(cid=>esc(staffById(cid)?.name||'')).filter(Boolean).join('・')}`:''}<br>${esc(v.memo||'')}</div><div class="item-actions"><button class="danger" onclick="delVisit('${v.id}')">削除</button></div></div>`).join(''):'<div class="empty">予定なし</div>'}
@@ -4328,6 +4463,16 @@ async function loadCustomersFromFirebase() {
 
 
 
+async function saveBottlesToFirebase(bottles) {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  await setDoc(
+    doc(firestoreDb, "app", "data"),
+    { bottles, bottlesUpdatedAt: new Date().toISOString() },
+    { merge: true }
+  );
+}
+
 async function saveAdminPasscodeToFirebase(passcode) {
   firebaseApp ||= initializeApp(firebaseConfig);
   firestoreDb ||= getFirestore(firebaseApp);
@@ -4486,6 +4631,27 @@ function startMenuRealtimeSync() {
   );
 }
 
+function startBottleRealtimeSync() {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  const ref = doc(firestoreDb, "app", "data");
+
+  return onSnapshot(
+    ref,
+    async snap => {
+      if (!snap.exists()) return;
+      const cloud = snap.data()?.bottles;
+      if (Array.isArray(cloud)) {
+        window.tinkerbellApplyCloudBottles?.(cloud);
+      } else {
+        const local = window.tinkerbellGetLocalBottles?.() || [];
+        await setDoc(ref,{bottles:local,bottlesUpdatedAt:new Date().toISOString()},{merge:true});
+      }
+    },
+    error => console.error("Bottle realtime sync failed:",error)
+  );
+}
+
 function startCustomerRealtimeSync() {
   firebaseApp ||= initializeApp(firebaseConfig);
   firestoreDb ||= getFirestore(firebaseApp);
@@ -4592,6 +4758,7 @@ window.tinkerbellFirebase = {
   get db() { return firestoreDb; },
   checkConnection: checkFirebaseConnection,
   saveCustomers: saveCustomersToFirebase,
+  saveBottles: saveBottlesToFirebase,
   loadCustomers: loadCustomersFromFirebase,
   saveStaff: saveStaffToFirebase,
   saveMenu: saveMenuToFirebase,
@@ -4605,6 +4772,7 @@ window.tinkerbellFirebase = {
 };
 
 startCustomerRealtimeSync();
+startBottleRealtimeSync();
 startStaffRealtimeSync();
 startMenuRealtimeSync();
 startAdminPasscodeSync();
