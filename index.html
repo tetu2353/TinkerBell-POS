@@ -759,6 +759,53 @@ body.manager-mode .payroll-staff-settings{
  .today-sale-row{flex-direction:column;gap:4px}
 }
 
+
+.seat-customer-matches{display:grid;gap:7px;margin-top:8px;max-height:250px;overflow:auto}
+.seat-customer-match{
+ display:flex;justify-content:space-between;align-items:center;gap:12px;
+ width:100%;padding:11px 12px;border:1px solid #ddd;border-radius:11px;
+ background:#fff;text-align:left
+}
+.seat-customer-match.selected{border-width:2px;font-weight:900}
+.seat-customer-match small{color:#666}
+.seat-customer-selected{margin-top:10px;padding:10px 12px;border-radius:10px;background:#eef7ff}
+.seat-bottle-preview{margin-top:10px;padding:12px;border:1px solid #e1d8bf;border-radius:12px;background:#fffaf0}
+.seat-bottle-line{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #eee}
+.seat-bottle-line:first-child{border-top:0}
+.seat-bottle-line small{margin-left:auto;color:#666}
+
+
+.seat-customer-info{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:8px;
+ margin-top:8px
+}
+.seat-customer-info>div{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:10px;
+ padding:10px 12px;
+ border-radius:10px;
+ background:#f6f6f6;
+ border:1px solid #e6e6e6
+}
+.seat-customer-info span{color:#666;font-size:13px;font-weight:800}
+.seat-customer-info b{font-size:17px}
+.seat-customer-match>span:first-child{
+ display:flex;
+ flex-direction:column;
+ gap:3px
+}
+.seat-customer-stats{
+ margin-left:auto;
+ display:flex;
+ flex-direction:column;
+ align-items:flex-end;
+ gap:3px
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -1185,7 +1232,37 @@ body.manager-mode .payroll-staff-settings{
     </div>
   </div>
 </div>
-<div id="seatModal" class="modal hidden"><div class="modal-card"><h2 id="seatModalTitle">入店登録</h2><label>お客様名<input id="seatCustomerName" list="customerNames" placeholder="名前を入力"></label><datalist id="customerNames"></datalist><p><b>ついている女の子</b></p><div id="seatCastChoices" class="seat-cast-grid"></div><div class="row" style="margin-top:14px"><button id="seatModalCancel" class="secondary">閉じる</button><button id="seatModalSave" class="primary">保存</button></div></div></div>
+<div id="seatModal" class="modal hidden">
+ <div class="modal-card">
+  <h2 id="seatModalTitle">入店登録</h2>
+
+  <label>お客様名
+   <input id="seatCustomerName" placeholder="名前を入力">
+  </label>
+
+  <div id="seatCustomerMatches" class="seat-customer-matches"></div>
+
+  <div id="seatCustomerSelected" class="seat-customer-selected hidden"></div>
+
+  <div id="seatCustomerInfo" class="seat-customer-info hidden">
+   <div id="seatCustomerVisitCount"></div>
+   <div id="seatCustomerCastInfo"></div>
+  </div>
+
+  <div id="seatBottlePreview" class="seat-bottle-preview hidden">
+   <b>お預かりボトル</b>
+   <div id="seatBottlePreviewList"></div>
+  </div>
+
+  <p><b>ついている女の子</b></p>
+  <div id="seatCastChoices" class="seat-cast-grid"></div>
+
+  <div class="row" style="margin-top:14px">
+   <button id="seatModalCancel" class="secondary">閉じる</button>
+   <button id="seatModalSave" class="primary">保存</button>
+  </div>
+ </div>
+</div>
 <div id="undoBar" class="undo hidden"><span id="undoText">注文を追加しました</span><button id="undoBtn" class="secondary">取り消す</button></div>
 <div id="shiftDayModal" class="modal hidden">
  <div class="modal-card">
@@ -1302,7 +1379,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v70-today-sales-in-orders';
+const APP_VERSION='v72-seat-registered-customer-visit-bottle';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1478,7 +1555,7 @@ function refreshSelects(){
  ['customerCast','visitCast'].forEach(x=>fillSelect($(x),db.staff.filter(s=>s.role==='cast')));
  fillSelect($('myAttendanceStaff'),db.staff);
  fillSelect($('bottleCustomer'),db.customers);
- $('customerNames').innerHTML=db.customers.map(c=>`<option value="${esc(c.name)}"></option>`).join('');
+
 }
 
 function applyRole(){
@@ -1946,7 +2023,7 @@ $('printShift').onclick=()=>window.print();
 $('exportShiftCsv').onclick=()=>{const key=shiftMonthKey(),days=new Date(shiftViewMonth.getFullYear(),shiftViewMonth.getMonth()+1,0).getDate();let rows=[['名前',...Array.from({length:days},(_,i)=>`${i+1}日`)]];db.staff.forEach(st=>rows.push([st.name,...Array.from({length:days},(_,i)=>shiftRecord(st.id,`${key}-${String(i+1).padStart(2,'0')}`)?.status||'')]));const csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tinkerbell_shift_${key}.csv`;a.click();URL.revokeObjectURL(a.href)};
 
 function seatTotal(s){return s.orders.reduce((a,o)=>a+o.price*o.qty,0)}
-let seatEditId='',seatCastSelected=[];
+let seatEditId='',seatCastSelected=[],seatSelectedCustomerId='';
 function seatCastNames(s){
  return Array.isArray(s.casts)
   ?s.casts.map(x=>staffById(x)?.name).filter(Boolean)
@@ -2101,13 +2178,141 @@ function renderSeatCastChoices(){
  });
 }
 
+
+function renderSeatCustomerMatches(){
+ const box=$('seatCustomerMatches');
+ if(!box)return;
+
+ const q=normalizeCustomerNameForMatch($('seatCustomerName').value);
+ const rows=(db.customers||[])
+  .filter(c=>!q || normalizeCustomerNameForMatch(c.name).includes(q))
+  .slice(0,8);
+
+ box.innerHTML=rows.length
+  ?`<div class="meta" style="margin-bottom:6px">顧客管理から選択</div>`+
+    rows.map(c=>`
+     <button type="button" class="seat-customer-match ${seatSelectedCustomerId===c.id?'selected':''}"
+      onclick="selectSeatCustomer('${c.id}')">
+      <span>
+       <b>${esc(c.name)}</b>
+       <small>担当：${esc(staffById(c.castId)?.name||'未設定')}</small>
+      </span>
+      <span class="seat-customer-stats">
+       <small>来店 ${customerVisitCount(c.id)}回</small>
+       <small>ボトル ${(db.bottles||[]).filter(b=>b.customerId===c.id).length}本</small>
+      </span>
+     </button>`).join('')
+  :'<div class="empty">登録済みのお客様は見つかりません</div>';
+}
+
+
+function customerVisitCount(customerId){
+ const c=customerById(customerId);
+ if(!c)return 0;
+
+ // 来店履歴にcustomerIdがあるものを優先して数える。
+ const visitIds=new Set(
+  (db.visits||[])
+   .filter(v=>v.customerId===customerId)
+   .map(v=>String(v.date||v.time||v.createdAt||v.id||''))
+ );
+
+ // 古い来店履歴はcustomerIdが無い場合があるので名前一致も補完。
+ const customerName=normalizeCustomerNameForMatch(c.name);
+ (db.visits||[]).forEach(v=>{
+  if(v.customerId)return;
+  if(normalizeCustomerNameForMatch(v.customer)===customerName){
+   visitIds.add(String(v.date||v.time||v.createdAt||v.id||''));
+  }
+ });
+
+ // 会計済み来店も顧客IDで拾う。同一会計日は1来店として扱う。
+ const checkoutDates=new Set(
+  (db.checkouts||[])
+   .filter(x=>
+    x.customerId===customerId &&
+    (x.status||'completed')!=='cancelled' &&
+    !x.cancelledAt
+   )
+   .map(x=>String(x.closedAt||'').slice(0,10))
+   .filter(Boolean)
+ );
+
+ // 既存の保存済み visits 値を下回らないようにする。
+ return Math.max(Number(c.visits||0),visitIds.size,checkoutDates.size);
+}
+
+function renderSeatBottlePreview(){
+ const wrap=$('seatBottlePreview');
+ const list=$('seatBottlePreviewList');
+ const selected=$('seatCustomerSelected');
+ const info=$('seatCustomerInfo');
+ const visit=$('seatCustomerVisitCount');
+ const castInfo=$('seatCustomerCastInfo');
+ if(!wrap||!list||!selected||!info||!visit||!castInfo)return;
+
+ const c=customerById(seatSelectedCustomerId);
+ if(!c){
+  selected.classList.add('hidden');
+  info.classList.add('hidden');
+  wrap.classList.add('hidden');
+  list.innerHTML='';
+  return;
+ }
+
+ selected.classList.remove('hidden');
+ selected.innerHTML=`選択中：<b>${esc(c.name)}</b>`;
+
+ info.classList.remove('hidden');
+ visit.innerHTML=`<span>来店数</span><b>${customerVisitCount(c.id)}回</b>`;
+ castInfo.innerHTML=`<span>担当</span><b>${esc(staffById(c.castId)?.name||'未設定')}</b>`;
+
+ const bottles=(db.bottles||[]).filter(b=>b.customerId===c.id);
+ wrap.classList.remove('hidden');
+ list.innerHTML=bottles.length
+  ?bottles.map(b=>`
+    <div class="seat-bottle-line">
+     <span>${esc(b.name)}</span>
+     <span class="tag">${esc(b.level||'未設定')}</span>
+     ${b.place?`<small>${esc(b.place)}</small>`:''}
+    </div>`).join('')
+  :'<div class="empty">お預かりボトルなし</div>';
+}
+
+window.selectSeatCustomer=idn=>{
+ const c=customerById(idn);
+ if(!c)return;
+ seatSelectedCustomerId=c.id;
+ $('seatCustomerName').value=c.name||'';
+ renderSeatCustomerMatches();
+ renderSeatBottlePreview();
+};
+
+$('seatCustomerName').addEventListener('input',()=>{
+ const typed=normalizeCustomerNameForMatch($('seatCustomerName').value);
+ const current=customerById(seatSelectedCustomerId);
+ if(!current || normalizeCustomerNameForMatch(current.name)!==typed){
+  seatSelectedCustomerId='';
+ }
+ renderSeatCustomerMatches();
+ renderSeatBottlePreview();
+});
+
 function openSeatModal(sid){
  const s=db.seats.find(x=>x.id===sid);
  seatEditId=sid;
  seatCastSelected=Array.isArray(s.casts)?[...s.casts]:[];
 
+ const existingCustomer=
+  (s.customerId&&customerById(s.customerId)) ||
+  db.customers.find(c=>normalizeCustomerNameForMatch(c.name)===normalizeCustomerNameForMatch(s.customerName));
+
+ seatSelectedCustomerId=existingCustomer?.id||'';
+
  $('seatModalTitle').textContent=s.customerName?`${s.name}を変更`:`${s.name}へ入店`;
  $('seatCustomerName').value=s.customerName||'';
+ renderSeatCustomerMatches();
+ renderSeatBottlePreview();
  renderSeatCastChoices();
  $('seatModal').classList.remove('hidden');
 }
@@ -2116,7 +2321,7 @@ window.openSeat=openSeatModal;
 window.editSeat=openSeatModal;
 
 
-$('seatModalCancel').onclick=()=>$('seatModal').classList.add('hidden');
+$('seatModalCancel').onclick=()=>{seatSelectedCustomerId='';$('seatModal').classList.add('hidden')};
 
 $('seatModalSave').onclick=async()=>{
  const name=$('seatCustomerName').value.trim();
@@ -2124,12 +2329,15 @@ $('seatModalSave').onclick=async()=>{
 
  const s=db.seats.find(x=>x.id===seatEditId);
  if(!s)return toast('席が見つかりません');
+ const wasOccupied=Boolean(s.customerName);
 
  const normalized=normalizeCustomerNameForMatch(name);
 
  // 顧客管理と必ず紐付ける。
- // 同名の既存顧客がいればそのIDを使用し、いなければ自動作成。
- let c=db.customers.find(x=>normalizeCustomerNameForMatch(x.name)===normalized);
+ // 画面で選択した顧客IDを最優先。未選択なら名前一致で探す。
+ let c=
+  (seatSelectedCustomerId&&customerById(seatSelectedCustomerId)) ||
+  db.customers.find(x=>normalizeCustomerNameForMatch(x.name)===normalized);
  let createdCustomer=false;
 
  if(!c){
@@ -2160,7 +2368,14 @@ $('seatModalSave').onclick=async()=>{
  s.openedAt=s.openedAt||nowISO();
  s.casts=[...seatCastSelected];
 
+ // 空席への新規入店登録だけ来店数を1回加算。
+ // 席の修正では二重加算しない。
+ if(!wasOccupied){
+  c.visits=Number(c.visits||0)+1;
+ }
+
  $('seatModal').classList.add('hidden');
+ seatSelectedCustomerId='';
  persist();
  refreshSelects();
  renderAll();
