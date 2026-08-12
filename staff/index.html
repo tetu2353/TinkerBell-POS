@@ -269,6 +269,7 @@ input,select,textarea{padding:13px;border-radius:12px}
   <div class="sectionHead"><h2>同伴・予約</h2><button class="btn gold" data-action="new-schedule">＋登録</button></div>
   <div class="tabs"><button class="tab active" data-schedule-tab="today">今日</button><button class="tab" data-schedule-tab="upcoming">今後</button><button class="tab" data-schedule-tab="date">日付指定</button></div>
   <div id="scheduleDateBox" class="card hidden"><label><span>表示日</span><input id="scheduleViewDate" type="date"></label></div>
+  <div id="todayScheduleShiftBox" class="card"></div>
   <div id="scheduleList" class="list"></div>
 </section>
 
@@ -363,7 +364,7 @@ input,select,textarea{padding:13px;border-radius:12px}
 
 <script>
 'use strict';
-const APP_VERSION='line-v55-customer-birthday-cast-bridge';
+const APP_VERSION='line-v56-schedule-customer-aligned';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -464,14 +465,35 @@ window.tinkerbellApplyCloudShiftMeta=meta=>{
 };
 window.tinkerbellApplyCloudSchedules=rows=>{
  if(!Array.isArray(rows))return;
- db.schedules=rows.map(x=>{
+
+ const localMap=new Map((db.schedules||[]).map(x=>[x.id,x]));
+
+ rows.forEach(x=>{
   const main=db.staff.find(s=>s.id===x.castId)||db.staff.find(s=>s.name===x.castName);
   const extraNames=Array.isArray(x.extraCastNames)&&x.extraCastNames.length
     ?x.extraCastNames
     :(x.extraCastIds||[]).map(id=>db.staff.find(s=>s.id===id)?.name).filter(Boolean);
-  return {id:x.id||uid(),date:x.date,type:x.type==='companion'?'companion':'reservation',time:x.time||'',customerId:x.customerId||'',customer:x.customer||'',cast:main?.name||x.castName||'担当なし',extraCasts:extraNames,people:x.people??1,memo:x.memo||''};
+
+  const cloudRow={
+   id:x.id||uid(),
+   date:x.date,
+   type:x.type==='companion'?'companion':'reservation',
+   time:x.time||'',
+   customerId:x.customerId||'',
+   customer:x.customer||'',
+   cast:main?.name||x.castName||'担当なし',
+   extraCasts:extraNames,
+   people:x.people??1,
+   memo:x.memo||''
+  };
+
+  localMap.set(cloudRow.id,{...(localMap.get(cloudRow.id)||{}),...cloudRow});
  });
- save();renderSchedules();renderHome();
+
+ db.schedules=[...localMap.values()];
+ save();
+ renderSchedules();
+ renderHome();
 };
 async function saveSharedShifts(){
  try{await window.tinkerbellLineFirebase?.saveSharedShifts?.(lineCloudShifts())}catch(e){console.error('shift sync save failed',e);toast('シフト同期に失敗しました')}
@@ -849,7 +871,7 @@ function openScheduleForm(existing=null){
   $('fCast').onchange=renderExtraCasts;
   $('formDialog').showModal();
 
-  $('saveForm').onclick=()=>{
+  $('saveForm').onclick=async()=>{
     const customerId=$('fCustomerId').value;
     const linked=db.customers.find(c=>c.id===customerId);
     const customerName=linked?.name||$('fCustomer').value.trim();
@@ -874,10 +896,10 @@ function openScheduleForm(existing=null){
 
     if(existing)Object.assign(existing,obj);else db.schedules.push(obj);
     save();
-    saveSharedSchedules();
-    $('formDialog').close();
     renderSchedules();
     renderHome();
+    await saveSharedSchedules();
+    $('formDialog').close();
     toast('予定を保存しました');
   };
 }
@@ -887,8 +909,35 @@ function renderSchedules(){
   if(state.scheduleMode==='today')list=list.filter(x=>x.date===today());
   if(state.scheduleMode==='upcoming')list=list.filter(x=>x.date>=today());
   if(state.scheduleMode==='date')list=list.filter(x=>x.date===$('scheduleViewDate').value);
+
+  const shiftBox=$('todayScheduleShiftBox');
+  if(shiftBox){
+    const showToday=state.scheduleMode==='today';
+    shiftBox.classList.toggle('hidden',!showToday);
+
+    if(showToday){
+      const rows=(db.shifts||[]).filter(x=>x.date===today()&&(x.mark==='o'||x.mark==='tri'));
+      const yes=rows.filter(x=>x.mark==='o').map(x=>x.staff);
+      const maybe=rows.filter(x=>x.mark==='tri').map(x=>x.staff);
+
+      shiftBox.innerHTML=`
+        <div class="rowTitle">👗 今日の出勤予定</div>
+        <div class="meta" style="margin-top:7px">
+          ${yes.length?`出勤：${yes.join('・')}`:'出勤予定なし'}
+        </div>
+        ${maybe.length?`<div class="meta">△ 要相談：${maybe.join('・')}</div>`:''}
+      `;
+    }
+  }
+
   list.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-  $('scheduleList').innerHTML=list.length?list.map(x=>`<button class="row full" data-schedule="${x.id}"><div class="rowTitle">${x.date} ${x.time} ${x.customer}</div><div class="meta">${x.type==='companion'?'同伴':'予約'}／${peopleText(x.people)}／担当:${x.cast||'担当なし'}${x.type==='companion'&&x.extraCasts?.length?`／同行:${x.extraCasts.join('・')}`:''}</div><div class="meta">${x.customerId?"登録済みのお客様":"手入力のお客様"}／タップで詳細</div></button>`).join(''):'<div class="card">予定はありません</div>';
+  $('scheduleList').innerHTML=list.length
+    ?list.map(x=>`<button class="row full" data-schedule="${x.id}">
+      <div class="rowTitle">${x.date} ${x.time} ${x.customer}</div>
+      <div class="meta">${x.type==='companion'?'同伴':'予約'}／${peopleText(x.people)}／担当:${x.cast||'担当なし'}${x.type==='companion'&&x.extraCasts?.length?`／同行:${x.extraCasts.join('・')}`:''}</div>
+      <div class="meta">${x.customerId?"登録済みのお客様":"手入力のお客様"}／タップで詳細</div>
+    </button>`).join('')
+    :'<div class="card">同伴・予約はありません</div>';
 }
 function showSchedule(id){
   const x=db.schedules.find(v=>v.id===id);if(!x)return;
@@ -1113,7 +1162,7 @@ function openBottleForm(existing=null,preselectedCustomerId=""){
   if(!db.customers.length)return toast('先にお客様登録が必要です');
   $('formTitle').textContent=existing?'ボトル編集':'ボトル登録';
   $('formBody').innerHTML=`
-    <label><span>管理番号</span><input id="bNo" value="${existing?lineBottleNumber(existing):''}"></label>
+    <label><span>管理番号</span><input id="bNo" value="${existing?.number||''}"></label>
     <label><span>お客様</span><select id="bCustomer">${db.customers.map(c=>`<option value="${c.id}" ${c.id===(existing?.customerId||preselectedCustomerId)?'selected':''}>${c.name}</option>`).join('')}</select></label>
     <label><span>種類</span>
       <select id="bCategory">
@@ -1136,26 +1185,20 @@ function openBottleForm(existing=null,preselectedCustomerId=""){
     const cid=$('bCustomer').value;
     const name=$('bName').value.trim();
     if(!no||!cid||!name)return toast('必須項目を入力');
-    if(db.bottles.some(b=>lineBottleNumber(b)===no&&b.id!==existing?.id))return toast('同じNo.があります');
+    if(db.bottles.some(b=>String(b.number)===no&&b.id!==existing?.id))return toast('同じNo.があります');
 
     const customer=db.customers.find(c=>c.id===cid)?.name||'';
-    const category=$('bCategory').value;
     const obj={
       id:existing?.id||uid(),
       number:no,
-      bottleNo:no,
       customerId:cid,
       customer,
-      category,
-      type:lineBottleTypeFromCategory(category),
+      category:$('bCategory').value,
       name,
       cast:$('bCast').value,
       qty:+$('bQty').value||1,
       status:existing?.status||'stored',
-      level:existing?.level||'満タン',
-      place:existing?.place||'',
-      emptyDate:existing?.emptyDate||'',
-      updatedAt:new Date().toISOString()
+      emptyDate:existing?.emptyDate||''
     };
 
     if(existing)Object.assign(existing,obj);else db.bottles.push(obj);
@@ -1167,37 +1210,12 @@ function openBottleForm(existing=null,preselectedCustomerId=""){
     toast('ボトルを保存しました');
   };
 }
-
-function lineBottleTypeFromCategory(category){
- return ({
-  shochu:'焼酎',
-  whisky:'ウイスキー',
-  brandy:'ブランデー',
-  champagne:'シャンパン',
-  wine:'ワイン',
-  sake:'日本酒',
-  other:'その他'
- })[String(category||'')]||'その他';
-}
-function lineBottleCategoryFromType(type){
- return ({
-  '焼酎':'shochu',
-  'ウイスキー':'whisky',
-  'ブランデー':'brandy',
-  'シャンパン':'champagne',
-  'ワイン':'wine',
-  '日本酒':'sake',
-  'その他':'other'
- })[String(type||'')]||'other';
-}
-function lineBottleNumber(b){return String(b.number??b.bottleNo??'').trim()}
-function lineBottleCategory(b){return b.category||lineBottleCategoryFromType(b.type)}
 function renderBottles(){
   const q=$('bottleSearch').value.trim().toLowerCase();
-  let list=db.bottles.filter(b=>[lineBottleNumber(b),b.customer,b.name,b.cast].join(' ').toLowerCase().includes(q));
+  let list=db.bottles.filter(b=>[b.number,b.customer,b.name,b.cast].join(' ').toLowerCase().includes(q));
 
   if(state.bottleCategory!=='all'){
-    list=list.filter(b=>lineBottleCategory(b)===state.bottleCategory);
+    list=list.filter(b=>(b.category||'other')===state.bottleCategory);
   }
   if(state.bottleStatus!=='all'){
     list=list.filter(b=>b.status===state.bottleStatus);
@@ -1205,12 +1223,12 @@ function renderBottles(){
 
   const counts={
     all:db.bottles.length,
-    whisky:db.bottles.filter(b=>lineBottleCategory(b)==='whisky').length,
-    brandy:db.bottles.filter(b=>lineBottleCategory(b)==='brandy').length,
-    shochu:db.bottles.filter(b=>lineBottleCategory(b)==='shochu').length,
-    wine:db.bottles.filter(b=>lineBottleCategory(b)==='wine').length,
-    sake:db.bottles.filter(b=>lineBottleCategory(b)==='sake').length,
-    other:db.bottles.filter(b=>lineBottleCategory(b)==='other').length
+    whisky:db.bottles.filter(b=>b.category==='whisky').length,
+    brandy:db.bottles.filter(b=>b.category==='brandy').length,
+    shochu:db.bottles.filter(b=>b.category==='shochu').length,
+    wine:db.bottles.filter(b=>b.category==='wine').length,
+    sake:db.bottles.filter(b=>b.category==='sake').length,
+    other:db.bottles.filter(b=>!b.category||b.category==='other').length
   };
 
   document.querySelectorAll('[data-bottle-category]').forEach(btn=>{
@@ -1227,8 +1245,8 @@ function renderBottles(){
   $('bottleSummary').innerHTML=`<div class="rowTitle">表示中：${list.length}本</div><div class="meta">キープボトルのみ。シャンパンは管理対象外です。</div>`;
 
   $('bottleList').innerHTML=list.length?list.map(b=>`<button class="row full" data-bottle="${b.id}" style="${b.status==='empty'?'opacity:.62':''}">
-    <div class="rowTitle">No.${lineBottleNumber(b)||"-"} ${b.customer}</div>
-    <span class="bottleTypeBadge">${bottleCategoryLabel(lineBottleCategory(b))}</span>
+    <div class="rowTitle">No.${b.number} ${b.customer}</div>
+    <span class="bottleTypeBadge">${bottleCategoryLabel(b.category)}</span>
     <div class="meta">${b.name}／担当:${b.cast||'担当不明'}／本数:${b.qty}</div>
     <div class="meta">${b.status==='empty'?'【空ボトル】':'保管中'}</div>
   </button>`).join(''):'<div class="card">該当するボトルはありません</div>';
@@ -1236,7 +1254,7 @@ function renderBottles(){
 function showBottle(id){
   const b=db.bottles.find(x=>x.id===id);if(!b)return;
   $('detailTitle').textContent='ボトル詳細';
-  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">No.${lineBottleNumber(b)||"-"} ${b.customer}</div><div class="meta">種類:${bottleCategoryLabel(lineBottleCategory(b))}</div><div class="meta">ボトル:${b.name}</div><div class="meta">担当:${b.cast}</div><div class="meta">本数:${b.qty}</div><div class="meta">状態:${b.status==='empty'?'空ボトル':'保管中'}</div><div class="actions"><button class="btn ghost" data-edit-bottle="${b.id}">編集</button><button class="btn" data-toggle-bottle="${b.id}">${b.status==='empty'?'保管中へ':'空ボトル'}</button><button class="btn red" data-delete-bottle="${b.id}">削除</button></div><button class="btn gold full" data-add-related-bottle="${b.id}" style="margin-top:9px">＋同じお客様にボトル追加</button></div>`;
+  $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">No.${b.number} ${b.customer}</div><div class="meta">種類:${bottleCategoryLabel(b.category)}</div><div class="meta">ボトル:${b.name}</div><div class="meta">担当:${b.cast}</div><div class="meta">本数:${b.qty}</div><div class="meta">状態:${b.status==='empty'?'空ボトル':'保管中'}</div><div class="actions"><button class="btn ghost" data-edit-bottle="${b.id}">編集</button><button class="btn" data-toggle-bottle="${b.id}">${b.status==='empty'?'保管中へ':'空ボトル'}</button><button class="btn red" data-delete-bottle="${b.id}">削除</button></div><button class="btn gold full" data-add-related-bottle="${b.id}" style="margin-top:9px">＋同じお客様にボトル追加</button></div>`;
   $('detailDialog').showModal();
 }
 
@@ -1458,7 +1476,10 @@ window.tinkerbellApplyCloudCustomers=rows=>{
  const map=new Map((db.customers||[]).map(c=>[c.id,c]));
  rows.forEach(c=>{
   const local=map.get(c.id)||{};
-  map.set(c.id,{...local,...c});
+  const staffById=(c.castId&&db.staff.find(s=>s.id===c.castId))||null;
+  const cast=c.cast||staffById?.name||local.cast||'担当不明';
+  const castId=c.castId||db.staff.find(s=>s.name===cast)?.id||local.castId||'';
+  map.set(c.id,{...local,...c,cast,castId});
  });
  db.customers=[...map.values()];
  save();
