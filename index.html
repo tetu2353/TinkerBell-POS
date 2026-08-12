@@ -725,6 +725,40 @@ body.manager-mode .payroll-staff-settings{
 .customer-pending-tag{background:#fff0c8;color:#8a5b00;border:1px solid #e0bb60;font-size:11px}
 #retryCustomerCloudSync{width:100%;margin-top:4px}
 
+
+.today-sales-grid{
+ display:grid;
+ grid-template-columns:repeat(5,minmax(0,1fr));
+ gap:8px;
+ margin-top:10px
+}
+.today-sales-grid>div{
+ background:#f7f7f7;
+ border:1px solid #e7e7e7;
+ border-radius:12px;
+ padding:10px;
+ text-align:center
+}
+.today-sales-grid small{
+ display:block;
+ color:#666;
+ font-weight:800;
+ margin-bottom:4px
+}
+.today-sales-grid b{font-size:18px}
+.today-sale-row{
+ display:flex;
+ justify-content:space-between;
+ gap:12px;
+ padding:10px 4px;
+ border-top:1px solid #eee;
+ font-weight:800
+}
+@media(max-width:700px){
+ .today-sales-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .today-sale-row{flex-direction:column;gap:4px}
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -852,6 +886,11 @@ body.manager-mode .payroll-staff-settings{
 <section id="seats" class="screen"><h2>席管理</h2><div id="seatGrid" class="seat-grid"></div></section>
 
 <section id="orders" class="screen">
+<div class="card">
+  <h3 style="margin-top:0">今日の売上</h3>
+  <div id="todaySalesSummary"></div>
+  <div id="todaySalesDetail" style="margin-top:12px"></div>
+</div>
 <div class="order-seat-header">
   <button class="secondary" onclick="show('seats')">← 席一覧</button>
   <div>
@@ -1263,7 +1302,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v69-order-quick-items-categories';
+const APP_VERSION='v70-today-sales-in-orders';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -4410,7 +4449,51 @@ function reconcileCustomerLinks(){
  return changed;
 }
 
-function renderAll(){reconcileCustomerLinks();renderAttendance();renderMyAttendance();renderAdminAttendance();renderInventory();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderPayroll();renderBackupStatus()}
+
+function renderTodaySales(){
+ const summary=$('todaySalesSummary');
+ const detail=$('todaySalesDetail');
+ if(!summary||!detail)return;
+
+ const day=today();
+ const rows=(db.checkouts||[]).filter(c=>{
+  const stamp=String(c.closedAt||'');
+  const active=(c.status||'completed')!=='cancelled' && !c.cancelledAt;
+  return active && stamp.slice(0,10)===day;
+ });
+
+ const sumByMethod=method=>rows
+  .filter(c=>c.paymentMethod===method)
+  .reduce((s,c)=>s+Number(c.total||0),0);
+
+ const total=rows.reduce((s,c)=>s+Number(c.total||0),0);
+ const cash=sumByMethod('現金');
+ const card=sumByMethod('クレジットカード');
+ const other=sumByMethod('その他');
+
+ summary.innerHTML=`
+  <div class="today-sales-grid">
+   <div><small>売上合計</small><b>${yen(total)}</b></div>
+   <div><small>会計件数</small><b>${rows.length}件</b></div>
+   <div><small>現金</small><b>${yen(cash)}</b></div>
+   <div><small>カード</small><b>${yen(card)}</b></div>
+   <div><small>その他</small><b>${yen(other)}</b></div>
+  </div>`;
+
+ const sorted=rows.slice().sort((a,b)=>String(b.closedAt||'').localeCompare(String(a.closedAt||'')));
+ detail.innerHTML=sorted.length
+  ?sorted.map(c=>{
+    const t=String(c.closedAt||'').slice(11,16)||'--:--';
+    const name=c.customerName||c.groupCustomerName||c.receiptName||'お客様';
+    return `<div class="today-sale-row">
+      <span>${esc(t)}　${esc(name)}</span>
+      <span>${esc(c.paymentMethod||'未設定')}　<b>${yen(c.total||0)}</b></span>
+    </div>`;
+   }).join('')
+  :'<div class="empty">今日の会計はまだありません</div>';
+}
+
+function renderAll(){reconcileCustomerLinks();renderAttendance();renderMyAttendance();renderAdminAttendance();renderInventory();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderPayroll();renderTodaySales();renderBackupStatus()}
 
 $('changeAdminPasscode').onclick=async()=>{
  const currentCode=$('currentAdminPasscode').value.trim();
