@@ -1076,7 +1076,10 @@ body.manager-mode .payroll-staff-settings{
  <input id="customerEditId" type="hidden">
  <div class="row3">
   <label>お客様名<input id="customerName"></label>
+  <label>ふりがな<input id="customerKana" placeholder="例：たなか"></label>
   <label>担当キャスト<select id="customerCast"></select></label>
+ </div>
+ <div class="row">
   <label>誕生月<select id="customerBirthMonth"><option value="">未登録</option><option value="1">1月</option><option value="2">2月</option><option value="3">3月</option><option value="4">4月</option><option value="5">5月</option><option value="6">6月</option><option value="7">7月</option><option value="8">8月</option><option value="9">9月</option><option value="10">10月</option><option value="11">11月</option><option value="12">12月</option></select></label>
  </div>
  <div class="row">
@@ -1570,7 +1573,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v79-customer-inline-bottle-registration';
+const APP_VERSION='v80-customer-schema-aligned';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -3319,6 +3322,7 @@ $('addCustomerBottleRow').onclick=()=>{
 function clearCustomerEdit(){
  $('customerEditId').value='';
  $('customerName').value='';
+ $('customerKana').value='';
  $('customerBirthMonth').value='';
  $('customerBirthDay').value='';
  $('customerMemo').value='';
@@ -3332,6 +3336,7 @@ window.editCustomer=idn=>{
  if(!c)return;
  $('customerEditId').value=c.id;
  $('customerName').value=c.name||'';
+ $('customerKana').value=c.kana||'';
  $('customerCast').value=c.castId||'';
  $('customerBirthMonth').value=c.birthMonth||'';
  $('customerBirthDay').value=c.birthDay||'';
@@ -3404,6 +3409,7 @@ $('saveCustomer').onclick=async()=>{
  const castId=$('customerCast').value;
  Object.assign(customer,{
   name,
+  kana:$('customerKana').value.trim(),
   castId,
   cast:staffById(castId)?.name||customer.cast||'担当不明',
   birthMonth:birthMonth?Number(birthMonth):'',
@@ -3533,7 +3539,7 @@ function bottlesForCustomer(c){
 function renderCustomers(){
  const q=$('customerSearch').value.toLowerCase();
  const a=db.customers.filter(c=>
-  (c.name+c.memo+customerBirthdayText(c)+(staffById(c.castId)?.name||c.cast||'')).toLowerCase().includes(q)
+  (c.name+(c.kana||'')+c.memo+customerBirthdayText(c)+(staffById(c.castId)?.name||c.cast||'')).toLowerCase().includes(q)
  );
 
  $('customerList').innerHTML=a.length
@@ -3542,6 +3548,7 @@ function renderCustomers(){
     return `<div class="item customer-card">
       <h3>${esc(c.name)} ${c.cloudPending?'<span class="tag customer-pending-tag">同期待ち</span>':''}</h3>
       <div class="meta">
+       ふりがな ${esc(c.kana||'未登録')}<br>
        担当 ${esc(staffById(c.castId)?.name||c.cast||'未設定')}<br>
        誕生日 ${esc(customerBirthdayText(c))}<br>
        ${esc(c.memo||'メモなし')}
