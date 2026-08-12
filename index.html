@@ -806,6 +806,19 @@ body.manager-mode .payroll-staff-settings{
  gap:3px
 }
 
+
+.seat-kana-tabs{
+ display:grid;
+ grid-template-columns:repeat(6,minmax(0,1fr));
+ gap:6px;
+ margin:10px 0
+}
+.seat-kana-tabs button{
+ min-height:40px;
+ padding:8px 6px;
+ font-weight:900
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -1240,6 +1253,7 @@ body.manager-mode .payroll-staff-settings{
    <input id="seatCustomerName" placeholder="名前を入力">
   </label>
 
+  <div id="seatKanaTabs" class="seat-kana-tabs"></div>
   <div id="seatCustomerMatches" class="seat-customer-matches"></div>
 
   <div id="seatCustomerSelected" class="seat-customer-selected hidden"></div>
@@ -1379,7 +1393,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v72-seat-registered-customer-visit-bottle';
+const APP_VERSION='v73-seat-kana-customer-picker';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2023,7 +2037,7 @@ $('printShift').onclick=()=>window.print();
 $('exportShiftCsv').onclick=()=>{const key=shiftMonthKey(),days=new Date(shiftViewMonth.getFullYear(),shiftViewMonth.getMonth()+1,0).getDate();let rows=[['名前',...Array.from({length:days},(_,i)=>`${i+1}日`)]];db.staff.forEach(st=>rows.push([st.name,...Array.from({length:days},(_,i)=>shiftRecord(st.id,`${key}-${String(i+1).padStart(2,'0')}`)?.status||'')]));const csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tinkerbell_shift_${key}.csv`;a.click();URL.revokeObjectURL(a.href)};
 
 function seatTotal(s){return s.orders.reduce((a,o)=>a+o.price*o.qty,0)}
-let seatEditId='',seatCastSelected=[],seatSelectedCustomerId='';
+let seatEditId='',seatCastSelected=[],seatSelectedCustomerId='',seatKanaFilter='あ';
 function seatCastNames(s){
  return Array.isArray(s.casts)
   ?s.casts.map(x=>staffById(x)?.name).filter(Boolean)
@@ -2179,14 +2193,61 @@ function renderSeatCastChoices(){
 }
 
 
+function customerKanaGroup(name){
+ const ch=String(name||'').trim().charAt(0);
+ if(!ch)return '他';
+
+ const c=ch.normalize('NFKC');
+ const groups=[
+  ['あ','あいうえおぁぃぅぇぉアイウエオァィゥェォ'],
+  ['か','かきくけこがぎぐげごカキクケコガギグゲゴ'],
+  ['さ','さしすせそざじずぜぞサシスセソザジズゼゾ'],
+  ['た','たちつてとだぢづでどタチツテトダヂヅデド'],
+  ['な','なにぬねのナニヌネノ'],
+  ['は','はひふへほばびぶべぼぱぴぷぺぽハヒフヘホバビブベボパピプペポ'],
+  ['ま','まみむめもマミムメモ'],
+  ['や','やゆよゃゅょヤユヨャュョ'],
+  ['ら','らりるれろラリルレロ'],
+  ['わ','わをんワヲン']
+ ];
+ for(const [g,chars] of groups){
+  if(chars.includes(c))return g;
+ }
+ return '他';
+}
+
+function renderSeatKanaTabs(){
+ const tabs=['あ','か','さ','た','な','は','ま','や','ら','わ','他','全部'];
+ $('seatKanaTabs').innerHTML=tabs.map(k=>`
+  <button type="button"
+   class="${seatKanaFilter===k?'primary':'secondary'}"
+   onclick="setSeatKanaFilter('${k}')">${k}</button>
+ `).join('');
+}
+window.setSeatKanaFilter=k=>{
+ seatKanaFilter=k;
+ renderSeatKanaTabs();
+ renderSeatCustomerMatches();
+};
+
 function renderSeatCustomerMatches(){
  const box=$('seatCustomerMatches');
  if(!box)return;
 
  const q=normalizeCustomerNameForMatch($('seatCustomerName').value);
- const rows=(db.customers||[])
-  .filter(c=>!q || normalizeCustomerNameForMatch(c.name).includes(q))
-  .slice(0,8);
+
+ let rows=(db.customers||[]);
+
+ if(q){
+  rows=rows.filter(c=>normalizeCustomerNameForMatch(c.name).includes(q));
+ }else if(seatKanaFilter!=='全部'){
+  rows=rows.filter(c=>customerKanaGroup(c.kana||c.furigana||c.name)===seatKanaFilter);
+ }
+
+ rows=rows
+  .slice()
+  .sort((a,b)=>String(a.kana||a.furigana||a.name).localeCompare(String(b.kana||b.furigana||b.name),'ja'))
+  .slice(0,50);
 
  box.innerHTML=rows.length
   ?`<div class="meta" style="margin-bottom:6px">顧客管理から選択</div>`+
@@ -2202,9 +2263,8 @@ function renderSeatCustomerMatches(){
        <small>ボトル ${(db.bottles||[]).filter(b=>b.customerId===c.id).length}本</small>
       </span>
      </button>`).join('')
-  :'<div class="empty">登録済みのお客様は見つかりません</div>';
+  :'<div class="empty">該当するお客様はいません</div>';
 }
-
 
 function customerVisitCount(customerId){
  const c=customerById(customerId);
@@ -2294,6 +2354,7 @@ $('seatCustomerName').addEventListener('input',()=>{
  if(!current || normalizeCustomerNameForMatch(current.name)!==typed){
   seatSelectedCustomerId='';
  }
+ renderSeatKanaTabs();
  renderSeatCustomerMatches();
  renderSeatBottlePreview();
 });
@@ -2311,6 +2372,7 @@ function openSeatModal(sid){
 
  $('seatModalTitle').textContent=s.customerName?`${s.name}を変更`:`${s.name}へ入店`;
  $('seatCustomerName').value=s.customerName||'';
+ renderSeatKanaTabs();
  renderSeatCustomerMatches();
  renderSeatBottlePreview();
  renderSeatCastChoices();
