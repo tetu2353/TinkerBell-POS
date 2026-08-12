@@ -1083,7 +1083,7 @@ body.manager-mode .payroll-staff-settings{
 
 <section id="notices" class="screen"><h2>お知らせ</h2><div class="card manager"><label>タイトル<input id="noticeTitle"></label><label>本文<textarea id="noticeBody" rows="4"></textarea></label><button id="saveNotice" class="primary">投稿</button></div><div id="noticeList" class="list"></div></section>
 
-<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><input id="staffEditId" type="hidden"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>同伴手当（1回）<input id="staffCompanionAllowance" type="number" value="0"></label></div><div class="row3"><label>送迎手当（1回）<input id="staffTransportAllowance" type="number" value="0"></label><div class="meta">給与計算では、勤怠・注文実績とここで設定した単価を自動集計します。</div><div class="meta">従業員ごとの暗証番号は使用しません。</div></div>
+<section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><input id="staffEditId" type="hidden"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>同伴バック（1回）<input id="staffCompanionAllowance" type="number" min="0" inputmode="numeric" value="0" placeholder="例：3000"></label></div><div class="row3"><label>送迎手当（1回）<input id="staffTransportAllowance" type="number" value="0"></label><div class="meta">給与計算では、勤怠・注文実績とここで設定した単価を自動集計します。同伴バックは「お店の同伴料金」ではなく、キャストへ支給する金額だけを入力します。</div><div class="meta">従業員ごとの暗証番号は使用しません。</div></div>
 
 <div class="payroll-staff-settings">
  <h3>給与・保険設定</h3>
@@ -1488,7 +1488,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v74-bottle-customer-search-type-filter';
+const APP_VERSION='v75-companion-back-setting';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -4245,7 +4245,7 @@ function renderPayroll(){
    <div><span>基本給　${p.hours.toFixed(1)}時間 × ${yen(staff.wage||0)}</span><b>${yen(p.hourlyPay)}</b></div>
    <div><span>ドリンクバック　${p.drinkCount}杯 × ${yen(staff.drinkBack||0)}</span><b>${yen(p.drinkPay)}</b></div>
    <div><span>ボトルバック　${p.bottleCount}本 × ${yen(staff.bottleBack||0)}</span><b>${yen(p.bottlePay)}</b></div>
-   <div><span>同伴手当　${p.companionCount}回 × ${yen(staff.companionAllowance||0)}</span><b>${yen(p.companionPay)}</b></div>
+   <div><span>同伴バック　${p.companionCount}回 × ${yen(staff.companionAllowance||0)}</span><b>${yen(p.companionPay)}</b></div>
    <div><span>送迎手当　${p.transportCount}回 × ${yen(staff.transportAllowance||0)}</span><b>${yen(p.transportPay)}</b></div>
    <div><span>その他手当</span><b>${yen(p.otherAllowance)}</b></div>
   </div>
@@ -4279,7 +4279,7 @@ function renderPayroll(){
     <label>基本給<small>自動 ${yen(p.autoHourlyPay)}</small><input type="number" min="0" value="${overrideValue(p.adj.manualOverrides,'hourlyPay')}" data-payroll-id="${staff.id}" data-payroll-override="hourlyPay" placeholder="${p.autoHourlyPay}"></label>
     <label>ドリンクバック<small>自動 ${yen(p.autoDrinkPay)}</small><input type="number" min="0" value="${overrideValue(p.adj.manualOverrides,'drinkPay')}" data-payroll-id="${staff.id}" data-payroll-override="drinkPay" placeholder="${p.autoDrinkPay}"></label>
     <label>ボトルバック<small>自動 ${yen(p.autoBottlePay)}</small><input type="number" min="0" value="${overrideValue(p.adj.manualOverrides,'bottlePay')}" data-payroll-id="${staff.id}" data-payroll-override="bottlePay" placeholder="${p.autoBottlePay}"></label>
-    <label>同伴手当<small>自動 ${yen(p.autoCompanionPay)}</small><input type="number" min="0" value="${overrideValue(p.adj.manualOverrides,'companionPay')}" data-payroll-id="${staff.id}" data-payroll-override="companionPay" placeholder="${p.autoCompanionPay}"></label>
+    <label>同伴バック<small>自動 ${yen(p.autoCompanionPay)}</small><input type="number" min="0" value="${overrideValue(p.adj.manualOverrides,'companionPay')}" data-payroll-id="${staff.id}" data-payroll-override="companionPay" placeholder="${p.autoCompanionPay}"></label>
     <label>送迎手当<small>自動 ${yen(p.autoTransportPay)}</small><input type="number" min="0" value="${overrideValue(p.adj.manualOverrides,'transportPay')}" data-payroll-id="${staff.id}" data-payroll-override="transportPay" placeholder="${p.autoTransportPay}"></label>
    </div>
 
