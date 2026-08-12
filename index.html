@@ -886,6 +886,30 @@ body.manager-mode .payroll-staff-settings{
 }
 .customer-bottle-row:first-of-type{border-top:0}
 
+
+.customer-inline-bottle-box{
+ margin:14px 0;
+ padding:14px;
+ border:2px solid #d8c49a;
+ border-radius:14px;
+ background:#fffaf0
+}
+.customer-bottle-edit-rows{
+ display:grid;
+ gap:10px;
+ margin-top:10px
+}
+.customer-bottle-edit-row{
+ padding:12px;
+ border:1px solid #e1d7c2;
+ border-radius:12px;
+ background:#fff
+}
+.customer-bottle-remove{
+ align-self:end;
+ min-height:44px
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -1047,7 +1071,35 @@ body.manager-mode .payroll-staff-settings{
  <div id="customerCloudStatus" class="customer-cloud-status">クラウド状態を確認中...</div>
  <button id="retryCustomerCloudSync" class="secondary" type="button">お客様データを再同期</button>
 </div>
-<div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・誕生日・メモ"></label></div><div class="card"><input id="customerEditId" type="hidden"><div class="row3"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label><label>誕生月<select id="customerBirthMonth"><option value="">未登録</option><option value="1">1月</option><option value="2">2月</option><option value="3">3月</option><option value="4">4月</option><option value="5">5月</option><option value="6">6月</option><option value="7">7月</option><option value="8">8月</option><option value="9">9月</option><option value="10">10月</option><option value="11">11月</option><option value="12">12月</option></select></label></div><div class="row"><label>誕生日<select id="customerBirthDay"><option value="">未登録</option><option value="1">1日</option><option value="2">2日</option><option value="3">3日</option><option value="4">4日</option><option value="5">5日</option><option value="6">6日</option><option value="7">7日</option><option value="8">8日</option><option value="9">9日</option><option value="10">10日</option><option value="11">11日</option><option value="12">12日</option><option value="13">13日</option><option value="14">14日</option><option value="15">15日</option><option value="16">16日</option><option value="17">17日</option><option value="18">18日</option><option value="19">19日</option><option value="20">20日</option><option value="21">21日</option><option value="22">22日</option><option value="23">23日</option><option value="24">24日</option><option value="25">25日</option><option value="26">26日</option><option value="27">27日</option><option value="28">28日</option><option value="29">29日</option><option value="30">30日</option><option value="31">31日</option></select></label><label>メモ<textarea id="customerMemo" rows="3"></textarea></label></div><div class="row"><button id="saveCustomer" class="primary">お客様登録</button><button id="cancelCustomerEdit" class="secondary hidden">編集をやめる</button></div></div><div id="customerList" class="list"></div></section>
+<div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・誕生日・メモ"></label></div>
+<div class="card">
+ <input id="customerEditId" type="hidden">
+ <div class="row3">
+  <label>お客様名<input id="customerName"></label>
+  <label>担当キャスト<select id="customerCast"></select></label>
+  <label>誕生月<select id="customerBirthMonth"><option value="">未登録</option><option value="1">1月</option><option value="2">2月</option><option value="3">3月</option><option value="4">4月</option><option value="5">5月</option><option value="6">6月</option><option value="7">7月</option><option value="8">8月</option><option value="9">9月</option><option value="10">10月</option><option value="11">11月</option><option value="12">12月</option></select></label>
+ </div>
+ <div class="row">
+  <label>誕生日<select id="customerBirthDay"><option value="">未登録</option><option value="1">1日</option><option value="2">2日</option><option value="3">3日</option><option value="4">4日</option><option value="5">5日</option><option value="6">6日</option><option value="7">7日</option><option value="8">8日</option><option value="9">9日</option><option value="10">10日</option><option value="11">11日</option><option value="12">12日</option><option value="13">13日</option><option value="14">14日</option><option value="15">15日</option><option value="16">16日</option><option value="17">17日</option><option value="18">18日</option><option value="19">19日</option><option value="20">20日</option><option value="21">21日</option><option value="22">22日</option><option value="23">23日</option><option value="24">24日</option><option value="25">25日</option><option value="26">26日</option><option value="27">27日</option><option value="28">28日</option><option value="29">29日</option><option value="30">30日</option><option value="31">31日</option></select></label>
+  <label>メモ<textarea id="customerMemo" rows="3"></textarea></label>
+ </div>
+
+ <div class="customer-inline-bottle-box">
+  <div class="customer-bottle-head">
+   <b>🍾 キープボトル</b>
+   <button type="button" id="addCustomerBottleRow" class="secondary">＋ ボトル追加</button>
+  </div>
+  <div class="meta">お客様登録と同時にボトルも登録できます。</div>
+  <div id="customerBottleRows" class="customer-bottle-edit-rows"></div>
+ </div>
+
+ <div class="row">
+  <button id="saveCustomer" class="primary">お客様登録</button>
+  <button id="cancelCustomerEdit" class="secondary hidden">編集をやめる</button>
+ </div>
+</div>
+<div id="customerList" class="list"></div>
+</section>
 
 <section id="bottles" class="screen">
 <h2>ボトル管理</h2>
@@ -1518,7 +1570,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v78-customer-birthday-no-phone';
+const APP_VERSION='v79-customer-inline-bottle-registration';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -3210,12 +3262,68 @@ window.delOrder=(sid,oid)=>{
 function customerBirthdayText(c){
  return c?.birthMonth&&c?.birthDay?`${c.birthMonth}月${c.birthDay}日`:'未登録';
 }
+
+let customerBottleDraft=[];
+
+function emptyCustomerBottleDraft(){
+ return {id:'',number:'',type:'焼酎',name:'',level:'満タン',place:''};
+}
+
+function renderCustomerBottleRows(){
+ const box=$('customerBottleRows');
+ if(!box)return;
+ box.innerHTML=customerBottleDraft.length
+  ?customerBottleDraft.map((b,i)=>`
+   <div class="customer-bottle-edit-row">
+    <div class="row3">
+     <label>ボトルNo.<input data-cb-number="${i}" value="${esc(b.number||'')}" inputmode="numeric" placeholder="例：128"></label>
+     <label>種類<select data-cb-type="${i}">
+      ${['焼酎','ウイスキー','ブランデー','シャンパン','ワイン','日本酒','その他'].map(t=>`<option ${t===(b.type||'焼酎')?'selected':''}>${t}</option>`).join('')}
+     </select></label>
+     <label>ボトル名<input data-cb-name="${i}" value="${esc(b.name||'')}" placeholder="例：黒霧島"></label>
+    </div>
+    <div class="row">
+     <label>残量<select data-cb-level="${i}">
+      ${['満タン','75%','50%','25%','ほぼ空'].map(v=>`<option ${v===(b.level||'満タン')?'selected':''}>${v}</option>`).join('')}
+     </select></label>
+     <label>保管場所<input data-cb-place="${i}" value="${esc(b.place||'')}"></label>
+     <button type="button" class="danger customer-bottle-remove" onclick="removeCustomerBottleRow(${i})">削除</button>
+    </div>
+   </div>`).join('')
+  :'<div class="empty">ボトル登録なし</div>';
+}
+
+function collectCustomerBottleDraft(){
+ return customerBottleDraft.map((b,i)=>({
+  ...b,
+  number:document.querySelector(`[data-cb-number="${i}"]`)?.value.trim()||'',
+  type:document.querySelector(`[data-cb-type="${i}"]`)?.value||'焼酎',
+  name:document.querySelector(`[data-cb-name="${i}"]`)?.value.trim()||'',
+  level:document.querySelector(`[data-cb-level="${i}"]`)?.value||'満タン',
+  place:document.querySelector(`[data-cb-place="${i}"]`)?.value.trim()||''
+ }));
+}
+
+window.removeCustomerBottleRow=i=>{
+ customerBottleDraft=collectCustomerBottleDraft();
+ customerBottleDraft.splice(i,1);
+ renderCustomerBottleRows();
+};
+
+$('addCustomerBottleRow').onclick=()=>{
+ customerBottleDraft=collectCustomerBottleDraft();
+ customerBottleDraft.push(emptyCustomerBottleDraft());
+ renderCustomerBottleRows();
+};
+
 function clearCustomerEdit(){
  $('customerEditId').value='';
  $('customerName').value='';
  $('customerBirthMonth').value='';
  $('customerBirthDay').value='';
  $('customerMemo').value='';
+ customerBottleDraft=[];
+ renderCustomerBottleRows();
  $('saveCustomer').textContent='お客様登録';
  $('cancelCustomerEdit').classList.add('hidden');
 }
@@ -3228,6 +3336,15 @@ window.editCustomer=idn=>{
  $('customerBirthMonth').value=c.birthMonth||'';
  $('customerBirthDay').value=c.birthDay||'';
  $('customerMemo').value=c.memo||'';
+ customerBottleDraft=bottlesForCustomer(c).map(b=>({
+  id:b.id,
+  number:bottleDisplayNumber(b),
+  type:bottleDisplayType(b),
+  name:b.name||'',
+  level:b.level||'満タン',
+  place:b.place||''
+ }));
+ renderCustomerBottleRows();
  $('saveCustomer').textContent='変更を保存';
  $('cancelCustomerEdit').classList.remove('hidden');
  show('customers');
@@ -3260,6 +3377,30 @@ $('saveCustomer').onclick=async()=>{
   button.textContent='お客様登録';
   return toast('誕生日は月と日を両方選択してください');
  }
+
+ const enteredBottles=collectCustomerBottleDraft().filter(b=>b.number||b.name||b.place);
+ for(const b of enteredBottles){
+  if(!b.number){
+   button.disabled=false;
+   button.textContent='お客様登録';
+   return toast('ボトルNo.を入力してください');
+  }
+  if(!b.name){
+   button.disabled=false;
+   button.textContent='お客様登録';
+   return toast('ボトル名を入力してください');
+  }
+  const duplicate=(db.bottles||[]).some(x=>
+   bottleDisplayNumber(x)===b.number &&
+   x.id!==b.id
+  );
+  if(duplicate){
+   button.disabled=false;
+   button.textContent='お客様登録';
+   return toast(`ボトルNo.${b.number}は登録済みです`);
+  }
+ }
+
  const castId=$('customerCast').value;
  Object.assign(customer,{
   name,
@@ -3274,6 +3415,32 @@ $('saveCustomer').onclick=async()=>{
  delete customer.phone;
 
  if(!existing)db.customers.push(customer);
+
+ // お客様登録画面のボトルを、このお客様に紐付けて保存
+ const keepIds=new Set(enteredBottles.filter(b=>b.id).map(b=>b.id));
+ db.bottles=db.bottles.filter(b=>b.customerId!==customer.id || keepIds.has(b.id));
+
+ enteredBottles.forEach(b=>{
+  const obj=b.id?db.bottles.find(x=>x.id===b.id):null;
+  const type=normalizeBottleType(b.type);
+  const data={
+   customerId:customer.id,
+   customer:customer.name,
+   number:b.number,
+   bottleNo:b.number,
+   type,
+   category:bottleCategoryFromType(type),
+   name:b.name,
+   level:b.level||'満タン',
+   place:b.place||'',
+   qty:Number(obj?.qty||1),
+   status:obj?.status||'stored',
+   cast:staffById(castId)?.name||customer.cast||'',
+   updatedAt:nowISO()
+  };
+  if(obj)Object.assign(obj,data);
+  else db.bottles.push({id:id(),...data});
+ });
 
  // 顧客名を変更した時は、席とボトル側の表示名も崩れないように追従
  db.seats.forEach(s=>{
@@ -5218,6 +5385,7 @@ $('saveInvoiceSettings').onclick=()=>{
  toast('インボイス登録番号を保存しました');
 };
 
+renderCustomerBottleRows();
 $('retryCustomerCloudSync')?.addEventListener('click',retryCustomerCloudSync);
 window.addEventListener('online',()=>{
  if(db.customers.some(c=>c.cloudPending))retryCustomerCloudSync();
