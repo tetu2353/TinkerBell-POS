@@ -860,6 +860,32 @@ body.manager-mode .payroll-staff-settings{
  .bottle-type-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
+
+.customer-bottle-box{
+ margin-top:12px;
+ padding:12px;
+ border:1px solid #e3d6b8;
+ border-radius:12px;
+ background:#fffaf0
+}
+.customer-bottle-head{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:10px;
+ margin-bottom:8px
+}
+.customer-bottle-head button{min-height:36px;padding:7px 10px}
+.customer-bottle-row{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:center;
+ gap:7px;
+ padding:8px 0;
+ border-top:1px solid #eee
+}
+.customer-bottle-row:first-of-type{border-top:0}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -1021,7 +1047,7 @@ body.manager-mode .payroll-staff-settings{
  <div id="customerCloudStatus" class="customer-cloud-status">クラウド状態を確認中...</div>
  <button id="retryCustomerCloudSync" class="secondary" type="button">お客様データを再同期</button>
 </div>
-<div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・メモ"></label></div><div class="card"><input id="customerEditId" type="hidden"><div class="row3"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label><label>電話番号<input id="customerPhone" inputmode="tel"></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><div class="row"><button id="saveCustomer" class="primary">お客様登録</button><button id="cancelCustomerEdit" class="secondary hidden">編集をやめる</button></div></div><div id="customerList" class="list"></div></section>
+<div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・誕生日・メモ"></label></div><div class="card"><input id="customerEditId" type="hidden"><div class="row3"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label><label>誕生月<select id="customerBirthMonth"><option value="">未登録</option><option value="1">1月</option><option value="2">2月</option><option value="3">3月</option><option value="4">4月</option><option value="5">5月</option><option value="6">6月</option><option value="7">7月</option><option value="8">8月</option><option value="9">9月</option><option value="10">10月</option><option value="11">11月</option><option value="12">12月</option></select></label></div><div class="row"><label>誕生日<select id="customerBirthDay"><option value="">未登録</option><option value="1">1日</option><option value="2">2日</option><option value="3">3日</option><option value="4">4日</option><option value="5">5日</option><option value="6">6日</option><option value="7">7日</option><option value="8">8日</option><option value="9">9日</option><option value="10">10日</option><option value="11">11日</option><option value="12">12日</option><option value="13">13日</option><option value="14">14日</option><option value="15">15日</option><option value="16">16日</option><option value="17">17日</option><option value="18">18日</option><option value="19">19日</option><option value="20">20日</option><option value="21">21日</option><option value="22">22日</option><option value="23">23日</option><option value="24">24日</option><option value="25">25日</option><option value="26">26日</option><option value="27">27日</option><option value="28">28日</option><option value="29">29日</option><option value="30">30日</option><option value="31">31日</option></select></label><label>メモ<textarea id="customerMemo" rows="3"></textarea></label></div><div class="row"><button id="saveCustomer" class="primary">お客様登録</button><button id="cancelCustomerEdit" class="secondary hidden">編集をやめる</button></div></div><div id="customerList" class="list"></div></section>
 
 <section id="bottles" class="screen">
 <h2>ボトル管理</h2>
@@ -1492,7 +1518,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v76-bottle-schema-link-number';
+const APP_VERSION='v78-customer-birthday-no-phone';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1583,7 +1609,11 @@ function customerById(x){return db.customers.find(c=>c.id===x)}
 window.tinkerbellApplyCloudCustomers=customers=>{
   if(!Array.isArray(customers))return;
   const pending=(db.customers||[]).filter(c=>c.cloudPending);
-  const map=new Map(customers.map(c=>[c.id,{...c,cloudPending:false}]));
+  const normalized=customers.map(c=>{
+   const castId=c.castId||db.staff.find(s=>s.name===c.cast)?.id||'';
+   return {...c,castId,cloudPending:false};
+  });
+  const map=new Map(normalized.map(c=>[c.id,c]));
   pending.forEach(c=>{if(!map.has(c.id))map.set(c.id,c)});
   db.customers=[...map.values()];
   persist();
@@ -1641,7 +1671,8 @@ window.tinkerbellApplyCloudCheckouts=checkouts=>{
   db.checkouts=checkouts;
   persist();
   renderReports();
- renderPayroll();
+  renderPayroll();
+  renderTodaySales();
 };
 window.tinkerbellGetLocalCheckouts=()=>Array.isArray(db.checkouts)?db.checkouts:[];
 window.tinkerbellApplyCloudPayrollAdjustments=rows=>{if(!Array.isArray(rows))return;db.payrollAdjustments=rows;persist();renderPayroll()};
@@ -3175,10 +3206,15 @@ window.delOrder=(sid,oid)=>{
 };
 
 
+
+function customerBirthdayText(c){
+ return c?.birthMonth&&c?.birthDay?`${c.birthMonth}月${c.birthDay}日`:'未登録';
+}
 function clearCustomerEdit(){
  $('customerEditId').value='';
  $('customerName').value='';
- $('customerPhone').value='';
+ $('customerBirthMonth').value='';
+ $('customerBirthDay').value='';
  $('customerMemo').value='';
  $('saveCustomer').textContent='お客様登録';
  $('cancelCustomerEdit').classList.add('hidden');
@@ -3189,7 +3225,8 @@ window.editCustomer=idn=>{
  $('customerEditId').value=c.id;
  $('customerName').value=c.name||'';
  $('customerCast').value=c.castId||'';
- $('customerPhone').value=c.phone||'';
+ $('customerBirthMonth').value=c.birthMonth||'';
+ $('customerBirthDay').value=c.birthDay||'';
  $('customerMemo').value=c.memo||'';
  $('saveCustomer').textContent='変更を保存';
  $('cancelCustomerEdit').classList.remove('hidden');
@@ -3216,14 +3253,25 @@ $('saveCustomer').onclick=async()=>{
   createdAt:nowISO()
  };
 
+ const birthMonth=$('customerBirthMonth').value;
+ const birthDay=$('customerBirthDay').value;
+ if((birthMonth&&!birthDay)||(!birthMonth&&birthDay)){
+  button.disabled=false;
+  button.textContent='お客様登録';
+  return toast('誕生日は月と日を両方選択してください');
+ }
+ const castId=$('customerCast').value;
  Object.assign(customer,{
   name,
-  castId:$('customerCast').value,
-  phone:$('customerPhone').value.trim(),
+  castId,
+  cast:staffById(castId)?.name||customer.cast||'担当不明',
+  birthMonth:birthMonth?Number(birthMonth):'',
+  birthDay:birthDay?Number(birthDay):'',
   memo:$('customerMemo').value.trim(),
   cloudPending:true,
   updatedAt:nowISO()
  });
+ delete customer.phone;
 
  if(!existing)db.customers.push(customer);
 
@@ -3304,7 +3352,70 @@ async function retryCustomerCloudSync(){
 }
 window.retryCustomerCloudSync=retryCustomerCloudSync;
 
-function renderCustomers(){const q=$('customerSearch').value.toLowerCase();const a=db.customers.filter(c=>(c.name+c.phone+c.memo+(staffById(c.castId)?.name||'')).toLowerCase().includes(q));$('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)} ${c.cloudPending?'<span class="tag customer-pending-tag">同期待ち</span>':''}</h3><div class="meta">担当 ${esc(staffById(c.castId)?.name||'未設定')}<br>電話 ${esc(c.phone||'未登録')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>`${bottleDisplayNumber(b)?`No.${esc(bottleDisplayNumber(b))} `:''}${esc(b.name)}(${esc(b.level||'未設定')})`).join('、'):'なし'}</div><div class="item-actions"><button class="secondary" onclick="editCustomer('${c.id}')">編集</button><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>'}
+function bottlesForCustomer(c){
+ const target=normalizeCustomerNameForMatch(c?.name);
+ return (db.bottles||[]).filter(b=>{
+  if(b.customerId===c.id)return true;
+  if(!b.customerId || !db.customers.some(x=>x.id===b.customerId)){
+   return normalizeCustomerNameForMatch(b.customer)===target;
+  }
+  return false;
+ });
+}
+
+function renderCustomers(){
+ const q=$('customerSearch').value.toLowerCase();
+ const a=db.customers.filter(c=>
+  (c.name+c.memo+customerBirthdayText(c)+(staffById(c.castId)?.name||c.cast||'')).toLowerCase().includes(q)
+ );
+
+ $('customerList').innerHTML=a.length
+  ?a.map(c=>{
+    const bs=bottlesForCustomer(c);
+    return `<div class="item customer-card">
+      <h3>${esc(c.name)} ${c.cloudPending?'<span class="tag customer-pending-tag">同期待ち</span>':''}</h3>
+      <div class="meta">
+       担当 ${esc(staffById(c.castId)?.name||c.cast||'未設定')}<br>
+       誕生日 ${esc(customerBirthdayText(c))}<br>
+       ${esc(c.memo||'メモなし')}
+      </div>
+
+      <div class="customer-bottle-box">
+       <div class="customer-bottle-head">
+        <b>🍾 お預かりボトル ${bs.length}本</b>
+        <button class="secondary" onclick="openBottleForCustomer('${c.id}')">＋ ボトル追加</button>
+       </div>
+       ${bs.length
+        ?bs.map(b=>`
+          <div class="customer-bottle-row">
+           <span>${bottleDisplayNumber(b)?`No.${esc(bottleDisplayNumber(b))}　`:''}${esc(b.name)}</span>
+           <span class="tag">${esc(bottleDisplayType(b))}</span>
+           <span class="tag">${esc(b.level||'未設定')}</span>
+          </div>`).join('')
+        :'<div class="empty">このお客様のボトル登録はありません</div>'}
+      </div>
+
+      <div class="item-actions">
+       <button class="secondary" onclick="editCustomer('${c.id}')">編集</button>
+       <button class="danger" onclick="delCustomer('${c.id}')">削除</button>
+      </div>
+    </div>`;
+  }).join('')
+  :'<div class="empty">該当なし</div>';
+}
+
+window.openBottleForCustomer=idn=>{
+ const c=customerById(idn);
+ if(!c)return;
+ clearBottleEdit();
+ $('bottleCustomerId').value=c.id;
+ $('bottleCustomerName').value=c.name||'';
+ $('bottleSelectedCustomer').classList.remove('hidden');
+ $('bottleSelectedCustomer').innerHTML=`選択中：<b>${esc(c.name)}</b>`;
+ show('bottles');
+ setTimeout(()=>$('bottleNumber')?.focus(),0);
+};
+
 window.delCustomer=async x=>{
  if(!confirm('削除しますか？'))return;
  const beforeCustomers=[...db.customers];
@@ -5017,6 +5128,17 @@ function reconcileCustomerLinks(){
 }
 
 
+function localDateKey(value){
+ const d=new Date(value);
+ if(Number.isNaN(d.getTime()))return '';
+ return d.toLocaleDateString('sv-SE');
+}
+function localTimeText(value){
+ const d=new Date(value);
+ if(Number.isNaN(d.getTime()))return '--:--';
+ return d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',hour12:false});
+}
+
 function renderTodaySales(){
  const summary=$('todaySalesSummary');
  const detail=$('todaySalesDetail');
@@ -5024,9 +5146,8 @@ function renderTodaySales(){
 
  const day=today();
  const rows=(db.checkouts||[]).filter(c=>{
-  const stamp=String(c.closedAt||'');
   const active=(c.status||'completed')!=='cancelled' && !c.cancelledAt;
-  return active && stamp.slice(0,10)===day;
+  return active && localDateKey(c.closedAt)===day;
  });
 
  const sumByMethod=method=>rows
@@ -5050,7 +5171,7 @@ function renderTodaySales(){
  const sorted=rows.slice().sort((a,b)=>String(b.closedAt||'').localeCompare(String(a.closedAt||'')));
  detail.innerHTML=sorted.length
   ?sorted.map(c=>{
-    const t=String(c.closedAt||'').slice(11,16)||'--:--';
+    const t=localTimeText(c.closedAt);
     const name=c.customerName||c.groupCustomerName||c.receiptName||'お客様';
     return `<div class="today-sale-row">
       <span>${esc(t)}　${esc(name)}</span>
