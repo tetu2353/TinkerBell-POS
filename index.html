@@ -910,6 +910,35 @@ body.manager-mode .payroll-staff-settings{
  min-height:44px
 }
 
+
+.menu-category-list{
+ display:grid;
+ gap:7px;
+ margin:12px 0
+}
+.menu-category-row{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:10px;
+ padding:10px 12px;
+ border:1px solid var(--line);
+ border-radius:10px;
+ background:#fff
+}
+.menu-category-row span{
+ display:flex;
+ align-items:center;
+ gap:10px
+}
+.menu-category-row small{
+ color:var(--muted)
+}
+.menu-category-row button{
+ min-height:36px;
+ padding:7px 12px
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -1225,17 +1254,7 @@ body.manager-mode .payroll-staff-settings{
     <label>商品名<input id="menuName" placeholder="例：ドリンク"></label>
     <label>価格<input id="menuPrice" type="number" min="0" inputmode="numeric" placeholder="例：3000"></label>
     <label>分類
-      <select id="menuType">
-        <option>セット</option>
-        <option>ドリンク</option>
-        <option>キャストドリンク</option>
-        <option>チャージ</option>
-        <option>ボトル</option>
-        <option>備品・割物</option>
-        <option>単品酒</option>
-        <option>フード</option>
-        <option>その他</option>
-      </select>
+      <select id="menuType"></select>
     </label>
   </div>
   <div class="row3">
@@ -1257,8 +1276,19 @@ body.manager-mode .payroll-staff-settings{
     <button id="cancelMenuEdit" class="secondary hidden">編集をキャンセル</button>
   </div>
 </div>
+<div class="card menu-category-manager">
+  <h3 style="margin-top:0">分類項目の管理</h3>
+  <div class="row">
+    <label>新しい分類
+      <input id="newMenuCategory" placeholder="例：カラオケ">
+    </label>
+    <button id="addMenuCategory" class="primary" type="button">分類を追加</button>
+  </div>
+  <div id="menuCategoryList" class="menu-category-list"></div>
+  <div class="meta">商品が入っている分類は、先に商品を別の分類へ変更すると削除できます。</div>
+</div>
 <div class="card">
-  <div class="meta">商品はFirebaseとリアルタイム同期します。「編集」で金額やバックを変更でき、↑↓で注文画面の並び順を変更できます。</div>
+  <div class="meta">商品・分類はFirebaseとリアルタイム同期します。「編集」で金額やバックを変更でき、↑↓で注文画面の並び順を変更できます。</div>
 </div>
 <div id="menuList" class="list"></div>
 </section>
@@ -1573,7 +1603,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v80-customer-schema-aligned';
+const APP_VERSION='v81-menu-category-manager';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1633,6 +1663,15 @@ db.menu=Array.isArray(db.menu)?db.menu:[];
 REQUIRED_MENU_ITEMS.forEach(item=>{
   if(!db.menu.some(x=>x.name===item.name))db.menu.push({...item});
 });
+const DEFAULT_MENU_CATEGORIES=['セット','ドリンク','キャストドリンク','チャージ','ボトル','備品・割物','単品酒','フード','その他'];
+const menuCategorySeed=[
+ ...DEFAULT_MENU_CATEGORIES,
+ ...db.menu.map(x=>String(x.type||'').trim()).filter(Boolean)
+];
+db.menuCategories=Array.isArray(db.menuCategories)&&db.menuCategories.length
+ ?[...new Set(db.menuCategories.map(x=>String(x||'').trim()).filter(Boolean))]
+ :[...new Set(menuCategorySeed)];
+
 db.inventoryLog=Array.isArray(db.inventoryLog)?db.inventoryLog:[];
 db.checkouts=Array.isArray(db.checkouts)?db.checkouts:[];
 db.checkoutEvents=Array.isArray(db.checkoutEvents)?db.checkoutEvents:[];
@@ -1721,6 +1760,15 @@ window.tinkerbellApplyCloudMenu=menu=>{
   renderTapOrders();
 };
 window.tinkerbellGetLocalMenu=()=>Array.isArray(db.menu)?db.menu:[];
+window.tinkerbellApplyCloudMenuCategories=categories=>{
+ if(!Array.isArray(categories))return;
+ db.menuCategories=[...new Set(categories.map(x=>String(x||'').trim()).filter(Boolean))];
+ persist();
+ renderMenuCategories();
+ renderTapOrders();
+};
+window.tinkerbellGetLocalMenuCategories=()=>Array.isArray(db.menuCategories)?db.menuCategories:[];
+
 window.tinkerbellApplyCloudCheckouts=checkouts=>{
   if(!Array.isArray(checkouts))return;
   db.checkouts=checkouts;
@@ -4066,6 +4114,84 @@ function clearMenuForm(){
  $('cancelMenuEdit').classList.add('hidden');
 }
 
+
+function renderMenuCategories(){
+ if(!$('menuType'))return;
+
+ const current=$('menuType').value;
+ const categories=(db.menuCategories||[]).filter(Boolean);
+
+ $('menuType').innerHTML=categories.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
+ if(current&&categories.includes(current))$('menuType').value=current;
+ else if(categories.length)$('menuType').value=categories[0];
+
+ const list=$('menuCategoryList');
+ if(list){
+  list.innerHTML=categories.length
+   ?categories.map(c=>{
+      const count=db.menu.filter(m=>m.type===c).length;
+      return `<div class="menu-category-row">
+       <span><b>${esc(c)}</b><small>${count}商品</small></span>
+       <button type="button" class="danger" onclick="deleteMenuCategory('${encodeURIComponent(c)}')" ${count?'disabled':''}>削除</button>
+      </div>`;
+    }).join('')
+   :'<div class="empty">分類がありません</div>';
+ }
+}
+
+$('addMenuCategory').onclick=async()=>{
+ const input=$('newMenuCategory');
+ const name=input.value.trim();
+ if(!name)return toast('分類名を入力してください');
+ if((db.menuCategories||[]).includes(name))return toast('同じ分類があります');
+
+ const before=[...(db.menuCategories||[])];
+ db.menuCategories.push(name);
+ persist();
+ renderMenuCategories();
+ $('menuType').value=name;
+ input.value='';
+
+ try{
+  if(window.tinkerbellFirebase?.saveMenuCategories){
+   await window.tinkerbellFirebase.saveMenuCategories(db.menuCategories);
+  }
+  toast('分類を追加しました');
+ }catch(error){
+  console.error('Menu category save failed:',error);
+  db.menuCategories=before;
+  persist();
+  renderMenuCategories();
+  toast('分類の保存に失敗しました');
+ }
+};
+
+window.deleteMenuCategory=async encoded=>{
+ const name=decodeURIComponent(encoded);
+ const used=db.menu.some(m=>m.type===name);
+ if(used)return toast('この分類には商品が入っています');
+ if(!confirm(`${name} を削除しますか？`))return;
+
+ const before=[...(db.menuCategories||[])];
+ db.menuCategories=db.menuCategories.filter(c=>c!==name);
+ persist();
+ renderMenuCategories();
+
+ try{
+  if(window.tinkerbellFirebase?.saveMenuCategories){
+   await window.tinkerbellFirebase.saveMenuCategories(db.menuCategories);
+  }
+  toast('分類を削除しました');
+ }catch(error){
+  console.error('Menu category delete failed:',error);
+  db.menuCategories=before;
+  persist();
+  renderMenuCategories();
+  toast('分類の削除に失敗しました');
+ }
+};
+
 $('saveMenu').onclick=async()=>{
  const button=$('saveMenu');
  const name=$('menuName').value.trim();
@@ -4182,6 +4308,7 @@ function renderInventory(){
   :'<div class="empty">履歴なし</div>';
 }
 function renderMenu(){
+ renderMenuCategories();
  const list=[...db.menu].sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
  $('menuList').innerHTML=list.length?list.map((m,index)=>`<div class="item" style="${m.visible===false?'opacity:.55':''}">
   <h3>${esc(m.name)} <span class="tag">${esc(m.type)}</span> ${m.visible===false?'<span class="tag">非表示</span>':''}</h3>
@@ -5613,6 +5740,20 @@ async function saveMenuToFirebase(menu) {
   );
 }
 
+
+async function saveMenuCategoriesToFirebase(menuCategories) {
+  firebaseApp ||= initializeApp(firebaseConfig);
+  firestoreDb ||= getFirestore(firebaseApp);
+  await setDoc(
+    doc(firestoreDb, "app", "data"),
+    {
+      menuCategories,
+      menuCategoriesUpdatedAt: new Date().toISOString()
+    },
+    { merge: true }
+  );
+}
+
 function startMenuRealtimeSync() {
   firebaseApp ||= initializeApp(firebaseConfig);
   firestoreDb ||= getFirestore(firebaseApp);
@@ -5625,6 +5766,14 @@ function startMenuRealtimeSync() {
       if (!snap.exists()) return;
 
       const cloudMenu = snap.data()?.menu;
+      const cloudCategories = snap.data()?.menuCategories;
+
+      if (Array.isArray(cloudCategories)) {
+        window.tinkerbellApplyCloudMenuCategories?.(cloudCategories);
+      } else {
+        const localCategories = window.tinkerbellGetLocalMenuCategories?.() || [];
+        await setDoc(ref,{menuCategories:localCategories,menuCategoriesUpdatedAt:new Date().toISOString()},{merge:true});
+      }
 
       if (Array.isArray(cloudMenu)) {
         window.tinkerbellApplyCloudMenu?.(cloudMenu);
@@ -5781,6 +5930,7 @@ window.tinkerbellFirebase = {
   loadCustomers: loadCustomersFromFirebase,
   saveStaff: saveStaffToFirebase,
   saveMenu: saveMenuToFirebase,
+  saveMenuCategories: saveMenuCategoriesToFirebase,
   saveAdminPasscode: saveAdminPasscodeToFirebase,
   saveCheckouts: saveCheckoutsToFirebase,
   saveSharedShifts: saveSharedShiftsToFirebase,
