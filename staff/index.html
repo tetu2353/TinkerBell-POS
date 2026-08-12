@@ -363,7 +363,7 @@ input,select,textarea{padding:13px;border-radius:12px}
 
 <script>
 'use strict';
-const APP_VERSION='line-v54-bottle-schema-number-bridge';
+const APP_VERSION='line-v55-customer-birthday-cast-bridge';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -970,13 +970,16 @@ function openCustomerForm(existing=null){
       }
 
       const customerId=existing?.id||uid();
+      const cast=$('cCast')?.value||'担当不明';
       const customerData={
         name,
         kana,
         birthMonth:month?Number(month):'',
         birthDay:day?Number(day):'',
-        cast:$('cCast')?.value||'担当不明',
-        memo:$('cMemo')?.value.trim()||''
+        cast,
+        castId:db.staff.find(s=>s.name===cast)?.id||existing?.castId||'',
+        memo:$('cMemo')?.value.trim()||'',
+        updatedAt:new Date().toISOString()
       };
 
       if(existing){
