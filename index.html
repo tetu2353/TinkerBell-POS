@@ -819,6 +819,47 @@ body.manager-mode .payroll-staff-settings{
  font-weight:900
 }
 
+
+.bottle-customer-matches{
+ display:grid;
+ gap:6px;
+ margin-top:8px;
+ max-height:220px;
+ overflow:auto
+}
+.bottle-customer-match{
+ display:flex;
+ flex-direction:column;
+ align-items:flex-start;
+ gap:3px;
+ width:100%;
+ padding:10px 12px;
+ border:1px solid #ddd;
+ border-radius:10px;
+ background:#fff;
+ text-align:left
+}
+.bottle-customer-match small{color:#666}
+.bottle-selected-customer{
+ margin-top:8px;
+ padding:10px 12px;
+ border-radius:10px;
+ background:#eef7ff
+}
+.bottle-type-tabs{
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:7px;
+ margin-top:8px
+}
+.bottle-type-tabs button{
+ min-height:42px;
+ font-weight:900
+}
+@media(max-width:700px){
+ .bottle-type-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -980,9 +1021,63 @@ body.manager-mode .payroll-staff-settings{
  <div id="customerCloudStatus" class="customer-cloud-status">クラウド状態を確認中...</div>
  <button id="retryCustomerCloudSync" class="secondary" type="button">お客様データを再同期</button>
 </div>
-<div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・メモ"></label></div><div class="card"><input id="customerEditId" type="hidden"><div class="row"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><div class="row"><button id="saveCustomer" class="primary">お客様登録</button><button id="cancelCustomerEdit" class="secondary hidden">編集をやめる</button></div></div><div id="customerList" class="list"></div></section>
+<div class="card"><label>検索<input id="customerSearch" placeholder="名前・担当・メモ"></label></div><div class="card"><input id="customerEditId" type="hidden"><div class="row3"><label>お客様名<input id="customerName"></label><label>担当キャスト<select id="customerCast"></select></label><label>電話番号<input id="customerPhone" inputmode="tel"></label></div><label>メモ<textarea id="customerMemo" rows="3"></textarea></label><div class="row"><button id="saveCustomer" class="primary">お客様登録</button><button id="cancelCustomerEdit" class="secondary hidden">編集をやめる</button></div></div><div id="customerList" class="list"></div></section>
 
-<section id="bottles" class="screen"><h2>ボトル管理</h2><div class="card"><input id="bottleEditId" type="hidden"><div class="row3"><label>お客様<select id="bottleCustomer"></select></label><label>ボトル名<input id="bottleName"></label><label>残量<select id="bottleLevel"><option>満タン</option><option>75%</option><option>50%</option><option>25%</option><option>ほぼ空</option></select></label></div><label>保管場所<input id="bottlePlace"></label><div class="row"><button id="saveBottle" class="primary">ボトル登録</button><button id="cancelBottleEdit" class="secondary hidden">編集をやめる</button></div></div><div id="bottleList" class="list"></div></section>
+<section id="bottles" class="screen">
+<h2>ボトル管理</h2>
+
+<div class="card">
+ <input id="bottleEditId" type="hidden">
+ <input id="bottleCustomerId" type="hidden">
+
+ <label>お客様名
+  <input id="bottleCustomerName" placeholder="名前を入力して検索">
+ </label>
+ <div id="bottleCustomerMatches" class="bottle-customer-matches"></div>
+ <div id="bottleSelectedCustomer" class="bottle-selected-customer hidden"></div>
+
+ <div class="row3">
+  <label>種類
+   <select id="bottleType">
+    <option>焼酎</option>
+    <option>ウイスキー</option>
+    <option>ブランデー</option>
+    <option>シャンパン</option>
+    <option>ワイン</option>
+    <option>日本酒</option>
+    <option>その他</option>
+   </select>
+  </label>
+  <label>ボトル名<input id="bottleName" placeholder="例：黒霧島"></label>
+  <label>残量
+   <select id="bottleLevel">
+    <option>満タン</option>
+    <option>75%</option>
+    <option>50%</option>
+    <option>25%</option>
+    <option>ほぼ空</option>
+   </select>
+  </label>
+ </div>
+
+ <label>保管場所<input id="bottlePlace"></label>
+
+ <div class="row">
+  <button id="saveBottle" class="primary">ボトル登録</button>
+  <button id="cancelBottleEdit" class="secondary hidden">編集をやめる</button>
+ </div>
+</div>
+
+<div class="card">
+ <label>お客様名で検索
+  <input id="bottleListCustomerSearch" placeholder="名前を入力">
+ </label>
+ <div class="meta" style="margin-top:10px;font-weight:900">種類で絞り込み</div>
+ <div id="bottleTypeTabs" class="bottle-type-tabs"></div>
+</div>
+
+<div id="bottleList" class="list"></div>
+</section>
 
 <section id="visits" class="screen"><h2>同伴・来店予定</h2><div class="card"><div class="row3"><label>担当<select id="visitCast"></select></label><label>お客様名<input id="visitCustomer"></label><label>日付<input id="visitDate" type="date"></label></div><div class="row3"><label>区分<select id="visitType"><option>同伴</option><option>来店予定</option><option>予約</option></select></label><label>時間<input id="visitTime" type="time"></label><label>人数<input id="visitPeople" type="number" min="1" value="1"></label></div><label>メモ<input id="visitMemo"></label><button id="saveVisit" class="primary">予定登録</button></div><div id="visitList" class="list"></div></section>
 
@@ -1393,7 +1488,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v73-seat-kana-customer-picker';
+const APP_VERSION='v74-bottle-customer-search-type-filter';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1568,7 +1663,6 @@ function refreshSelects(){
  fillSelect($('loginStaff'),db.staff);
  ['customerCast','visitCast'].forEach(x=>fillSelect($(x),db.staff.filter(s=>s.role==='cast')));
  fillSelect($('myAttendanceStaff'),db.staff);
- fillSelect($('bottleCustomer'),db.customers);
 
 }
 
@@ -3080,6 +3174,7 @@ window.delOrder=(sid,oid)=>{
 function clearCustomerEdit(){
  $('customerEditId').value='';
  $('customerName').value='';
+ $('customerPhone').value='';
  $('customerMemo').value='';
  $('saveCustomer').textContent='お客様登録';
  $('cancelCustomerEdit').classList.add('hidden');
@@ -3090,6 +3185,7 @@ window.editCustomer=idn=>{
  $('customerEditId').value=c.id;
  $('customerName').value=c.name||'';
  $('customerCast').value=c.castId||'';
+ $('customerPhone').value=c.phone||'';
  $('customerMemo').value=c.memo||'';
  $('saveCustomer').textContent='変更を保存';
  $('cancelCustomerEdit').classList.remove('hidden');
@@ -3117,9 +3213,10 @@ $('saveCustomer').onclick=async()=>{
  };
 
  Object.assign(customer,{
- name,
- castId:$('customerCast').value,
- memo:$('customerMemo').value.trim(),
+  name,
+  castId:$('customerCast').value,
+  phone:$('customerPhone').value.trim(),
+  memo:$('customerMemo').value.trim(),
   cloudPending:true,
   updatedAt:nowISO()
  });
@@ -3203,7 +3300,7 @@ async function retryCustomerCloudSync(){
 }
 window.retryCustomerCloudSync=retryCustomerCloudSync;
 
-function renderCustomers(){const q=$('customerSearch').value.toLowerCase();const a=db.customers.filter(c=>(c.name+(c.memo||'')+(staffById(c.castId)?.name||'')).toLowerCase().includes(q));$('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)} ${c.cloudPending?'<span class="tag customer-pending-tag">同期待ち</span>':''}</h3><div class="meta">担当 ${esc(staffById(c.castId)?.name||'未設定')}<br>${esc(c.memo||'メモなし')}<br><b>お預かりボトル</b><br>${bs.length?bs.map(b=>`${esc(b.name)}（残量 ${esc(b.level||'未設定')}／${esc(b.place||'保管場所未登録')}）`).join('<br>'):'なし'}</div><div class="item-actions"><button class="secondary" onclick="editCustomer('${c.id}')">編集</button><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>'}
+function renderCustomers(){const q=$('customerSearch').value.toLowerCase();const a=db.customers.filter(c=>(c.name+c.phone+c.memo+(staffById(c.castId)?.name||'')).toLowerCase().includes(q));$('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)} ${c.cloudPending?'<span class="tag customer-pending-tag">同期待ち</span>':''}</h3><div class="meta">担当 ${esc(staffById(c.castId)?.name||'未設定')}<br>電話 ${esc(c.phone||'未登録')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>`${esc(b.name)}(${esc(b.level)})`).join('、'):'なし'}</div><div class="item-actions"><button class="secondary" onclick="editCustomer('${c.id}')">編集</button><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>'}
 window.delCustomer=async x=>{
  if(!confirm('削除しますか？'))return;
  const beforeCustomers=[...db.customers];
@@ -3231,22 +3328,120 @@ window.delCustomer=async x=>{
  }
 }
 
+
+let bottleTypeFilter='全部';
+
+function normalizeBottleType(v){
+ const t=String(v||'').trim();
+ const allowed=['焼酎','ウイスキー','ブランデー','シャンパン','ワイン','日本酒','その他'];
+ return allowed.includes(t)?t:'その他';
+}
+
+function inferBottleType(name){
+ const n=String(name||'').toLowerCase();
+ if(/シャンパン|champagne|モエ|ヴーヴ|ドンペリ|ベルエポック|クリュッグ/.test(n))return 'シャンパン';
+ if(/ワイン|wine|赤ワイン|白ワイン|ロゼ/.test(n))return 'ワイン';
+ if(/焼酎|霧島|いいちこ|二階堂|吉四六|鏡月|チャミスル/.test(n))return '焼酎';
+ if(/ウイスキー|whisky|whiskey|山崎|白州|響|角|ジャック|マッカラン/.test(n))return 'ウイスキー';
+ if(/ブランデー|brandy|ヘネシー|レミー|カミュ/.test(n))return 'ブランデー';
+ if(/日本酒|清酒|獺祭|久保田|八海山/.test(n))return '日本酒';
+ return 'その他';
+}
+
+function renderBottleCustomerMatches(){
+ const box=$('bottleCustomerMatches');
+ if(!box)return;
+
+ const q=normalizeCustomerNameForMatch($('bottleCustomerName').value);
+ if(!q){
+  box.innerHTML='<div class="meta">お客様名を入力すると登録済み顧客が表示されます</div>';
+  return;
+ }
+
+ const rows=(db.customers||[])
+  .filter(c=>normalizeCustomerNameForMatch(c.name).includes(q))
+  .slice()
+  .sort((a,b)=>String(a.kana||a.furigana||a.name).localeCompare(String(b.kana||b.furigana||b.name),'ja'))
+  .slice(0,20);
+
+ box.innerHTML=rows.length
+  ?rows.map(c=>`
+    <button type="button" class="bottle-customer-match"
+      onclick="selectBottleCustomer('${c.id}')">
+      <b>${esc(c.name)}</b>
+      <small>担当：${esc(staffById(c.castId)?.name||'未設定')} / ボトル ${(db.bottles||[]).filter(b=>b.customerId===c.id).length}本</small>
+    </button>`).join('')
+  :'<div class="empty">該当するお客様はいません</div>';
+}
+
+window.selectBottleCustomer=idn=>{
+ const c=customerById(idn);
+ if(!c)return;
+ $('bottleCustomerId').value=c.id;
+ $('bottleCustomerName').value=c.name||'';
+ $('bottleSelectedCustomer').classList.remove('hidden');
+ $('bottleSelectedCustomer').innerHTML=`選択中：<b>${esc(c.name)}</b>`;
+ $('bottleCustomerMatches').innerHTML='';
+};
+
+$('bottleCustomerName').addEventListener('input',()=>{
+ const c=customerById($('bottleCustomerId').value);
+ if(!c || normalizeCustomerNameForMatch(c.name)!==normalizeCustomerNameForMatch($('bottleCustomerName').value)){
+  $('bottleCustomerId').value='';
+  $('bottleSelectedCustomer').classList.add('hidden');
+ }
+ renderBottleCustomerMatches();
+});
+
+function renderBottleTypeTabs(){
+ const tabs=['全部','焼酎','ウイスキー','ブランデー','シャンパン','ワイン','日本酒','その他'];
+ $('bottleTypeTabs').innerHTML=tabs.map(t=>`
+  <button type="button"
+    class="${bottleTypeFilter===t?'primary':'secondary'}"
+    onclick="setBottleTypeFilter('${t}')">${t}</button>
+ `).join('');
+}
+
+window.setBottleTypeFilter=t=>{
+ bottleTypeFilter=t;
+ renderBottleTypeTabs();
+ renderBottles();
+};
+
+$('bottleListCustomerSearch').addEventListener('input',renderBottles);
+
 function clearBottleEdit(){
  $('bottleEditId').value='';
+ $('bottleCustomerId').value='';
+ $('bottleCustomerName').value='';
+ $('bottleSelectedCustomer').classList.add('hidden');
+ $('bottleCustomerMatches').innerHTML='';
+ $('bottleType').value='焼酎';
  $('bottleName').value='';
  $('bottlePlace').value='';
  $('bottleLevel').value='満タン';
  $('saveBottle').textContent='ボトル登録';
  $('cancelBottleEdit').classList.add('hidden');
 }
+
 window.editBottle=idn=>{
  const b=db.bottles.find(x=>x.id===idn);
  if(!b)return;
+ const c=customerById(b.customerId);
+
  $('bottleEditId').value=b.id;
- $('bottleCustomer').value=b.customerId||'';
+ $('bottleCustomerId').value=b.customerId||'';
+ $('bottleCustomerName').value=c?.name||b.customer||'';
+ $('bottleType').value=normalizeBottleType(b.type||inferBottleType(b.name));
  $('bottleName').value=b.name||'';
  $('bottleLevel').value=b.level||'満タン';
  $('bottlePlace').value=b.place||'';
+
+ if(c){
+  $('bottleSelectedCustomer').classList.remove('hidden');
+  $('bottleSelectedCustomer').innerHTML=`選択中：<b>${esc(c.name)}</b>`;
+ }
+
  $('saveBottle').textContent='変更を保存';
  $('cancelBottleEdit').classList.remove('hidden');
  show('bottles');
@@ -3266,18 +3461,22 @@ async function saveBottlesCloudSafe(){
 }
 
 $('saveBottle').onclick=async()=>{
- const cid=$('bottleCustomer').value;
+ const cid=$('bottleCustomerId').value;
  const name=$('bottleName').value.trim();
- if(!cid||!name)return toast('お客様とボトル名を入力');
+
+ if(!cid)return toast('登録済みのお客様を選んでください');
+ if(!name)return toast('ボトル名を入力してください');
 
  const editId=$('bottleEditId').value;
  const existing=editId?db.bottles.find(b=>b.id===editId):null;
  const customer=customerById(cid);
+ if(!customer)return toast('お客様が見つかりません');
 
  const obj=existing||{id:id()};
  Object.assign(obj,{
   customerId:cid,
-  customer:customer?.name||obj.customer||'',
+  customer:customer.name,
+  type:normalizeBottleType($('bottleType').value),
   name,
   level:$('bottleLevel').value,
   place:$('bottlePlace').value,
@@ -3295,8 +3494,53 @@ $('saveBottle').onclick=async()=>{
 };
 
 function renderBottles(){
- $('bottleList').innerHTML=db.bottles.length?db.bottles.map(b=>`<div class="item"><h3>${esc(b.name)} <span class="tag">${esc(b.level||'未設定')}</span></h3><div class="meta">${esc(customerById(b.customerId)?.name||b.customer||'不明')} / ${esc(b.place||'保管場所未登録')}</div><div class="item-actions"><button class="secondary" onclick="editBottle('${b.id}')">編集</button><button class="secondary" onclick="changeBottle('${b.id}')">残量変更</button><button class="danger" onclick="delBottle('${b.id}')">削除</button></div></div>`).join(''):'<div class="empty">ボトルなし</div>';
+ renderBottleTypeTabs();
+
+ const q=normalizeCustomerNameForMatch($('bottleListCustomerSearch')?.value||'');
+
+ let rows=(db.bottles||[]).map(b=>({
+  ...b,
+  type:normalizeBottleType(b.type||inferBottleType(b.name))
+ }));
+
+ if(bottleTypeFilter!=='全部'){
+  rows=rows.filter(b=>b.type===bottleTypeFilter);
+ }
+
+ if(q){
+  rows=rows.filter(b=>{
+   const c=customerById(b.customerId);
+   return normalizeCustomerNameForMatch(c?.name||b.customer||'').includes(q);
+  });
+ }
+
+ rows.sort((a,b)=>{
+  const an=customerById(a.customerId)?.name||a.customer||'';
+  const bn=customerById(b.customerId)?.name||b.customer||'';
+  return an.localeCompare(bn,'ja') || String(a.name).localeCompare(String(b.name),'ja');
+ });
+
+ $('bottleList').innerHTML=rows.length
+  ?rows.map(b=>`
+   <div class="item">
+    <h3>
+     ${esc(b.name)}
+     <span class="tag">${esc(b.type)}</span>
+     <span class="tag">${esc(b.level||'未設定')}</span>
+    </h3>
+    <div class="meta">
+     お客様：${esc(customerById(b.customerId)?.name||b.customer||'不明')}
+     <br>保管：${esc(b.place||'未登録')}
+    </div>
+    <div class="item-actions">
+     <button class="secondary" onclick="editBottle('${b.id}')">編集</button>
+     <button class="secondary" onclick="changeBottle('${b.id}')">残量変更</button>
+     <button class="danger" onclick="delBottle('${b.id}')">削除</button>
+    </div>
+   </div>`).join('')
+  :'<div class="empty">該当するボトルはありません</div>';
 }
+
 window.changeBottle=async x=>{
  const b=db.bottles.find(v=>v.id===x);
  if(!b)return;
@@ -3308,6 +3552,7 @@ window.changeBottle=async x=>{
  renderAll();
  await saveBottlesCloudSafe();
 };
+
 window.delBottle=async x=>{
  if(!confirm('このボトルを削除しますか？'))return;
  db.bottles=db.bottles.filter(v=>v.id!==x);
