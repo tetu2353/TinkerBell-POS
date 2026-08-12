@@ -862,9 +862,10 @@ body.manager-mode .payroll-staff-settings{
 <div id="noOrderSeat" class="card hidden">席管理から注文する席をタップしてください。</div>
 <div id="orderWorkspace">
   <div class="card order-step-card">
-    <b class="order-step-title">商品をタップ</b>
-    <div id="orderCategories" class="category-row" style="margin-top:10px"></div>
-    <div id="tapMenuGrid" class="order-menu-grid" style="margin-top:12px"></div>
+    <b class="order-step-title">注文</b>
+    <div id="tapMenuGrid" class="order-menu-grid" style="margin-top:10px"></div>
+    <div class="meta" style="margin-top:14px;font-weight:900">その他の項目</div>
+    <div id="orderCategories" class="category-row" style="margin-top:8px"></div>
   </div>
   <div id="castPicker" class="card hidden">
     <b class="order-step-title">女の子をタップ</b>
@@ -1262,7 +1263,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v68-customer-link-repair';
+const APP_VERSION='v69-order-quick-items-categories';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1949,7 +1950,7 @@ function renderSeats(){
 
 window.openSeatOrder=sid=>{
  selectedOrderSeat=sid;
- selectedCategory='すべて';
+ selectedCategory='よく使う';
  pendingMenu='';
  show('orders');
 };
@@ -2496,11 +2497,11 @@ $('seatCheckoutConfirm').onclick=async()=>{
  toast(mode==='split'?`分割会計を${createdCheckouts.length}件保存しました`:'会計を確定しました');
 };
 
-let selectedOrderSeat='',selectedCategory='すべて',pendingMenu='',lastOrder=null,undoTimer=null;
+let selectedOrderSeat='',selectedCategory='よく使う',pendingMenu='',lastOrder=null,undoTimer=null;
 
 window.selectOrderSeat=sid=>{
  selectedOrderSeat=sid;
- selectedCategory='すべて';
+ selectedCategory='よく使う';
  pendingMenu='';
  renderOrders();
 };
@@ -2564,20 +2565,41 @@ function renderTapOrders(){
   .filter(m=>m.visible!==false)
   .sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
 
- const cats=['すべて',...new Set(visibleMenu.map(m=>m.type))];
+ const cats=[...new Set(visibleMenu.map(m=>m.type).filter(Boolean))];
 
- $('orderCategories').innerHTML=cats.map(c=>`
+ // 注文履歴から「よく使う商品」を自動集計。
+ // まず頻度順、同数なら現在のメニュー並び順を優先。
+ const orderCount=new Map();
+ db.seats.forEach(seat=>(seat.orders||[]).forEach(o=>{
+  if(o.menuId)orderCount.set(o.menuId,(orderCount.get(o.menuId)||0)+Number(o.qty||1));
+ }));
+ (db.checkouts||[]).forEach(co=>(co.orders||[]).forEach(o=>{
+  if(o.menuId)orderCount.set(o.menuId,(orderCount.get(o.menuId)||0)+Number(o.qty||1));
+ }));
+
+ const quickItems=[...visibleMenu]
+  .sort((a,b)=>{
+   const diff=(orderCount.get(b.id)||0)-(orderCount.get(a.id)||0);
+   return diff!==0?diff:(a.sortOrder||0)-(b.sortOrder||0);
+  })
+  .slice(0,6);
+
+ $('orderCategories').innerHTML=`
+  <button class="${selectedCategory==='よく使う'?'primary':'secondary'}" onclick="setCategory('よく使う')">よく使う</button>
+ `+cats.map(c=>`
   <button class="${c===selectedCategory?'primary':'secondary'}" onclick="setCategory('${esc(c)}')">
    ${esc(c)}
   </button>`).join('');
 
- const items=visibleMenu.filter(m=>selectedCategory==='すべて'||m.type===selectedCategory);
+ const items=selectedCategory==='よく使う'
+  ?quickItems
+  :visibleMenu.filter(m=>m.type===selectedCategory);
 
  $('tapMenuGrid').innerHTML=items.length?items.map(m=>`
   <button class="order-menu-button" onclick="tapMenu('${m.id}')">
    <b>${esc(m.name)}</b>
    <small>${yen(m.price)}</small>
-  </button>`).join(''):'<div class="empty">この分類の商品はありません</div>';
+  </button>`).join(''):'<div class="empty">この項目の商品はありません</div>';
 
  $('castPicker').classList.add('hidden');
 }
