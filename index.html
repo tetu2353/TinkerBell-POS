@@ -1037,6 +1037,9 @@ body.manager-mode .payroll-staff-settings{
  <div id="bottleSelectedCustomer" class="bottle-selected-customer hidden"></div>
 
  <div class="row3">
+  <label>ボトルNo.
+   <input id="bottleNumber" inputmode="numeric" placeholder="例：128">
+  </label>
   <label>種類
    <select id="bottleType">
     <option>焼酎</option>
@@ -1049,6 +1052,8 @@ body.manager-mode .payroll-staff-settings{
    </select>
   </label>
   <label>ボトル名<input id="bottleName" placeholder="例：黒霧島"></label>
+ </div>
+ <div class="row">
   <label>残量
    <select id="bottleLevel">
     <option>満タン</option>
@@ -1058,9 +1063,8 @@ body.manager-mode .payroll-staff-settings{
     <option>ほぼ空</option>
    </select>
   </label>
+  <label>保管場所<input id="bottlePlace"></label>
  </div>
-
- <label>保管場所<input id="bottlePlace"></label>
 
  <div class="row">
   <button id="saveBottle" class="primary">ボトル登録</button>
@@ -1488,7 +1492,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v75-companion-back-setting';
+const APP_VERSION='v76-bottle-schema-link-number';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2205,7 +2209,7 @@ window.openSeatDetail=sid=>{
    <div class="meta">お預かりボトル</div>
    <div style="font-size:18px;font-weight:900;margin-top:6px">
     ${customerBottles.length
-      ?customerBottles.map(b=>`${esc(b.name)} <span class="tag">${esc(b.level)}</span>`).join('<br>')
+      ?customerBottles.map(b=>`${bottleDisplayNumber(b)?`No.${esc(bottleDisplayNumber(b))} `:''}${esc(b.name)} <span class="tag">${esc(b.level||'未設定')}</span>`).join('<br>')
       :'なし'}
    </div>
   </div>
@@ -2426,7 +2430,7 @@ function renderSeatBottlePreview(){
  list.innerHTML=bottles.length
   ?bottles.map(b=>`
     <div class="seat-bottle-line">
-     <span>${esc(b.name)}</span>
+     <span>${bottleDisplayNumber(b)?`No.${esc(bottleDisplayNumber(b))} `:''}${esc(b.name)}</span>
      <span class="tag">${esc(b.level||'未設定')}</span>
      ${b.place?`<small>${esc(b.place)}</small>`:''}
     </div>`).join('')
@@ -3300,7 +3304,7 @@ async function retryCustomerCloudSync(){
 }
 window.retryCustomerCloudSync=retryCustomerCloudSync;
 
-function renderCustomers(){const q=$('customerSearch').value.toLowerCase();const a=db.customers.filter(c=>(c.name+c.phone+c.memo+(staffById(c.castId)?.name||'')).toLowerCase().includes(q));$('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)} ${c.cloudPending?'<span class="tag customer-pending-tag">同期待ち</span>':''}</h3><div class="meta">担当 ${esc(staffById(c.castId)?.name||'未設定')}<br>電話 ${esc(c.phone||'未登録')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>`${esc(b.name)}(${esc(b.level)})`).join('、'):'なし'}</div><div class="item-actions"><button class="secondary" onclick="editCustomer('${c.id}')">編集</button><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>'}
+function renderCustomers(){const q=$('customerSearch').value.toLowerCase();const a=db.customers.filter(c=>(c.name+c.phone+c.memo+(staffById(c.castId)?.name||'')).toLowerCase().includes(q));$('customerList').innerHTML=a.length?a.map(c=>{const bs=db.bottles.filter(b=>b.customerId===c.id);return `<div class="item"><h3>${esc(c.name)} ${c.cloudPending?'<span class="tag customer-pending-tag">同期待ち</span>':''}</h3><div class="meta">担当 ${esc(staffById(c.castId)?.name||'未設定')}<br>電話 ${esc(c.phone||'未登録')}<br>${esc(c.memo||'メモなし')}<br>ボトル ${bs.length?bs.map(b=>`${bottleDisplayNumber(b)?`No.${esc(bottleDisplayNumber(b))} `:''}${esc(b.name)}(${esc(b.level||'未設定')})`).join('、'):'なし'}</div><div class="item-actions"><button class="secondary" onclick="editCustomer('${c.id}')">編集</button><button class="danger" onclick="delCustomer('${c.id}')">削除</button></div></div>`}).join(''):'<div class="empty">該当なし</div>'}
 window.delCustomer=async x=>{
  if(!confirm('削除しますか？'))return;
  const beforeCustomers=[...db.customers];
@@ -3335,6 +3339,35 @@ function normalizeBottleType(v){
  const t=String(v||'').trim();
  const allowed=['焼酎','ウイスキー','ブランデー','シャンパン','ワイン','日本酒','その他'];
  return allowed.includes(t)?t:'その他';
+}
+
+function bottleCategoryFromType(type){
+ return ({
+  '焼酎':'shochu',
+  'ウイスキー':'whisky',
+  'ブランデー':'brandy',
+  'シャンパン':'champagne',
+  'ワイン':'wine',
+  '日本酒':'sake',
+  'その他':'other'
+ })[normalizeBottleType(type)]||'other';
+}
+function bottleTypeFromCategory(category){
+ return ({
+  shochu:'焼酎',
+  whisky:'ウイスキー',
+  brandy:'ブランデー',
+  champagne:'シャンパン',
+  wine:'ワイン',
+  sake:'日本酒',
+  other:'その他'
+ })[String(category||'')]||'その他';
+}
+function bottleDisplayType(b){
+ return b.type?normalizeBottleType(b.type):(b.category?bottleTypeFromCategory(b.category):inferBottleType(b.name));
+}
+function bottleDisplayNumber(b){
+ return String(b.number??b.bottleNo??'').trim();
 }
 
 function inferBottleType(name){
@@ -3416,6 +3449,7 @@ function clearBottleEdit(){
  $('bottleCustomerName').value='';
  $('bottleSelectedCustomer').classList.add('hidden');
  $('bottleCustomerMatches').innerHTML='';
+ $('bottleNumber').value='';
  $('bottleType').value='焼酎';
  $('bottleName').value='';
  $('bottlePlace').value='';
@@ -3432,7 +3466,8 @@ window.editBottle=idn=>{
  $('bottleEditId').value=b.id;
  $('bottleCustomerId').value=b.customerId||'';
  $('bottleCustomerName').value=c?.name||b.customer||'';
- $('bottleType').value=normalizeBottleType(b.type||inferBottleType(b.name));
+ $('bottleNumber').value=bottleDisplayNumber(b);
+ $('bottleType').value=bottleDisplayType(b);
  $('bottleName').value=b.name||'';
  $('bottleLevel').value=b.level||'満タン';
  $('bottlePlace').value=b.place||'';
@@ -3462,24 +3497,36 @@ async function saveBottlesCloudSafe(){
 
 $('saveBottle').onclick=async()=>{
  const cid=$('bottleCustomerId').value;
+ const number=$('bottleNumber').value.trim();
  const name=$('bottleName').value.trim();
 
  if(!cid)return toast('登録済みのお客様を選んでください');
+ if(!number)return toast('ボトルNo.を入力してください');
  if(!name)return toast('ボトル名を入力してください');
 
  const editId=$('bottleEditId').value;
+ if((db.bottles||[]).some(b=>b.id!==editId && bottleDisplayNumber(b)===number)){
+  return toast('同じボトルNo.が登録されています');
+ }
  const existing=editId?db.bottles.find(b=>b.id===editId):null;
  const customer=customerById(cid);
  if(!customer)return toast('お客様が見つかりません');
 
  const obj=existing||{id:id()};
+ const type=normalizeBottleType($('bottleType').value);
  Object.assign(obj,{
   customerId:cid,
   customer:customer.name,
-  type:normalizeBottleType($('bottleType').value),
+  number,
+  bottleNo:number,
+  type,
+  category:bottleCategoryFromType(type),
   name,
   level:$('bottleLevel').value,
   place:$('bottlePlace').value,
+  qty:Number(obj.qty||1),
+  status:obj.status||'stored',
+  cast:obj.cast||staffById(customer.castId)?.name||'',
   updatedAt:nowISO()
  });
  if(!existing)db.bottles.push(obj);
@@ -3500,7 +3547,7 @@ function renderBottles(){
 
  let rows=(db.bottles||[]).map(b=>({
   ...b,
-  type:normalizeBottleType(b.type||inferBottleType(b.name))
+  type:bottleDisplayType(b)
  }));
 
  if(bottleTypeFilter!=='全部'){
@@ -3510,7 +3557,8 @@ function renderBottles(){
  if(q){
   rows=rows.filter(b=>{
    const c=customerById(b.customerId);
-   return normalizeCustomerNameForMatch(c?.name||b.customer||'').includes(q);
+   return normalizeCustomerNameForMatch(c?.name||b.customer||'').includes(q)
+    || bottleDisplayNumber(b).toLowerCase().includes(q.toLowerCase());
   });
  }
 
@@ -3524,7 +3572,7 @@ function renderBottles(){
   ?rows.map(b=>`
    <div class="item">
     <h3>
-     ${esc(b.name)}
+     ${bottleDisplayNumber(b)?`No.${esc(bottleDisplayNumber(b))}　`:''}${esc(b.name)}
      <span class="tag">${esc(b.type)}</span>
      <span class="tag">${esc(b.level||'未設定')}</span>
     </h3>
