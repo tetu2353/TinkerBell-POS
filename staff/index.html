@@ -364,7 +364,7 @@ input,select,textarea{padding:13px;border-radius:12px}
 
 <script>
 'use strict';
-const APP_VERSION='line-v56-schedule-customer-aligned';
+const APP_VERSION='line-v57-customer-bottle-link-fix';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -736,7 +736,7 @@ function openScheduleForm(existing=null){
 
     <div id="selectedCustomerBox" class="${linkedCustomer||existing?.customerId?'card':'hidden'}">
       <div class="rowTitle" id="selectedCustomerName">${linkedCustomer?.name||existing?.customer||''}</div>
-      <div class="meta" id="selectedCustomerMeta">${linkedCustomer?`担当:${linkedCustomer.cast||'担当不明'}／ボトル:${db.bottles.filter(b=>b.customerId===linkedCustomer.id).length}本`:''}</div>
+      <div class="meta" id="selectedCustomerMeta">${linkedCustomer?`担当:${linkedCustomer.cast||'担当不明'}／ボトル:${lineBottlesForCustomer(linkedCustomer).length}本`:''}</div>
       <button type="button" class="btn ghost" id="changeCustomer">選び直す</button>
     </div>
 
@@ -811,7 +811,7 @@ function openScheduleForm(existing=null){
     $('fCustomerChoices').innerHTML=customers.length
       ?customers.map(c=>`<button type="button" class="scheduleCustomerChoice" data-select-schedule-customer="${c.id}">
         <b>${c.name}</b>
-        <small>${c.kana||'ふりがな未登録'}／担当:${c.cast||'担当不明'}／ボトル:${db.bottles.filter(b=>b.customerId===c.id).length}本</small>
+        <small>${c.kana||'ふりがな未登録'}／担当:${c.cast||'担当不明'}／ボトル:${lineBottlesForCustomer(c).length}本</small>
       </button>`).join('')
       :'<div class="meta">該当するお客様はいません</div>';
   };
@@ -822,11 +822,11 @@ function openScheduleForm(existing=null){
     $('fCustomerId').value=c.id;
     $('fCustomer').value=c.name;
     $('selectedCustomerName').textContent=c.name;
-    $('selectedCustomerMeta').textContent=`担当:${c.cast||'担当不明'}／ボトル:${db.bottles.filter(b=>b.customerId===c.id).length}本`;
+    $('selectedCustomerMeta').textContent=`担当:${c.cast||'担当不明'}／ボトル:${lineBottlesForCustomer(c).length}本`;
     $('selectedCustomerBox').classList.remove('hidden');
     $('manualCustomerBox').classList.add('hidden');
 
-    const bottles=db.bottles.filter(b=>b.customerId===c.id);
+    const bottles=lineBottlesForCustomer(c);
     $('selectedCustomerBottles').classList.toggle('hidden',!bottles.length);
     $('selectedCustomerBottles').innerHTML=bottles.length
       ?`<div class="rowTitle">キープボトル</div>${bottles.map(b=>`<div class="meta">No.${b.number} ${b.name} × ${b.qty||1}</div>`).join('')}`
@@ -1107,6 +1107,37 @@ function customerKanaGroup(customer){
   if('わをん'.includes(first))return 'wa';
   return 'other';
 }
+
+function normalizeCustomerLinkName(v){
+  return String(v||'')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/\s+/g,'');
+}
+function lineBottlesForCustomer(c){
+  const target=normalizeCustomerLinkName(c?.name);
+  return (db.bottles||[]).filter(b=>{
+    if(b.customerId===c.id)return true;
+    const bottleName=normalizeCustomerLinkName(b.customer);
+    return target && bottleName===target;
+  });
+}
+function repairLineBottleCustomerLinks(){
+  let changed=false;
+  (db.bottles||[]).forEach(b=>{
+    const valid=b.customerId && db.customers.some(c=>c.id===b.customerId);
+    if(valid)return;
+    const n=normalizeCustomerLinkName(b.customer);
+    if(!n)return;
+    const c=db.customers.find(x=>normalizeCustomerLinkName(x.name)===n);
+    if(c){
+      b.customerId=c.id;
+      b.customer=c.name;
+      changed=true;
+    }
+  });
+  if(changed)save();
+}
 function renderCustomers(){
   const query=normalizeKana(state.customerSearch);
   let list=[...db.customers];
@@ -1135,12 +1166,12 @@ function renderCustomers(){
     ?list.map(c=>`<button class="row full" data-customer="${c.id}">
       <div class="rowTitle">${c.name}</div>
       <div class="meta">${c.kana?`${c.kana}／`:''}誕生日:${birthdayText(c)}／担当:${c.cast||'担当不明'}</div>
-      <div class="meta">ボトル:${db.bottles.filter(b=>b.customerId===c.id).length}本</div>
+      <div class="meta">ボトル:${lineBottlesForCustomer(c).length}本</div>
     </button>`).join('')
     :'<div class="card">該当するお客様はいません</div>';
 }
 function showCustomer(id){
-  const c=db.customers.find(x=>x.id===id);if(!c)return;const bs=db.bottles.filter(b=>b.customerId===id);
+  const c=db.customers.find(x=>x.id===id);if(!c)return;const bs=lineBottlesForCustomer(c);
   $('detailTitle').textContent='お客様詳細';
   $('detailBody').innerHTML=`<div class="card"><div class="rowTitle">${c.name}</div><div class="meta">ふりがな:${c.kana||'未登録'}</div><div class="meta">誕生日:${birthdayText(c)}</div><div class="meta">担当:${c.cast||'担当不明'}</div><div class="meta">備考:${c.memo||'なし'}</div><div class="actions"><button class="btn ghost" data-edit-customer="${c.id}">編集</button><button class="btn red" data-delete-customer="${c.id}">削除</button></div></div><div class="card"><div class="sectionHead"><div class="rowTitle">🍾 キープボトル</div><button class="btn gold" data-add-bottle-for="${c.id}">＋追加</button></div>${bs.length?bs.map(b=>`<button class="row full" data-bottle="${b.id}">No.${b.number} ${b.name}</button>`).join(''):'<div class="meta">なし</div>'}</div>`;
   $('detailDialog').showModal();
@@ -1457,6 +1488,7 @@ window.addEventListener('hashchange',route);
 
 function start(){
   populateStaff();
+  repairLineBottleCustomerLinks();
   applyShiftPeriod();
   $('scheduleViewDate').value=today();
   route();
@@ -1482,6 +1514,7 @@ window.tinkerbellApplyCloudCustomers=rows=>{
   map.set(c.id,{...local,...c,cast,castId});
  });
  db.customers=[...map.values()];
+ repairLineBottleCustomerLinks();
  save();
  renderCustomers();renderBottles();renderHome();
 };
@@ -1494,6 +1527,7 @@ window.tinkerbellApplyCloudBottles=rows=>{
   map.set(b.id,{...local,...b});
  });
  db.bottles=[...map.values()];
+ repairLineBottleCustomerLinks();
  save();
  renderCustomers();renderBottles();renderHome();
 };
