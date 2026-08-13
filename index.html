@@ -939,6 +939,42 @@ body.manager-mode .payroll-staff-settings{
  padding:7px 12px
 }
 
+
+.customer-visit-stats{
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:8px;
+ margin:12px 0
+}
+.customer-visit-stats>div{
+ padding:10px;
+ border:1px solid #e3d6b8;
+ border-radius:11px;
+ background:#fffaf0
+}
+.customer-visit-stats small{
+ display:block;
+ color:#76656f;
+ font-weight:800;
+ margin-bottom:4px
+}
+.customer-visit-stats b{
+ display:block;
+ font-size:17px
+}
+.customer-visit-stats .customer-total-spend{
+ grid-column:1/-1;
+ border:2px solid #c79b43;
+ background:#fff3d4
+}
+.customer-visit-stats .customer-total-spend b{
+ font-size:21px;
+ color:#7a5315
+}
+@media(max-width:700px){
+ .customer-visit-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
 <body>
@@ -1603,7 +1639,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v82-attendance-inventory-cloud-sync';
+const APP_VERSION='v83-customer-visit-spend-stats';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1840,6 +1876,7 @@ function applyRole(){
  $('userBadge').classList.toggle('manager-unlocked',managerUnlocked);
  $('logoutBtn').classList.toggle('hidden',!managerUnlocked);
  $('welcome').textContent=managerUnlocked?'管理モードで使用中':'通常業務のみ表示中';
+ if($('customerList'))renderCustomers();
 }
 
 const ADMIN_PASSCODE_KEY='tinkerbell_admin_passcode';
@@ -3620,6 +3657,67 @@ function bottlesForCustomer(c){
  });
 }
 
+
+function customerCompletedCheckouts(c){
+ const targetName=normalizeCustomerNameForMatch(c?.name);
+ return (db.checkouts||[]).filter(x=>{
+  if((x.status||'completed')==='cancelled'||x.cancelledAt)return false;
+  if(x.customerId===c.id)return true;
+
+  // 古い会計でcustomerIdが無い場合だけ名前で補完
+  if(!x.customerId){
+   const checkoutName=normalizeCustomerNameForMatch(x.groupCustomerName||x.customerName);
+   return targetName && checkoutName===targetName;
+  }
+  return false;
+ });
+}
+
+function customerVisitDateKeys(c){
+ const dates=new Set();
+
+ // 実際に会計完了した日を来店日として優先
+ customerCompletedCheckouts(c).forEach(x=>{
+  const d=localDateKey(x.closedAt);
+  if(d)dates.add(d);
+ });
+
+ // POSで席登録した既存来店回数は customerVisitCount() 側で補完
+ return [...dates].sort();
+}
+
+function customerSpendTotal(c){
+ return customerCompletedCheckouts(c)
+  .reduce((sum,x)=>sum+Number(x.total||0),0);
+}
+
+function customerLastVisitKey(c){
+ const dates=customerVisitDateKeys(c);
+ return dates.length?dates[dates.length-1]:'';
+}
+
+function customerDaysSinceLastVisit(c){
+ const key=customerLastVisitKey(c);
+ if(!key)return null;
+ const last=new Date(key+'T00:00:00');
+ const now=new Date(today()+'T00:00:00');
+ if(Number.isNaN(last.getTime())||Number.isNaN(now.getTime()))return null;
+ return Math.max(0,Math.floor((now-last)/86400000));
+}
+
+function customerAverageSpend(c){
+ const total=customerSpendTotal(c);
+ const visits=customerVisitCount(c.id);
+ return visits>0?Math.round(total/visits):0;
+}
+
+function customerDisplayDate(key){
+ if(!key)return '未記録';
+ const [y,m,d]=key.split('-').map(Number);
+ if(!y||!m||!d)return key;
+ return `${y}/${m}/${d}`;
+}
+
 function renderCustomers(){
  const q=$('customerSearch').value.toLowerCase();
  const a=db.customers.filter(c=>
@@ -3629,6 +3727,12 @@ function renderCustomers(){
  $('customerList').innerHTML=a.length
   ?a.map(c=>{
     const bs=bottlesForCustomer(c);
+    const lastVisit=customerLastVisitKey(c);
+    const daysSince=customerDaysSinceLastVisit(c);
+    const visits=customerVisitCount(c.id);
+    const average=customerAverageSpend(c);
+    const total=customerSpendTotal(c);
+
     return `<div class="item customer-card">
       <h3>${esc(c.name)} ${c.cloudPending?'<span class="tag customer-pending-tag">同期待ち</span>':''}</h3>
       <div class="meta">
@@ -3636,6 +3740,14 @@ function renderCustomers(){
        担当 ${esc(staffById(c.castId)?.name||c.cast||'未設定')}<br>
        誕生日 ${esc(customerBirthdayText(c))}<br>
        ${esc(c.memo||'メモなし')}
+      </div>
+
+      <div class="customer-visit-stats">
+       <div><small>最終来店</small><b>${esc(customerDisplayDate(lastVisit))}</b></div>
+       <div><small>前回来店から</small><b>${daysSince===null?'未記録':`${daysSince}日`}</b></div>
+       <div><small>来店回数</small><b>${visits}回</b></div>
+       <div><small>平均利用額</small><b>${yen(average)}</b></div>
+       ${managerUnlocked?`<div class="customer-total-spend manager-spend"><small>累計利用額</small><b>${yen(total)}</b></div>`:''}
       </div>
 
       <div class="customer-bottle-box">
