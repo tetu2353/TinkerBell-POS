@@ -1603,7 +1603,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v81-menu-category-manager';
+const APP_VERSION='v82-attendance-inventory-cloud-sync';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1778,6 +1778,32 @@ window.tinkerbellApplyCloudCheckouts=checkouts=>{
   renderTodaySales();
 };
 window.tinkerbellGetLocalCheckouts=()=>Array.isArray(db.checkouts)?db.checkouts:[];
+window.tinkerbellApplyCloudAttendance=rows=>{
+ if(!Array.isArray(rows))return;
+ const map=new Map((db.attendance||[]).map(r=>[r.id,r]));
+ rows.forEach(r=>map.set(r.id,{...(map.get(r.id)||{}),...r}));
+ db.attendance=[...map.values()].sort((a,b)=>String(a.in||'').localeCompare(String(b.in||'')));
+ persist();renderAttendance();renderMyAttendance();renderAdminAttendance();renderPayroll();
+};
+window.tinkerbellGetLocalAttendance=()=>Array.isArray(db.attendance)?db.attendance:[];
+
+window.tinkerbellApplyCloudInventory=(stockMap,inventoryLog)=>{
+ const stocks=(stockMap&&typeof stockMap==='object')?stockMap:{};
+ db.menu.forEach(m=>{
+  if(Object.prototype.hasOwnProperty.call(stocks,m.id))m.stock=Math.max(0,Number(stocks[m.id]||0));
+ });
+ if(Array.isArray(inventoryLog)){
+  const map=new Map((db.inventoryLog||[]).map(x=>[x.id,x]));
+  inventoryLog.forEach(x=>map.set(x.id,{...(map.get(x.id)||{}),...x}));
+  db.inventoryLog=[...map.values()].sort((a,b)=>String(b.time||'').localeCompare(String(a.time||''))).slice(0,300);
+ }
+ persist();renderInventory();renderMenu();renderTapOrders();
+};
+window.tinkerbellGetLocalInventory=()=>({
+ stockMap:Object.fromEntries((db.menu||[]).filter(m=>m.stockEnabled).map(m=>[m.id,Number(m.stock||0)])),
+ inventoryLog:Array.isArray(db.inventoryLog)?db.inventoryLog:[]
+});
+
 window.tinkerbellApplyCloudPayrollAdjustments=rows=>{if(!Array.isArray(rows))return;db.payrollAdjustments=rows;persist();renderPayroll()};
 window.tinkerbellGetLocalPayrollAdjustments=()=>Array.isArray(db.payrollAdjustments)?db.payrollAdjustments:[];
 
@@ -1921,7 +1947,7 @@ $('attendanceConfirmNo').onclick=()=>{
  $('attendanceModal').classList.add('hidden');
 };
 
-$('attendanceConfirmYes').onclick=()=>{
+$('attendanceConfirmYes').onclick=async()=>{
  const staff=staffById(attendanceTargetId);
  if(!staff)return;
 
@@ -1937,6 +1963,7 @@ $('attendanceConfirmYes').onclick=()=>{
   $('attendancePickCard').classList.add('hidden');
   renderAttendance();
   renderPayroll();
+  await syncAttendanceCloud();
   toast(`${staff.name}を出勤登録しました`);
   return;
  }
@@ -1973,7 +2000,7 @@ $('companionStatus').onchange=()=>{
  $('companionCustomerWrap').classList.toggle('hidden',$('companionStatus').value!=='yes');
 };
 
-$('attendanceModalSave').onclick=()=>{
+$('attendanceModalSave').onclick=async()=>{
  const staff=staffById(attendanceTargetId);
  if(!staff)return;
 
@@ -2018,6 +2045,7 @@ $('attendanceModalSave').onclick=()=>{
  renderMyAttendance();
  renderAdminAttendance();
  renderPayroll();
+ await syncAttendanceCloud();
  toast(`${staff.name}を退勤登録しました`);
 };
 
@@ -3213,6 +3241,8 @@ window.commitTapOrder=(mid,castId)=>{
 
  persist();
  renderOrders();
+ renderInventory();
+ syncInventoryCloud();
  showUndo(`${m.name}を追加`);
  toast(`${m.name}を追加`);
 };
@@ -3240,6 +3270,8 @@ $('undoBtn').onclick=()=>{
 
   persist();
   renderOrders();
+  renderInventory();
+  syncInventoryCloud();
  }
  lastOrder=null;
  $('undoBar').classList.add('hidden');
@@ -3296,6 +3328,8 @@ window.changeOrderQty=(sid,oid,delta)=>{
 
  persist();
  renderOrders();
+ renderInventory();
+ syncInventoryCloud();
 };
 
 window.delOrder=(sid,oid)=>{
@@ -3306,6 +3340,8 @@ window.delOrder=(sid,oid)=>{
  s.orders=s.orders.filter(x=>x.id!==oid);
  persist();
  renderOrders();
+ renderInventory();
+ syncInventoryCloud();
 };
 
 
@@ -4250,6 +4286,7 @@ $('saveMenu').onclick=async()=>{
   }
 
   await window.tinkerbellFirebase.saveMenu(db.menu);
+  await syncInventoryCloud();
 
   persist();
   renderMenu();
@@ -4271,6 +4308,23 @@ $('saveMenu').onclick=async()=>{
 $('cancelMenuEdit').onclick=clearMenuForm;
 
 
+
+async function syncInventoryCloud(){
+ try{
+  if(window.tinkerbellFirebase?.saveInventory){
+   await window.tinkerbellFirebase.saveInventory(
+    Object.fromEntries((db.menu||[]).filter(m=>m.stockEnabled).map(m=>[m.id,Number(m.stock||0)])),
+    db.inventoryLog||[]
+   );
+  }
+ }catch(error){console.error('Inventory cloud save failed:',error);toast('在庫は端末保存済み・クラウド同期待ちです')}
+}
+async function syncAttendanceCloud(){
+ try{
+  if(window.tinkerbellFirebase?.saveAttendance)await window.tinkerbellFirebase.saveAttendance(db.attendance||[]);
+ }catch(error){console.error('Attendance cloud save failed:',error);toast('勤怠は端末保存済み・クラウド同期待ちです')}
+}
+
 function logInventory(menuId,delta,reason){
  const m=db.menu.find(x=>x.id===menuId);
  if(!m||!m.stockEnabled||!delta)return;
@@ -4284,11 +4338,12 @@ function adjustInventory(menuId,delta,reason){
  if(next<0){toast(`${m.name}の在庫がありません`);return false;}
  m.stock=next; logInventory(menuId,delta,reason); return true;
 }
-window.receiveStock=mid=>{
+window.receiveStock=async mid=>{
  const m=db.menu.find(x=>x.id===mid);if(!m)return;
  const raw=prompt(`${m.name}の入荷数を入力`,'1'); if(raw===null)return;
  const qty=Number(raw); if(!Number.isInteger(qty)||qty<=0)return toast('入荷数を確認してください');
  adjustInventory(mid,qty,'入荷'); persist();renderInventory();renderMenu();renderTapOrders();
+ await syncInventoryCloud();
  toast(`${m.name}を${qty}入荷しました`);
 };
 function renderInventory(){
@@ -5777,6 +5832,14 @@ function startMenuRealtimeSync() {
 
       if (Array.isArray(cloudMenu)) {
         window.tinkerbellApplyCloudMenu?.(cloudMenu);
+        const invStock=snap.data()?.inventoryStock;
+        const invLog=snap.data()?.inventoryLog;
+        if((invStock&&typeof invStock==='object')||Array.isArray(invLog)){
+          window.tinkerbellApplyCloudInventory?.(
+            (invStock&&typeof invStock==='object')?invStock:{},
+            Array.isArray(invLog)?invLog:[]
+          );
+        }
         setStatus("Firebase接続：成功（お客様・従業員・商品を同期）", true);
       } else {
         const localMenu = window.tinkerbellGetLocalMenu?.() || [];
@@ -5869,6 +5932,60 @@ checkFirebaseConnection();
 
 
 
+
+async function saveAttendanceToFirebase(attendance){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ const ref=doc(firestoreDb,"app","data");
+ await runTransaction(firestoreDb,async tx=>{
+  const snap=await tx.get(ref);const d=snap.exists()?snap.data():{};
+  const cloud=Array.isArray(d.attendance)?d.attendance:[];
+  const map=new Map(cloud.map(r=>[r.id,r]));
+  (attendance||[]).forEach(r=>map.set(r.id,{...(map.get(r.id)||{}),...r}));
+  tx.set(ref,{attendance:[...map.values()],attendanceUpdatedAt:new Date().toISOString()},{merge:true});
+ });
+}
+function startAttendanceRealtimeSync(){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ const ref=doc(firestoreDb,"app","data");
+ return onSnapshot(ref,async snap=>{
+  if(!snap.exists())return;const d=snap.data()||{};
+  if(Array.isArray(d.attendance))window.tinkerbellApplyCloudAttendance?.(d.attendance);
+  else{
+   const local=window.tinkerbellGetLocalAttendance?.()||[];
+   await setDoc(ref,{attendance:local,attendanceUpdatedAt:new Date().toISOString()},{merge:true});
+  }
+ },error=>console.error('Attendance realtime sync failed:',error));
+}
+
+async function saveInventoryToFirebase(stockMap,inventoryLog){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ const ref=doc(firestoreDb,"app","data");
+ await runTransaction(firestoreDb,async tx=>{
+  const snap=await tx.get(ref);const d=snap.exists()?snap.data():{};
+  const cloudStock=(d.inventoryStock&&typeof d.inventoryStock==='object')?d.inventoryStock:{};
+  const mergedStock={...cloudStock,...(stockMap||{})};
+  const cloudLog=Array.isArray(d.inventoryLog)?d.inventoryLog:[];
+  const logMap=new Map(cloudLog.map(x=>[x.id,x]));
+  (inventoryLog||[]).forEach(x=>logMap.set(x.id,{...(logMap.get(x.id)||{}),...x}));
+  const mergedLog=[...logMap.values()].sort((a,b)=>String(b.time||'').localeCompare(String(a.time||''))).slice(0,300);
+  tx.set(ref,{inventoryStock:mergedStock,inventoryLog:mergedLog,inventoryUpdatedAt:new Date().toISOString()},{merge:true});
+ });
+}
+function startInventoryRealtimeSync(){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ const ref=doc(firestoreDb,"app","data");
+ return onSnapshot(ref,async snap=>{
+  if(!snap.exists())return;const d=snap.data()||{};
+  const hasStock=d.inventoryStock&&typeof d.inventoryStock==='object';
+  const hasLog=Array.isArray(d.inventoryLog);
+  if(hasStock||hasLog)window.tinkerbellApplyCloudInventory?.(hasStock?d.inventoryStock:{},hasLog?d.inventoryLog:[]);
+  else{
+   const local=window.tinkerbellGetLocalInventory?.()||{stockMap:{},inventoryLog:[]};
+   await setDoc(ref,{inventoryStock:local.stockMap||{},inventoryLog:local.inventoryLog||[],inventoryUpdatedAt:new Date().toISOString()},{merge:true});
+  }
+ },error=>console.error('Inventory realtime sync failed:',error));
+}
+
 async function savePayrollAdjustmentsToFirebase(payrollAdjustments){
  firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
  await setDoc(doc(firestoreDb,"app","data"),{payrollAdjustments,payrollAdjustmentsUpdatedAt:new Date().toISOString()},{merge:true});
@@ -5937,6 +6054,8 @@ window.tinkerbellFirebase = {
   saveSharedShiftMeta: saveSharedShiftMetaToFirebase,
   saveSharedSchedules: saveSharedSchedulesToFirebase,
   savePayrollAdjustments: savePayrollAdjustmentsToFirebase,
+  saveAttendance: saveAttendanceToFirebase,
+  saveInventory: saveInventoryToFirebase,
   reloadCheckouts: ()=>startCheckoutRealtimeSync()
 };
 
@@ -5948,6 +6067,8 @@ startAdminPasscodeSync();
 startCheckoutRealtimeSync();
 startSharedShiftScheduleSync();
 startPayrollAdjustmentsSync();
+startAttendanceRealtimeSync();
+startInventoryRealtimeSync();
 initializeSharedShiftSchedule();
 </script>
 
