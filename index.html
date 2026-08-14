@@ -975,17 +975,9 @@ body.manager-mode .payroll-staff-settings{
  .customer-visit-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
-/* 店舗端末版：管理機能の入口を端末上に表示しない */
-body.store-pos-only .manager,
-body.store-pos-only .management-heading,
-body.store-pos-only .management-grid,
-body.store-pos-only #userBadge,
-body.store-pos-only #logoutBtn,
-body.store-pos-only #login{display:none!important}
-
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
-<body class="store-pos-only">
+<body>
 <section id="login" class="login hidden">
  <div class="loginbox">
   <div class="logo">✦</div><h1>TINKER BELL</h1><p>店舗管理システム</p>
@@ -997,7 +989,7 @@ body.store-pos-only #login{display:none!important}
 </section>
 
 <div id="app">
-<header><div class="brand"><small>TINKER BELL</small><b>店舗POS</b></div><div class="header-actions"></div></header>
+<header><div class="brand"><small>TINKER BELL</small><b>店舗管理</b></div><div class="header-actions"><button id="userBadge" class="pill">管理者ログイン</button><button id="logoutBtn" class="pill hidden">管理解除</button></div></header>
 <main>
 <section id="home" class="screen active">
  <div class="hero"><div style="font-size:25px;color:#f0cf75">✦</div><h1>Tinker Bell POS</h1><p id="welcome"></p></div>
@@ -1239,7 +1231,17 @@ body.store-pos-only #login{display:none!important}
 
 <section id="visits" class="screen"><h2>同伴・来店予定</h2><div class="card"><div class="row3"><label>担当<select id="visitCast"></select></label><label>お客様名<input id="visitCustomer"></label><label>日付<input id="visitDate" type="date"></label></div><div class="row3"><label>区分<select id="visitType"><option>同伴</option><option>来店予定</option><option>予約</option></select></label><label>時間<input id="visitTime" type="time"></label><label>人数<input id="visitPeople" type="number" min="1" value="1"></label></div><label>メモ<input id="visitMemo"></label><button id="saveVisit" class="primary">予定登録</button></div><div id="visitList" class="list"></div></section>
 
-<section id="notices" class="screen"><h2>お知らせ</h2><div class="card manager"><label>タイトル<input id="noticeTitle"></label><label>本文<textarea id="noticeBody" rows="4"></textarea></label><button id="saveNotice" class="primary">投稿</button></div><div id="noticeList" class="list"></div></section>
+<section id="notices" class="screen">
+<h2>お店からのお知らせ</h2>
+<div class="card manager">
+<input id="noticeEditId" type="hidden">
+<label>タイトル<input id="noticeTitle" placeholder="例：本日の連絡"></label>
+<label>本文<textarea id="noticeBody" rows="4" placeholder="スタッフ全員に伝える内容"></textarea></label>
+<div class="row"><button id="saveNotice" class="primary">お知らせを投稿</button><button id="cancelNoticeEdit" class="secondary hidden">編集をやめる</button></div>
+<div class="meta">ここで投稿した内容はLINEスタッフ画面にも表示されます。</div>
+</div>
+<div id="noticeList" class="list"></div>
+</section>
 
 <section id="staff" class="screen manager"><h2>従業員管理</h2><div class="card"><div class="meta">従業員データはFirebaseとリアルタイム同期します。</div></div><div class="card"><input id="staffEditId" type="hidden"><div class="row3"><label>名前<input id="staffName"></label><label>役割<select id="staffRole"><option value="cast">キャスト</option><option value="staff">黒服</option><option value="manager">幹部</option></select></label><label>時給<input id="staffWage" type="number" value="1500"></label></div><div class="row3"><label>ドリンクバック<input id="staffDrinkBack" type="number" value="200"></label><label>ボトルバック<input id="staffBottleBack" type="number" value="1000"></label><label>同伴バック（1回）<input id="staffCompanionAllowance" type="number" min="0" inputmode="numeric" value="0" placeholder="例：3000"></label></div><div class="row3"><label>送迎手当（1回）<input id="staffTransportAllowance" type="number" value="0"></label><div class="meta">給与計算では、勤怠・注文実績とここで設定した単価を自動集計します。同伴バックは「お店の同伴料金」ではなく、キャストへ支給する金額だけを入力します。</div><div class="meta">従業員ごとの暗証番号は使用しません。</div></div>
 
@@ -1647,7 +1649,7 @@ body.store-pos-only #login{display:none!important}
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v84-store-pos-only';
+const APP_VERSION='v84-shared-notices';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1822,6 +1824,9 @@ window.tinkerbellApplyCloudCheckouts=checkouts=>{
   renderTodaySales();
 };
 window.tinkerbellGetLocalCheckouts=()=>Array.isArray(db.checkouts)?db.checkouts:[];
+window.tinkerbellApplyCloudNotices=rows=>{if(!Array.isArray(rows))return;db.notices=rows;persist();renderNotices()};
+window.tinkerbellGetLocalNotices=()=>Array.isArray(db.notices)?db.notices:[];
+
 window.tinkerbellApplyCloudAttendance=rows=>{
  if(!Array.isArray(rows))return;
  const map=new Map((db.attendance||[]).map(r=>[r.id,r]));
@@ -1858,7 +1863,7 @@ window.tinkerbellApplyCloudCheckoutEvents=events=>{
 };
 window.tinkerbellGetLocalCheckoutEvents=()=>Array.isArray(db.checkoutEvents)?db.checkoutEvents:[];
 
-let managerUnlocked=false;
+let managerUnlocked=sessionStorage.getItem('tb_manager_unlocked')==='1';
 
 function isManager(){return managerUnlocked}
 
@@ -1875,24 +1880,36 @@ function refreshSelects(){
 }
 
 function applyRole(){
- managerUnlocked=false;
  qsa('.manager').forEach(x=>{
   x.classList.toggle('hidden',!managerUnlocked);
   x.classList.toggle('locked',false);
  });
  document.body.classList.toggle('manager-mode',managerUnlocked);
- if($('userBadge'))$('userBadge').textContent='';
- if($('logoutBtn'))$('logoutBtn').classList.add('hidden');
+ $('userBadge').textContent=managerUnlocked?'管理モード':'管理者ログイン';
+ $('userBadge').classList.toggle('manager-unlocked',managerUnlocked);
+ $('logoutBtn').classList.toggle('hidden',!managerUnlocked);
  $('welcome').textContent=managerUnlocked?'管理モードで使用中':'通常業務のみ表示中';
  if($('customerList'))renderCustomers();
+ if($('noticeList'))renderNotices();
 }
 
 const ADMIN_PASSCODE_KEY='tinkerbell_admin_passcode';
 function getAdminPasscode(){return localStorage.getItem(ADMIN_PASSCODE_KEY)||'1234'}
 
 function unlockManager(){
- toast('管理機能は管理者専用画面から操作してください');
- return false;
+ const pin=prompt('管理者パスコードを入力してください');
+ if(pin===null)return false;
+
+ if(String(pin)!==getAdminPasscode()){
+  toast('管理者パスコードが違います');
+  return false;
+ }
+
+ managerUnlocked=true;
+ sessionStorage.setItem('tb_manager_unlocked','1');
+ applyRole();
+ toast('管理モードを解除しました');
+ return true;
 }
 
 function lockManager(){
@@ -1908,8 +1925,7 @@ const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttenda
 
 function show(idn){
  if(MANAGER_SCREENS.has(idn)&&!managerUnlocked){
-  toast('この端末では管理画面を開けません');
-  return;
+  if(!unlockManager())return;
  }
  qsa('.screen').forEach(x=>x.classList.remove('active'));
  $(idn).classList.add('active');
@@ -1928,8 +1944,11 @@ $('loginBtn').onclick=()=>{
  }
 };
 
-if($('logoutBtn'))$('logoutBtn').onclick=lockManager;
-if($('userBadge'))$('userBadge').onclick=()=>{};
+$('logoutBtn').onclick=lockManager;
+$('userBadge').onclick=()=>{
+ if(managerUnlocked)lockManager();
+ else unlockManager();
+};
 
 let attendanceAction='';
 let attendanceTargetId='';
@@ -4089,8 +4108,65 @@ $('saveVisit').onclick=()=>{if(!$('visitCustomer').value.trim())return toast('�
 function renderVisits(){const a=db.visits.sort((x,y)=>(x.date+x.time).localeCompare(y.date+y.time));$('visitList').innerHTML=a.length?a.map(v=>`<div class="item"><h3>${esc(v.customer)} <span class="tag">${esc(v.type)}</span></h3><div class="meta">${esc(v.date)} ${esc(v.time)} / ${esc(v.people)}名<br>担当 ${esc(staffById(v.castId)?.name||'')}${v.type==='同伴'&&v.extraCastIds?.length?`<br>同行 ${(v.extraCastIds||[]).map(cid=>esc(staffById(cid)?.name||'')).filter(Boolean).join('・')}`:''}<br>${esc(v.memo||'')}</div><div class="item-actions"><button class="danger" onclick="delVisit('${v.id}')">削除</button></div></div>`).join(''):'<div class="empty">予定なし</div>'}
 window.delVisit=x=>{db.visits=db.visits.filter(v=>v.id!==x);persist();saveSharedSchedulesFromPos();renderVisits()}
 
-$('saveNotice').onclick=()=>{db.notices.unshift({id:id(),title:$('noticeTitle').value,body:$('noticeBody').value,date:today()});persist();renderNotices();toast('投稿しました')};
-function renderNotices(){$('noticeList').innerHTML=db.notices.length?db.notices.map(n=>`<div class="item"><h3>${esc(n.title)}</h3><div class="meta">${esc(n.date)}<br>${esc(n.body)}</div></div>`).join(''):'<div class="empty">お知らせなし</div>'}
+
+function clearNoticeForm(){
+ $('noticeEditId').value='';$('noticeTitle').value='';$('noticeBody').value='';
+ $('saveNotice').textContent='お知らせを投稿';$('cancelNoticeEdit').classList.add('hidden');
+}
+function noticeDateText(n){
+ const value=n.updatedAt||n.createdAt||n.date||'';if(!value)return '';
+ const d=new Date(value);return Number.isNaN(d.getTime())?String(value):d.toLocaleString('ja-JP');
+}
+function renderNotices(){
+ const list=[...(db.notices||[])].sort((a,b)=>String(b.updatedAt||b.createdAt||b.date||'').localeCompare(String(a.updatedAt||a.createdAt||a.date||'')));
+ $('noticeList').innerHTML=list.length?list.map(n=>`<div class="item">
+ <h3>🔔 ${esc(n.title||'お知らせ')}</h3>
+ <div class="meta">${esc(noticeDateText(n))}<br>${esc(n.body||'')}</div>
+ ${managerUnlocked?`<div class="item-actions"><button class="secondary" onclick="editNotice('${n.id}')">編集</button><button class="danger" onclick="delNotice('${n.id}')">削除</button></div>`:''}
+ </div>`).join(''):'<div class="empty">お知らせはありません</div>';
+}
+$('saveNotice').onclick=async()=>{
+ const title=$('noticeTitle').value.trim(),body=$('noticeBody').value.trim();
+ if(!title)return toast('タイトルを入力してください');
+ if(!body)return toast('本文を入力してください');
+ const editId=$('noticeEditId').value;
+ const before=JSON.parse(JSON.stringify(db.notices||[]));
+ const now=nowISO();
+
+ if(editId){
+  const item=(db.notices||[]).find(n=>n.id===editId);if(!item)return toast('お知らせが見つかりません');
+  Object.assign(item,{title,body,updatedAt:now,date:today()});
+ }else{
+  db.notices.unshift({id:id(),title,body,createdAt:now,updatedAt:now,date:today()});
+ }
+
+ persist();renderNotices();clearNoticeForm();
+
+ try{
+  if(window.tinkerbellFirebase?.saveNotices)await window.tinkerbellFirebase.saveNotices(db.notices);
+  toast(editId?'お知らせを更新しました':'お知らせを投稿しました');
+ }catch(error){
+  console.error(error);db.notices=before;persist();renderNotices();toast('お知らせのクラウド保存に失敗しました');
+ }
+};
+$('cancelNoticeEdit').onclick=clearNoticeForm;
+window.editNotice=idn=>{
+ const n=(db.notices||[]).find(x=>x.id===idn);if(!n)return;
+ $('noticeEditId').value=n.id;$('noticeTitle').value=n.title||'';$('noticeBody').value=n.body||'';
+ $('saveNotice').textContent='変更を保存';$('cancelNoticeEdit').classList.remove('hidden');
+};
+window.delNotice=async idn=>{
+ if(!confirm('このお知らせを削除しますか？'))return;
+ const before=JSON.parse(JSON.stringify(db.notices||[]));
+ db.notices=db.notices.filter(x=>x.id!==idn);persist();renderNotices();
+ try{
+  if(window.tinkerbellFirebase?.saveNotices)await window.tinkerbellFirebase.saveNotices(db.notices);
+  toast('お知らせを削除しました');
+ }catch(error){
+  console.error(error);db.notices=before;persist();renderNotices();toast('削除のクラウド保存に失敗しました');
+ }
+};
+
 
 function staffRoleLabel(role){
  if(role==='cast')return 'キャスト';
@@ -6093,6 +6169,24 @@ function startInventoryRealtimeSync(){
  },error=>console.error('Inventory realtime sync failed:',error));
 }
 
+
+async function saveNoticesToFirebase(notices){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ await setDoc(doc(firestoreDb,"app","data"),{notices,noticesUpdatedAt:new Date().toISOString()},{merge:true});
+}
+function startNoticesRealtimeSync(){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ const ref=doc(firestoreDb,"app","data");
+ return onSnapshot(ref,async snap=>{
+  if(!snap.exists())return;
+  const cloud=snap.data()?.notices;
+  if(Array.isArray(cloud))window.tinkerbellApplyCloudNotices?.(cloud);
+  else{
+   const local=window.tinkerbellGetLocalNotices?.()||[];
+   await setDoc(ref,{notices:local,noticesUpdatedAt:new Date().toISOString()},{merge:true});
+  }
+ },error=>console.error('Notices realtime sync failed:',error));
+}
 async function savePayrollAdjustmentsToFirebase(payrollAdjustments){
  firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
  await setDoc(doc(firestoreDb,"app","data"),{payrollAdjustments,payrollAdjustmentsUpdatedAt:new Date().toISOString()},{merge:true});
@@ -6163,6 +6257,7 @@ window.tinkerbellFirebase = {
   savePayrollAdjustments: savePayrollAdjustmentsToFirebase,
   saveAttendance: saveAttendanceToFirebase,
   saveInventory: saveInventoryToFirebase,
+  saveNotices: saveNoticesToFirebase,
   reloadCheckouts: ()=>startCheckoutRealtimeSync()
 };
 
@@ -6176,6 +6271,7 @@ startSharedShiftScheduleSync();
 startPayrollAdjustmentsSync();
 startAttendanceRealtimeSync();
 startInventoryRealtimeSync();
+startNoticesRealtimeSync();
 initializeSharedShiftSchedule();
 </script>
 
