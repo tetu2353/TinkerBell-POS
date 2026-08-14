@@ -364,7 +364,7 @@ input,select,textarea{padding:13px;border-radius:12px}
 
 <script>
 'use strict';
-const APP_VERSION='line-v59-customer-save-local-first';
+const APP_VERSION='line-v60-customer-edit-save-fix';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -967,32 +967,148 @@ function openCustomerForm(existing=null){
     toast('お客様登録画面を開けません');
     return;
   }
-  const linked=existing?lineBottlesForCustomer(existing):[];
+
+  const editingId=existing?.id||'';
+  const linked=existing?lineBottlesForCustomer(existing).map(b=>({...b})):[];
+  const rows=linked.length
+    ?linked
+    :[{id:'',number:'',category:'shochu',name:'',cast:existing?.cast||'担当不明',qty:1}];
+
   $('formTitle').textContent=existing?'お客様編集':'お客様登録';
-  $('formBody').innerHTML=`<label><span>お客様名</span><input id="cName" value="${existing?.name||''}"></label><label><span>ふりがな</span><input id="cKana" value="${existing?.kana||''}" placeholder="例：たなか"></label><div class="form2"><label><span>誕生月</span><select id="cMonth"><option value="">未登録</option>${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthMonth)===i+1?'selected':''}>${i+1}月</option>`).join('')}</select></label><label><span>誕生日</span><select id="cDay"><option value="">未登録</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}" ${Number(existing?.birthDay)===i+1?'selected':''}>${i+1}日</option>`).join('')}</select></label></div><label><span>担当</span><select id="cCast"><option>担当不明</option>${names().map(n=>`<option ${n===existing?.cast?'selected':''}>${n}</option>`).join('')}</select></label><label><span>備考</span><textarea id="cMemo">${existing?.memo||''}</textarea></label><div class="card"><div class="rowTitle">🍾 キープボトル登録</div><div id="customerBottleRows" class="list" style="margin-top:9px"></div><button type="button" class="btn ghost full" id="addCustomerBottle">＋ボトル追加</button></div><button type="button" class="btn gold full" id="saveCustomer">保存</button>`;
-  $('formDialog').showModal();
-  const rows=linked.map(b=>({...b}));
-  if(!rows.length)rows.push({id:'',number:'',category:'shochu',name:'',cast:existing?.cast||'担当不明',qty:1});
-  const renderRows=()=>{
-    $('customerBottleRows').innerHTML=rows.map((b,i)=>`<div class="row"><div class="form2">
-      <label><span>ボトルNo.</span><input data-bn="${i}" value="${b.number||''}"></label>
-      <label><span>種類</span><select data-bcategory="${i}">
-        <option value="shochu" ${(b.category||'shochu')==='shochu'?'selected':''}>焼酎</option>
-        <option value="whisky" ${b.category==='whisky'?'selected':''}>ウイスキー</option>
-        <option value="brandy" ${b.category==='brandy'?'selected':''}>ブランデー</option>
-        <option value="other" ${!['shochu','whisky','brandy'].includes(b.category||'shochu')?'selected':''}>その他</option>
+
+  // 既存値はHTML文字列へ直接差し込まず、フォーム生成後にvalueへ代入する
+  body.innerHTML=`
+    <label><span>お客様名</span><input id="cName"></label>
+    <label><span>ふりがな</span><input id="cKana" placeholder="例：たなか"></label>
+    <div class="form2">
+      <label><span>誕生月</span><select id="cMonth">
+        <option value="">未登録</option>
+        ${Array.from({length:12},(_,i)=>`<option value="${i+1}">${i+1}月</option>`).join('')}
       </select></label>
-      <label><span>ボトル名</span><input data-bname="${i}" value="${b.name||''}"></label>
-      <label><span>担当</span><select data-bcast="${i}"><option>担当不明</option>${names().map(n=>`<option ${n===b.cast?'selected':''}>${n}</option>`).join('')}</select></label>
-      <label><span>本数</span><input data-bqty="${i}" type="number" min="1" value="${b.qty||1}"></label>
-    </div><button type="button" class="btn red" data-remove-row="${i}">削除</button></div>`).join('');
+      <label><span>誕生日</span><select id="cDay">
+        <option value="">未登録</option>
+        ${Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}日</option>`).join('')}
+      </select></label>
+    </div>
+    <label><span>担当</span><select id="cCast">
+      <option value="担当不明">担当不明</option>
+      ${names().map(n=>`<option></option>`).join('')}
+    </select></label>
+    <label><span>備考</span><textarea id="cMemo"></textarea></label>
+
+    <div class="card">
+      <div class="rowTitle">🍾 キープボトル登録</div>
+      <div id="customerBottleRows" class="list" style="margin-top:9px"></div>
+      <button type="button" class="btn ghost full" id="addCustomerBottle">＋ボトル追加</button>
+    </div>
+
+    <button type="button" class="btn gold full" id="saveCustomer">${existing?'変更を保存':'保存'}</button>
+  `;
+
+  // staff option values/text are assigned safely
+  const castSelect=$('cCast');
+  const staffOptions=[...castSelect.options].slice(1);
+  names().forEach((n,i)=>{
+    if(staffOptions[i]){
+      staffOptions[i].value=n;
+      staffOptions[i].textContent=n;
+    }
+  });
+
+  // Assign customer values safely after DOM creation
+  $('cName').value=existing?.name||'';
+  $('cKana').value=existing?.kana||'';
+  $('cMonth').value=existing?.birthMonth?String(existing.birthMonth):'';
+  $('cDay').value=existing?.birthDay?String(existing.birthDay):'';
+  $('cCast').value=existing?.cast||'担当不明';
+  $('cMemo').value=existing?.memo||'';
+
+  const renderRows=()=>{
+    const box=$('customerBottleRows');
+    box.innerHTML='';
+
+    rows.forEach((b,i)=>{
+      const row=document.createElement('div');
+      row.className='row';
+      row.innerHTML=`
+        <div class="form2">
+          <label><span>ボトルNo.</span><input data-bn="${i}"></label>
+          <label><span>種類</span>
+            <select data-bcategory="${i}">
+              <option value="shochu">焼酎</option>
+              <option value="whisky">ウイスキー</option>
+              <option value="brandy">ブランデー</option>
+              <option value="other">その他</option>
+            </select>
+          </label>
+          <label><span>ボトル名</span><input data-bname="${i}"></label>
+          <label><span>担当</span><select data-bcast="${i}"></select></label>
+          <label><span>本数</span><input data-bqty="${i}" type="number" min="1"></label>
+        </div>
+        <button type="button" class="btn red" data-remove-row="${i}">削除</button>
+      `;
+
+      box.appendChild(row);
+
+      const noEl=row.querySelector(`[data-bn="${i}"]`);
+      const categoryEl=row.querySelector(`[data-bcategory="${i}"]`);
+      const nameEl=row.querySelector(`[data-bname="${i}"]`);
+      const castEl=row.querySelector(`[data-bcast="${i}"]`);
+      const qtyEl=row.querySelector(`[data-bqty="${i}"]`);
+
+      noEl.value=String(b.number??b.bottleNo??'');
+      categoryEl.value=['shochu','whisky','brandy'].includes(b.category)?b.category:'other';
+      nameEl.value=b.name||'';
+
+      const castNames=['担当不明',...names()];
+      castNames.forEach(n=>{
+        const opt=document.createElement('option');
+        opt.value=n;
+        opt.textContent=n;
+        castEl.appendChild(opt);
+      });
+      castEl.value=b.cast||existing?.cast||'担当不明';
+      qtyEl.value=Math.max(1,Number(b.qty||1));
+    });
   };
+
   renderRows();
-  $('addCustomerBottle').onclick=()=>{rows.push({id:'',number:'',category:'shochu',name:'',cast:$('cCast').value,qty:1});renderRows()};
-  $('customerBottleRows').onclick=e=>{const b=e.target.closest('[data-remove-row]');if(!b)return;rows.splice(+b.dataset.removeRow,1);if(!rows.length)rows.push({id:'',number:'',category:'shochu',name:'',cast:$('cCast').value,qty:1});renderRows()};
+
+  $('addCustomerBottle').onclick=()=>{
+    rows.push({
+      id:'',
+      number:'',
+      category:'shochu',
+      name:'',
+      cast:$('cCast').value||'担当不明',
+      qty:1
+    });
+    renderRows();
+  };
+
+  $('customerBottleRows').onclick=e=>{
+    const remove=e.target.closest('[data-remove-row]');
+    if(!remove)return;
+    rows.splice(Number(remove.dataset.removeRow),1);
+    if(!rows.length){
+      rows.push({
+        id:'',
+        number:'',
+        category:'shochu',
+        name:'',
+        cast:$('cCast').value||'担当不明',
+        qty:1
+      });
+    }
+    renderRows();
+  };
+
   const saveCustomerButton=$('saveCustomer');
 
-  const commitCustomerSave=async()=>{
+  const commitCustomerSave=async e=>{
+    e?.preventDefault();
+    e?.stopPropagation();
+
     if(saveCustomerButton.disabled)return;
 
     const originalText=saveCustomerButton.textContent;
@@ -1000,12 +1116,12 @@ function openCustomerForm(existing=null){
     saveCustomerButton.textContent='保存中…';
 
     try{
-      const name=$('cName')?.value.trim()||'';
+      const name=$('cName').value.trim();
       if(!name)throw new Error('お客様名を入力してください');
 
-      const kana=normalizeKana($('cKana')?.value.trim()||'');
-      const month=$('cMonth')?.value||'';
-      const day=$('cDay')?.value||'';
+      const kana=normalizeKana($('cKana').value.trim());
+      const month=$('cMonth').value;
+      const day=$('cDay').value;
 
       if((month&&!day)||(!month&&day)){
         throw new Error('誕生日は月と日を両方選択してください');
@@ -1019,7 +1135,7 @@ function openCustomerForm(existing=null){
         const rawCategory=document.querySelector(`[data-bcategory="${i}"]`)?.value||'shochu';
         const category=['shochu','whisky','brandy','other'].includes(rawCategory)?rawCategory:'other';
         const bottleName=document.querySelector(`[data-bname="${i}"]`)?.value.trim()||'';
-        const cast=document.querySelector(`[data-bcast="${i}"]`)?.value||$('cCast')?.value||'担当不明';
+        const cast=document.querySelector(`[data-bcast="${i}"]`)?.value||$('cCast').value||'担当不明';
         const qty=Math.max(1,Number(document.querySelector(`[data-bqty="${i}"]`)?.value||1));
 
         if(number||bottleName){
@@ -1031,14 +1147,18 @@ function openCustomerForm(existing=null){
       const duplicateNumber=entered.find(r=>
         r.number &&
         db.bottles.some(b=>
-          String(b.number||'')===String(r.number) &&
+          String(b.number??b.bottleNo??'')===String(r.number) &&
           b.id!==r.id
         )
       );
       if(duplicateNumber)throw new Error('登録済みのボトルNo.があります');
 
-      const customerId=existing?.id||uid();
-      const cast=$('cCast')?.value||'担当不明';
+      // IMPORTANT: fetch editing customer fresh by ID rather than relying on stale object closure
+      const target=editingId?db.customers.find(c=>c.id===editingId):null;
+      if(editingId&&!target)throw new Error('編集するお客様が見つかりません');
+
+      const customerId=target?.id||uid();
+      const cast=$('cCast').value||'担当不明';
 
       const customerData={
         name,
@@ -1046,73 +1166,64 @@ function openCustomerForm(existing=null){
         birthMonth:month?Number(month):'',
         birthDay:day?Number(day):'',
         cast,
-        castId:db.staff.find(s=>s.name===cast)?.id||existing?.castId||'',
-        memo:$('cMemo')?.value.trim()||'',
+        castId:db.staff.find(s=>s.name===cast)?.id||target?.castId||'',
+        memo:$('cMemo').value.trim(),
         updatedAt:new Date().toISOString()
       };
 
-      if(existing){
-        Object.assign(existing,customerData);
+      if(target){
+        Object.assign(target,customerData);
       }else{
         db.customers.push({id:customerId,...customerData});
       }
 
-      // このお客様のボトルを画面内容に合わせる
+      // Only remove bottles that truly belong to this customerId.
       const enteredIds=new Set(entered.filter(r=>r.id).map(r=>r.id));
       db.bottles=db.bottles.filter(b=>
         b.customerId!==customerId || enteredIds.has(b.id)
       );
 
       for(const r of entered){
-        if(r.id){
-          const bottle=db.bottles.find(x=>x.id===r.id);
-          if(bottle){
-            Object.assign(bottle,{
-              number:r.number,
-              category:r.category,
-              name:r.name,
-              cast:r.cast,
-              qty:r.qty,
-              customerId,
-              customer:name
-            });
-          }
+        let bottle=r.id?db.bottles.find(x=>x.id===r.id):null;
+
+        const bottleData={
+          number:r.number,
+          bottleNo:r.number,
+          category:r.category,
+          name:r.name,
+          cast:r.cast,
+          qty:r.qty,
+          customerId,
+          customer:name,
+          status:bottle?.status||'stored',
+          emptyDate:bottle?.emptyDate||''
+        };
+
+        if(bottle){
+          Object.assign(bottle,bottleData);
         }else{
-          db.bottles.push({
-            id:uid(),
-            number:r.number,
-            category:r.category,
-            name:r.name,
-            cast:r.cast,
-            qty:r.qty,
-            customerId,
-            customer:name,
-            status:'stored',
-            emptyDate:''
-          });
+          db.bottles.push({id:r.id||uid(),...bottleData});
         }
       }
 
-      // まず端末へ確実に保存
+      // Local save first. Editing must succeed even if Firebase is temporarily unavailable.
       save();
 
-      if(!db.customers.some(c=>c.id===customerId)){
-        throw new Error('お客様データを保存できませんでした');
+      const verify=db.customers.find(c=>c.id===customerId);
+      if(!verify||verify.name!==name){
+        throw new Error('お客様の変更を保存できませんでした');
       }
 
-      // 画面を先に閉じて、保存成功を即表示
-      $('formDialog').close();
+      dialog.close();
       renderCustomers();
       renderBottles();
       renderHome();
-      toast(existing?'お客様を更新しました':'お客様を登録しました');
+      toast(target?'お客様を更新しました':'お客様を登録しました');
 
-      // Firebaseは後追い。失敗しても端末データは消さない
-      try{
-        await saveCustomersBottlesShared();
-      }catch(syncError){
+      // Cloud sync after local success. Never roll back local edit.
+      saveCustomersBottlesShared().catch(syncError=>{
         console.error('Customer cloud sync failed:',syncError);
-      }
+      });
 
     }catch(error){
       console.error('Customer save failed:',error);
@@ -1122,10 +1233,10 @@ function openCustomerForm(existing=null){
     }
   };
 
-  // 動的に作るボタンへ直接登録
-  saveCustomerButton.addEventListener('click',commitCustomerSave,{once:false});
-
+  saveCustomerButton.onclick=commitCustomerSave;
+  dialog.showModal();
 }
+
 function normalizeKana(value){
   return String(value||'')
     .trim()
