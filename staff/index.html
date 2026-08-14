@@ -220,6 +220,7 @@ input,select,textarea{padding:13px;border-radius:12px}
     <button class="tile" data-action="new-schedule"><span class="ico">🥂</span><b>予定登録・変更</b><small>未来の予定も登録</small></button>
     <button class="tile" data-nav="customers"><span class="ico">👤</span><b>お客様情報</b><small>誕生日・備考・ボトル</small></button>
     <button class="tile" data-nav="bottles"><span class="ico">🍾</span><b>ボトル確認</b><small>No.検索・編集・削除</small></button>
+    <button class="tile" data-nav="notices"><span class="ico">🔔</span><b>お店からのお知らせ</b><small id="noticeHomeSummary">連絡を確認</small></button>
     <button class="tile" data-action="admin"><span class="ico">🔒</span><b>その他・管理</b><small>スタッフ登録</small></button>
   </div>
 </section>
@@ -327,6 +328,13 @@ input,select,textarea{padding:13px;border-radius:12px}
   <div id="bottleSummary" class="card"></div>
   <div id="bottleList" class="list"></div>
 </section>
+<section id="notices" class="hidden">
+  <button class="btn ghost" data-nav="home">← ホーム</button>
+  <div class="sectionHead"><h2>お店からのお知らせ</h2></div>
+  <div class="card"><div class="meta">POSの管理者からスタッフ全員への連絡です。</div></div>
+  <div id="noticeList" class="list"></div>
+</section>
+
 </main>
 
 <dialog id="formDialog"><div class="modal"><div class="modalHead"><h2 id="formTitle"></h2><button class="close" data-close="formDialog">×</button></div><div id="formBody"></div></div></dialog>
@@ -364,7 +372,7 @@ input,select,textarea{padding:13px;border-radius:12px}
 
 <script>
 'use strict';
-const APP_VERSION='line-v60-customer-edit-save-fix';
+const APP_VERSION='line-v61-shared-notices';
 const $=id=>document.getElementById(id);
 const KEY='tinkerbell_v24';
 const DEFAULT_STAFF=[{id:'s1',name:'あい',role:'cast'},{id:'s2',name:'れな',role:'cast'},{id:'s3',name:'みく',role:'cast'}];
@@ -387,11 +395,12 @@ function load(){
         shiftMeta:(d.shiftMeta&&typeof d.shiftMeta==='object')?d.shiftMeta:{submitted:{},published:{}},
         schedules:Array.isArray(d.schedules)?d.schedules:[],
         customers:Array.isArray(d.customers)?d.customers:[],
-        bottles:(Array.isArray(d.bottles)?d.bottles:[]).map(b=>({...b,category:b.category||'other'}))
+        bottles:(Array.isArray(d.bottles)?d.bottles:[]).map(b=>({...b,category:b.category||'other'})),
+        notices:Array.isArray(d.notices)?d.notices:[]
       };
     }
   }catch(e){console.error(e)}
-  return {staff:[...DEFAULT_STAFF],shifts:[],shiftMeta:{submitted:{},published:{}},schedules:[],customers:[],bottles:[]};
+  return {staff:[...DEFAULT_STAFF],shifts:[],shiftMeta:{submitted:{},published:{}},schedules:[],customers:[],bottles:[],notices:[]};
 }
 let db=load();
 
@@ -561,8 +570,9 @@ function show(section,updateHash=true){
   }
   if(section==='customers')renderCustomers();
   if(section==='bottles')renderBottles();
+  if(section==='notices')renderNotices();
   if(updateHash){
-    const map={home:'',shift:'shift',schedules:'today',customers:'customers',bottles:'bottles'};
+    const map={home:'',shift:'shift',schedules:'today',customers:'customers',bottles:'bottles',notices:'notices'};
     history.replaceState(null,'',map[section]?'#'+map[section]:location.pathname+location.search);
   }
   scrollTo(0,0);
@@ -571,10 +581,11 @@ function route(){
   const r=(location.hash||'').slice(1);
   if(r==='schedule'){show('schedules',false);openScheduleForm();return}
   if(r==='admin'){show('home',false);$('adminDialog').showModal();return}
-  show({shift:'shift',today:'schedules',customers:'customers',bottles:'bottles'}[r]||'home',false);
+  show({shift:'shift',today:'schedules',customers:'customers',bottles:'bottles',notices:'notices'}[r]||'home',false);
 }
 
 function renderHome(){
+  renderNotices();
   $('homeShiftCount').textContent=db.shifts.filter(x=>x.date===today()&&x.mark==='o').length;
   $('homeScheduleCount').textContent=db.schedules.filter(x=>x.date===today()).length;
   const month=new Date().getMonth()+1;
@@ -1328,6 +1339,25 @@ function showCustomer(id){
 }
 
 
+
+function lineNoticeDateText(n){
+ const value=n.updatedAt||n.createdAt||n.date||'';if(!value)return '';
+ const d=new Date(value);return Number.isNaN(d.getTime())?String(value):d.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function renderNotices(){
+ const list=[...(db.notices||[])].sort((a,b)=>String(b.updatedAt||b.createdAt||b.date||'').localeCompare(String(a.updatedAt||a.createdAt||a.date||'')));
+ if($('noticeList')){
+  $('noticeList').innerHTML=list.length?list.map(n=>`<div class="card">
+    <div class="rowTitle">🔔 ${n.title||'お知らせ'}</div>
+    <div class="meta">${lineNoticeDateText(n)}</div>
+    <div style="margin-top:9px;white-space:pre-wrap;line-height:1.7">${n.body||''}</div>
+  </div>`).join(''):'<div class="card">現在、お知らせはありません</div>';
+ }
+ if($('noticeHomeSummary'))$('noticeHomeSummary').textContent=list.length?`最新：${list[0].title||'お知らせ'}`:'現在お知らせなし';
+}
+window.tinkerbellApplyCloudNotices=rows=>{if(!Array.isArray(rows))return;db.notices=rows;save();renderNotices()};
+window.tinkerbellGetLocalNotices=()=>Array.isArray(db.notices)?db.notices:[];
+
 function bottleCategoryLabel(category){
   return {
     whisky:'ウイスキー',
@@ -1772,6 +1802,7 @@ onSnapshot(dataRef,snap=>{
   const d=snap.data()||{};
   if(Array.isArray(d.customers))window.tinkerbellApplyCloudCustomers?.(d.customers);
   if(Array.isArray(d.bottles))window.tinkerbellApplyCloudBottles?.(d.bottles);
+  if(Array.isArray(d.notices))window.tinkerbellApplyCloudNotices?.(d.notices);
   if(Array.isArray(d.sharedShifts))window.tinkerbellApplyCloudShifts?.(d.sharedShifts);
   if(d.sharedShiftMeta&&typeof d.sharedShiftMeta==='object')window.tinkerbellApplyCloudShiftMeta?.(d.sharedShiftMeta);
   if(Array.isArray(d.sharedSchedules))window.tinkerbellApplyCloudSchedules?.(d.sharedSchedules);
