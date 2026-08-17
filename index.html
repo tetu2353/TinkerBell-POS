@@ -983,17 +983,9 @@ body.manager-mode .payroll-staff-settings{
  .customer-visit-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
-/* 店舗端末版：管理機能の入口を端末上に表示しない */
-body.store-pos-only .manager,
-body.store-pos-only .management-heading,
-body.store-pos-only .management-grid,
-body.store-pos-only #userBadge,
-body.store-pos-only #logoutBtn,
-body.store-pos-only #login{display:none!important}
-
 </style>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#251c29"></head>
-<body class="store-pos-only">
+<body>
 <section id="login" class="login hidden">
  <div class="loginbox">
   <div class="logo">✦</div><h1>TINKER BELL</h1><p>店舗管理システム</p>
@@ -1005,7 +997,7 @@ body.store-pos-only #login{display:none!important}
 </section>
 
 <div id="app">
-<header><div class="brand"><small>TINKER BELL</small><b>店舗POS</b></div><div class="header-actions"></div></header>
+<header><div class="brand"><small>TINKER BELL</small><b>店舗管理</b></div><div class="header-actions"><button id="userBadge" class="pill">管理者ログイン</button><button id="logoutBtn" class="pill hidden">管理解除</button></div></header>
 <main>
 <section id="home" class="screen active">
  <div class="hero"><div style="font-size:25px;color:#f0cf75">✦</div><h1>Tinker Bell POS</h1><p id="welcome"></p></div>
@@ -1694,7 +1686,7 @@ body.store-pos-only #login{display:none!important}
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v86-store-pos-seat-hold-phone';
+const APP_VERSION='v87-manager-seat-hold-phone';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1905,7 +1897,7 @@ window.tinkerbellApplyCloudCheckoutEvents=events=>{
 };
 window.tinkerbellGetLocalCheckoutEvents=()=>Array.isArray(db.checkoutEvents)?db.checkoutEvents:[];
 
-let managerUnlocked=false;
+let managerUnlocked=sessionStorage.getItem('tb_manager_unlocked')==='1';
 
 function isManager(){return managerUnlocked}
 
@@ -1922,14 +1914,14 @@ function refreshSelects(){
 }
 
 function applyRole(){
- managerUnlocked=false;
  qsa('.manager').forEach(x=>{
   x.classList.toggle('hidden',!managerUnlocked);
   x.classList.toggle('locked',false);
  });
  document.body.classList.toggle('manager-mode',managerUnlocked);
- if($('userBadge'))$('userBadge').textContent='';
- if($('logoutBtn'))$('logoutBtn').classList.add('hidden');
+ $('userBadge').textContent=managerUnlocked?'管理モード':'管理者ログイン';
+ $('userBadge').classList.toggle('manager-unlocked',managerUnlocked);
+ $('logoutBtn').classList.toggle('hidden',!managerUnlocked);
  $('welcome').textContent=managerUnlocked?'管理モードで使用中':'通常業務のみ表示中';
  if($('customerList'))renderCustomers();
 }
@@ -1938,8 +1930,19 @@ const ADMIN_PASSCODE_KEY='tinkerbell_admin_passcode';
 function getAdminPasscode(){return localStorage.getItem(ADMIN_PASSCODE_KEY)||'1234'}
 
 function unlockManager(){
- toast('管理機能は管理者専用画面から操作してください');
- return false;
+ const pin=prompt('管理者パスコードを入力してください');
+ if(pin===null)return false;
+
+ if(String(pin)!==getAdminPasscode()){
+  toast('管理者パスコードが違います');
+  return false;
+ }
+
+ managerUnlocked=true;
+ sessionStorage.setItem('tb_manager_unlocked','1');
+ applyRole();
+ toast('管理モードを解除しました');
+ return true;
 }
 
 function lockManager(){
@@ -1955,8 +1958,7 @@ const MANAGER_SCREENS=new Set(['staff','menu','reports','settings','adminAttenda
 
 function show(idn){
  if(MANAGER_SCREENS.has(idn)&&!managerUnlocked){
-  toast('この端末では管理画面を開けません');
-  return;
+  if(!unlockManager())return;
  }
  qsa('.screen').forEach(x=>x.classList.remove('active'));
  $(idn).classList.add('active');
@@ -1975,8 +1977,11 @@ $('loginBtn').onclick=()=>{
  }
 };
 
-if($('logoutBtn'))$('logoutBtn').onclick=lockManager;
-if($('userBadge'))$('userBadge').onclick=()=>{};
+$('logoutBtn').onclick=lockManager;
+$('userBadge').onclick=()=>{
+ if(managerUnlocked)lockManager();
+ else unlockManager();
+};
 
 let attendanceAction='';
 let attendanceTargetId='';
