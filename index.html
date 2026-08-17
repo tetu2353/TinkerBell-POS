@@ -762,9 +762,22 @@ body.manager-mode .payroll-staff-settings{
  border-top:1px solid #eee;
  font-weight:800
 }
+.daily-report-controls{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+.daily-report-controls label{min-width:170px;margin:0}
+.daily-report-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+.daily-report-metric{border:1px solid #dfd5c8;background:#fffaf4;border-radius:12px;padding:12px;text-align:center}
+.daily-report-metric small{display:block;color:#6a625a;font-weight:800;margin-bottom:4px}
+.daily-report-metric b{font-size:21px}
+.daily-report-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.daily-report-list{display:grid;gap:7px}
+.daily-report-line{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #eee}
+.daily-report-line:last-child{border-bottom:0}
+.daily-report-warning{margin-top:12px;border:2px solid #d79527;background:#fff8e8;border-radius:12px;padding:12px}
 @media(max-width:700px){
  .today-sales-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
  .today-sale-row{flex-direction:column;gap:4px}
+ .daily-report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .daily-report-columns{grid-template-columns:1fr}
 }
 
 
@@ -1364,6 +1377,15 @@ body.manager-mode .payroll-staff-settings{
 <h2>売上・勤怠集計</h2>
 <div id="metrics" class="summary"></div>
 <div class="card">
+  <div class="sectionHead"><h3>日計</h3></div>
+  <div class="daily-report-controls">
+    <label>営業日<input id="dailyReportDate" type="date"></label>
+    <button id="dailyReportToday" class="secondary">今日</button>
+    <button id="dailyReportPrint" class="primary">日計表を印刷</button>
+  </div>
+  <div id="dailyReportBody"></div>
+</div>
+<div class="card">
   <div class="sectionHead"><h3>会計履歴</h3><button id="syncCheckoutHistory" class="secondary">クラウド再読込</button></div>
   <div id="checkoutHistory"></div>
 </div>
@@ -1524,6 +1546,10 @@ body.manager-mode .payroll-staff-settings{
 
   <p><b>ついている女の子</b></p>
   <div id="seatCastChoices" class="seat-cast-grid"></div>
+
+  <label>人数
+   <input id="seatPeople" type="number" min="1" value="1">
+  </label>
 
   <div class="row" style="margin-top:14px">
    <button id="seatModalCancel" class="secondary">閉じる</button>
@@ -1686,7 +1712,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v87-manager-seat-hold-phone';
+const APP_VERSION='v88-manager-seat-hold-phone-daily-report';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2522,6 +2548,7 @@ window.seatReservationArrive=async sid=>{
  seat.customerId=customer.id;
  seat.customerName=customer.name;
  seat.openedAt=nowISO();
+ seat.people=Math.max(1,Number(r.people||1));
  seat.casts=[...new Set(castIds)];
  seat.orders=Array.isArray(seat.orders)?seat.orders:[];
  delete seat.reservation;
@@ -2876,6 +2903,7 @@ function openSeatModal(sid){
 
  $('seatModalTitle').textContent=s.customerName?`${s.name}を変更`:`${s.name}へ入店`;
  $('seatCustomerName').value=s.customerName||'';
+ $('seatPeople').value=Math.max(1,Number(s.people||1));
  renderSeatKanaTabs();
  renderSeatCustomerMatches();
  renderSeatBottlePreview();
@@ -2932,6 +2960,7 @@ $('seatModalSave').onclick=async()=>{
  s.customerId=c.id;
  s.customerName=c.name;
  s.openedAt=s.openedAt||nowISO();
+ s.people=Math.max(1,Number($('seatPeople').value||1));
  s.casts=[...seatCastSelected];
 
  // 空席への新規入店登録だけ来店数を1回加算。
@@ -3174,6 +3203,7 @@ $('seatCheckoutConfirm').onclick=async()=>{
     customerId:s.customerId||'',
     customerName:s.customerName,
     groupCustomerName:s.customerName,
+    people:Math.max(1,Number(s.people||1)),
     openedAt:s.openedAt,
     closedAt:nowISO(),
     paymentMethod,
@@ -3238,6 +3268,7 @@ $('seatCheckoutConfirm').onclick=async()=>{
      customerId:s.customerId||'',
      customerName:name,
      groupCustomerName:s.customerName,
+     people:Math.max(1,Number(s.people||1)),
      openedAt:s.openedAt,
      closedAt:nowISO(),
      paymentMethod:row.paymentMethod,
@@ -3302,6 +3333,7 @@ $('seatCheckoutConfirm').onclick=async()=>{
  s.customerName='';
  s.casts=[];
  s.openedAt='';
+ s.people=1;
  s.orders=[];
  if(selectedOrderSeat===sid)selectedOrderSeat='';
  pendingCheckoutSeatId='';
@@ -5814,6 +5846,99 @@ function localTimeText(value){
  return d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',hour12:false});
 }
 
+function dailyReportData(day){
+ const rows=(db.checkouts||[]).filter(c=>{
+  const active=(c.status||'completed')!=='cancelled'&&!c.cancelledAt;
+  return active&&localDateKey(c.closedAt)===day;
+ });
+ const transactionMap=new Map();
+ rows.forEach(c=>{
+  const key=c.splitGroupId||c.id;
+  if(!transactionMap.has(key))transactionMap.set(key,c);
+ });
+ const transactions=[...transactionMap.values()];
+ const payments={};
+ rows.forEach(c=>{
+  const method=c.paymentMethod||'未設定';
+  payments[method]=(payments[method]||0)+Number(c.total||0);
+ });
+ const items={};
+ let discount=0;
+ const castBacks={};
+ transactions.forEach(c=>(c.orders||[]).forEach(o=>{
+  const qty=Math.max(0,Number(o.qty||1));
+  const amount=Number(o.price||0)*qty;
+  const name=o.name||db.menu.find(m=>m.id===o.menuId)?.name||'名称未登録';
+  if(!items[name])items[name]={qty:0,amount:0};
+  items[name].qty+=qty;
+  items[name].amount+=amount;
+  if(amount<0)discount+=Math.abs(amount);
+
+  const castId=String(o.castId||'');
+  if(!castId)return;
+  const staff=staffById(castId);
+  if(!staff)return;
+  const type=payrollMenuType(o);
+  let back=0;
+  if(type==='キャストドリンク')back=qty*Number(staff.drinkBack||0);
+  if(type==='ボトル')back=qty*Number(staff.bottleBack||0);
+  if(back){
+   if(!castBacks[staff.name])castBacks[staff.name]={drink:0,bottle:0,total:0};
+   if(type==='キャストドリンク')castBacks[staff.name].drink+=qty;
+   if(type==='ボトル')castBacks[staff.name].bottle+=qty;
+   castBacks[staff.name].total+=back;
+  }
+ }));
+ const openSeats=(db.seats||[]).filter(s=>s.customerName||s.openedAt||(s.orders||[]).length);
+ return {
+  day,rows,transactions,payments,items,castBacks,openSeats,discount,
+  total:rows.reduce((s,c)=>s+Number(c.total||0),0),
+  people:transactions.reduce((s,c)=>s+Math.max(0,Number(c.people||0)),0),
+  openTotal:openSeats.reduce((s,c)=>s+seatBilling(c).total,0)
+ };
+}
+
+function dailyReportMarkup(data,forPrint=false){
+ const paymentRows=Object.entries(data.payments).sort((a,b)=>b[1]-a[1]);
+ const itemRows=Object.entries(data.items).sort((a,b)=>b[1].amount-a[1].amount);
+ const castRows=Object.entries(data.castBacks).sort((a,b)=>b[1].total-a[1].total);
+ const checkoutRows=data.rows.slice().sort((a,b)=>String(a.closedAt).localeCompare(String(b.closedAt)));
+ const section=(title,body)=>`<div class="${forPrint?'print-section':'card'}"><h3>${title}</h3>${body}</div>`;
+ return `
+  <div class="daily-report-grid">
+   <div class="daily-report-metric"><small>売上合計</small><b>${yen(data.total)}</b></div>
+   <div class="daily-report-metric"><small>会計件数</small><b>${data.transactions.length}件</b></div>
+   <div class="daily-report-metric"><small>支払件数</small><b>${data.rows.length}件</b></div>
+   <div class="daily-report-metric"><small>来店人数（登録分）</small><b>${data.people}名</b></div>
+   <div class="daily-report-metric"><small>値引き登録</small><b>${yen(data.discount)}</b></div>
+   <div class="daily-report-metric"><small>未会計</small><b>${yen(data.openTotal)}</b></div>
+  </div>
+  <div class="daily-report-columns">
+   ${section('支払方法別',paymentRows.length?`<div class="daily-report-list">${paymentRows.map(([name,amount])=>`<div class="daily-report-line"><span>${esc(name)}</span><b>${yen(amount)}</b></div>`).join('')}</div>`:'<div class="empty">会計なし</div>')}
+   ${section('商品別',itemRows.length?`<div class="daily-report-list">${itemRows.map(([name,v])=>`<div class="daily-report-line"><span>${esc(name)} × ${v.qty}</span><b>${yen(v.amount)}</b></div>`).join('')}</div>`:'<div class="empty">商品なし</div>')}
+  </div>
+  ${section('キャスト別 商品バック（現在の設定額）',castRows.length?`<div class="daily-report-list">${castRows.map(([name,v])=>`<div class="daily-report-line"><span>${esc(name)}　ドリンク${v.drink}／ボトル${v.bottle}</span><b>${yen(v.total)}</b></div>`).join('')}</div>`:'<div class="empty">対象バックなし</div>')}
+  ${section('会計明細',checkoutRows.length?`<div class="daily-report-list">${checkoutRows.map(c=>`<div class="daily-report-line"><span>${esc(localTimeText(c.closedAt))}　${esc(c.seat||'')}　${esc(c.customerName||'お客様')}<small>（${esc(c.paymentMethod||'未設定')}）</small></span><b>${yen(c.total)}</b></div>`).join('')}</div>`:'<div class="empty">会計なし</div>')}
+  ${data.openSeats.length?`<div class="daily-report-warning"><b>未会計席 ${data.openSeats.length}席</b>${data.openSeats.map(s=>`<div class="daily-report-line"><span>${esc(s.name)}　${esc(s.customerName||'')}</span><b>${yen(seatBilling(s).total)}</b></div>`).join('')}</div>`:''}`;
+}
+
+function renderDailyReport(){
+ const input=$('dailyReportDate');
+ const body=$('dailyReportBody');
+ if(!input||!body)return;
+ if(!input.value)input.value=today();
+ body.innerHTML=dailyReportMarkup(dailyReportData(input.value));
+}
+
+function printDailyReport(){
+ const day=$('dailyReportDate').value||today();
+ const data=dailyReportData(day);
+ const w=window.open('','_blank','width=900,height=900');
+ if(!w)return toast('印刷画面を開けません。ポップアップを許可してください');
+ w.document.write(`<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>日計 ${esc(day)}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Yu Gothic",sans-serif;color:#222;margin:24px}h1{text-align:center;margin:0 0 4px}h2{text-align:center;margin:0 0 20px}.daily-report-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.daily-report-metric,.print-section{border:1px solid #aaa;padding:10px;margin-top:10px}.daily-report-metric{text-align:center}.daily-report-metric small{display:block}.daily-report-metric b{font-size:20px}.daily-report-columns{display:grid;grid-template-columns:1fr 1fr;gap:10px}.daily-report-line{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #ddd;padding:6px 0}.daily-report-warning{border:2px solid #b66b00;padding:10px;margin-top:10px}.empty{color:#777}@media print{body{margin:8mm}.print-section{break-inside:avoid}}</style></head><body><h1>TINKER BELL 日計表</h1><h2>${esc(day)}</h2>${dailyReportMarkup(data,true)}<script>window.onload=()=>window.print()<\/script></body></html>`);
+ w.document.close();
+}
+
 function renderTodaySales(){
  const summary=$('todaySalesSummary');
  const detail=$('todaySalesDetail');
@@ -5856,7 +5981,11 @@ function renderTodaySales(){
   :'<div class="empty">今日の会計はまだありません</div>';
 }
 
-function renderAll(){reconcileCustomerLinks();renderAttendance();renderMyAttendance();renderAdminAttendance();renderInventory();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderPayroll();renderTodaySales();renderBackupStatus()}
+function renderAll(){reconcileCustomerLinks();renderAttendance();renderMyAttendance();renderAdminAttendance();renderInventory();renderShifts();renderSeats();renderOrders();renderCustomers();renderBottles();renderVisits();renderNotices();renderStaff();renderMenu();renderReports();renderPayroll();renderTodaySales();renderDailyReport();renderBackupStatus()}
+
+$('dailyReportDate').onchange=renderDailyReport;
+$('dailyReportToday').onclick=()=>{$('dailyReportDate').value=today();renderDailyReport()};
+$('dailyReportPrint').onclick=printDailyReport;
 
 $('changeAdminPasscode').onclick=async()=>{
  const currentCode=$('currentAdminPasscode').value.trim();
