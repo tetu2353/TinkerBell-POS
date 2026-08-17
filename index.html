@@ -773,6 +773,11 @@ body.manager-mode .payroll-staff-settings{
 .daily-report-line{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #eee}
 .daily-report-line:last-child{border-bottom:0}
 .daily-report-warning{margin-top:12px;border:2px solid #d79527;background:#fff8e8;border-radius:12px;padding:12px}
+.daily-close-card{border:2px solid #b88a35;background:linear-gradient(145deg,#fff9e9,#fff)}
+.daily-close-button{width:100%;min-height:66px;font-size:20px;margin-top:10px}
+.daily-close-status{margin-top:10px;padding:10px 12px;border-radius:11px;background:#f2f2f2;font-weight:900}
+.daily-close-status.sent{background:#e8f7ed;color:#21733b}
+.daily-close-status.error{background:#fdeaea;color:#a12828}
 @media(max-width:700px){
  .today-sales-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
  .today-sale-row{flex-direction:column;gap:4px}
@@ -1027,7 +1032,6 @@ body.manager-mode .payroll-staff-settings{
   <button class="tile" data-go="customers"><span>👤</span><b>お客様</b><small>担当・履歴・メモ</small></button>
   <button class="tile" data-go="bottles"><span>🍾</span><b>ボトル</b><small>残量・保管場所</small></button>
   <button class="tile" data-go="visits"><span>🤝</span><b>同伴・来店予定</b><small>予約を共有</small></button>
-  <button class="tile" data-go="notices"><span>🔔</span><b>お知らせ</b><small>店舗からの連絡</small></button>
   </div><h2 class="management-heading">管理</h2><div class="grid management-grid"><button class="tile manager manager-tile" data-go="staff"><span>👥</span><b>従業員管理</b><small>時給・手当・権限</small></button>
   <button class="tile manager manager-tile" data-go="menu"><span>📖</span><b>メニュー管理</b><small>料金・バック設定</small></button>
   <button class="tile manager manager-tile" data-go="adminAttendance"><span>🗓️</span><b>全員の勤怠</b><small>月・日別の出退勤</small></button>
@@ -1127,6 +1131,12 @@ body.manager-mode .payroll-staff-settings{
   <h3 style="margin-top:0">今日の売上</h3>
   <div id="todaySalesSummary"></div>
   <div id="todaySalesDetail" style="margin-top:12px"></div>
+</div>
+<div class="card daily-close-card">
+  <h3 style="margin:0">🌙 営業終了の日計</h3>
+  <div class="meta">閉店時に黒服さんが押すと、本日の日計を登録済みの管理者LINEへ送ります。</div>
+  <button id="sendDailyCloseToLine" class="primary daily-close-button">本日の日計を管理者LINEへ送る</button>
+  <div id="dailyCloseLineStatus" class="daily-close-status">まだ送信していません</div>
 </div>
 <div class="order-seat-header">
   <button class="secondary" onclick="show('seats')">← 席一覧</button>
@@ -1712,7 +1722,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v88-manager-seat-hold-phone-daily-report';
+const APP_VERSION='v89-manager-daily-close-line';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -5939,6 +5949,81 @@ function printDailyReport(){
  w.document.close();
 }
 
+let pendingDailyClosingId='';
+function setDailyCloseStatus(message,state=''){
+ const el=$('dailyCloseLineStatus');
+ if(!el)return;
+ el.textContent=message;
+ el.classList.toggle('sent',state==='sent');
+ el.classList.toggle('error',state==='error');
+}
+
+window.tinkerbellApplyDailyClosingResult=result=>{
+ if(!result||typeof result!=='object')return;
+ if(pendingDailyClosingId&&result.requestId!==pendingDailyClosingId)return;
+ if(result.status==='sent'){
+  const count=Number(result.recipientCount||0);
+  setDailyCloseStatus(`送信完了：管理者 ${count}人へLINEを送りました`,'sent');
+  pendingDailyClosingId='';
+ }else if(result.status==='error'){
+  setDailyCloseStatus(`送信できません：${result.message||'エラー'}`,'error');
+  pendingDailyClosingId='';
+ }else if(result.status==='sending'){
+  setDailyCloseStatus('管理者LINEへ送信中...');
+ }
+};
+
+async function sendDailyClosingToLine(){
+ const button=$('sendDailyCloseToLine');
+ if(!window.tinkerbellFirebase?.sendDailyClosing){
+  return toast('Firebaseの準備中です。少し待ってから押してください');
+ }
+ const data=dailyReportData(today());
+ if(!data.rows.length&&!confirm('本日の確定会計は0件です。この内容で日計を送りますか？'))return;
+ if(data.openSeats.length&&!confirm(`未会計の席が${data.openSeats.length}席あります。未会計のまま日計を送りますか？`))return;
+
+ const previous=localStorage.getItem('tinkerbell_daily_closer_name')||'';
+ const closedBy=prompt('日計を締める黒服さんの名前を入力してください',previous);
+ if(closedBy===null)return;
+ if(!closedBy.trim())return toast('締め担当者の名前を入力してください');
+ localStorage.setItem('tinkerbell_daily_closer_name',closedBy.trim());
+ if(!confirm(`${today()}の日計を管理者LINEへ送ります。よろしいですか？`))return;
+
+ const requestId=id();
+ const payload={
+  id:requestId,
+  businessDate:today(),
+  requestedAt:nowISO(),
+  closedBy:closedBy.trim(),
+  total:data.total,
+  transactionCount:data.transactions.length,
+  paymentCount:data.rows.length,
+  people:data.people,
+  discount:data.discount,
+  openTotal:data.openTotal,
+  payments:Object.entries(data.payments).map(([name,amount])=>({name,amount})),
+  items:Object.entries(data.items).map(([name,v])=>({name,qty:v.qty,amount:v.amount})).sort((a,b)=>b.amount-a.amount),
+  castBacks:Object.entries(data.castBacks).map(([name,v])=>({name,drink:v.drink,bottle:v.bottle,total:v.total})).sort((a,b)=>b.total-a.total),
+  openSeats:data.openSeats.map(s=>({name:s.name,customerName:s.customerName||'',amount:seatBilling(s).total}))
+ };
+
+ button.disabled=true;
+ pendingDailyClosingId=requestId;
+ setDailyCloseStatus('日計を送信中...');
+ try{
+  await window.tinkerbellFirebase.sendDailyClosing(payload);
+  setDailyCloseStatus('送信依頼を受け付けました。LINE送信結果を確認中...');
+ }catch(error){
+  console.error(error);
+  pendingDailyClosingId='';
+  setDailyCloseStatus('送信依頼に失敗しました。通信を確認してください','error');
+ }finally{
+  button.disabled=false;
+ }
+}
+
+$('sendDailyCloseToLine').onclick=sendDailyClosingToLine;
+
 function renderTodaySales(){
  const summary=$('todaySalesSummary');
  const detail=$('todaySalesDetail');
@@ -6454,6 +6539,21 @@ async function saveSharedSchedulesToFirebase(sharedSchedules){
  firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
  await setDoc(doc(firestoreDb,"app","data"),{sharedSchedules,sharedSchedulesUpdatedAt:new Date().toISOString()},{merge:true});
 }
+async function sendDailyClosingToFirebase(request){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ await setDoc(doc(firestoreDb,"app","data"),{
+  dailyClosingRequest:request,
+  dailyClosingRequestedAt:new Date().toISOString()
+ },{merge:true});
+}
+function startDailyClosingResultSync(){
+ firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
+ return onSnapshot(doc(firestoreDb,"app","data"),snap=>{
+  if(!snap.exists())return;
+  const result=snap.data()?.dailyClosingResult;
+  if(result&&typeof result==='object')window.tinkerbellApplyDailyClosingResult?.(result);
+ },e=>console.error('Daily closing result sync failed:',e));
+}
 function startSharedShiftScheduleSync(){
  firebaseApp ||= initializeApp(firebaseConfig);firestoreDb ||= getFirestore(firebaseApp);
  const ref=doc(firestoreDb,"app","data");
@@ -6501,6 +6601,7 @@ window.tinkerbellFirebase = {
   saveSharedShifts: saveSharedShiftsToFirebase,
   saveSharedShiftMeta: saveSharedShiftMetaToFirebase,
   saveSharedSchedules: saveSharedSchedulesToFirebase,
+  sendDailyClosing: sendDailyClosingToFirebase,
   savePayrollAdjustments: savePayrollAdjustmentsToFirebase,
   saveAttendance: saveAttendanceToFirebase,
   saveInventory: saveInventoryToFirebase,
@@ -6517,6 +6618,7 @@ startSharedShiftScheduleSync();
 startPayrollAdjustmentsSync();
 startAttendanceRealtimeSync();
 startInventoryRealtimeSync();
+startDailyClosingResultSync();
 initializeSharedShiftSchedule();
 </script>
 
