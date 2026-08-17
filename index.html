@@ -1544,7 +1544,27 @@ body.store-pos-only #login{display:none!important}
   <h2 id="seatReservePickTitle">今日の予定から仮押さえ</h2>
   <div class="meta">来店前の仮押さえです。注文は「来店・注文開始」を押すまで始まりません。</div>
   <div id="seatReservePickList" class="seat-reservation-list"></div>
+  <button id="seatPhoneReserveOpen" class="primary" style="width:100%;margin-top:14px">☎ 電話予約を直接入力</button>
   <button id="seatReservePickClose" class="secondary" style="width:100%;margin-top:14px">閉じる</button>
+ </div>
+</div>
+<div id="seatPhoneReserveModal" class="modal hidden">
+ <div class="modal-card">
+  <h2 id="seatPhoneReserveTitle">電話予約を登録</h2>
+  <div class="row">
+   <label>区分<select id="seatPhoneReserveType"><option value="予約">予約・来店予定</option><option value="同伴">同伴</option></select></label>
+   <label>予定時間<input id="seatPhoneReserveTime" type="time"></label>
+  </div>
+  <label>お客様名<input id="seatPhoneReserveCustomer" placeholder="例：田中様"></label>
+  <div class="row">
+   <label>人数<input id="seatPhoneReservePeople" type="number" min="1" value="1"></label>
+   <label>担当<select id="seatPhoneReserveCast"></select></label>
+  </div>
+  <label>メモ<input id="seatPhoneReserveMemo" placeholder="電話内容など"></label>
+  <div class="row" style="margin-top:14px">
+   <button id="seatPhoneReserveCancel" class="secondary">戻る</button>
+   <button id="seatPhoneReserveSave" class="primary">予定登録＋席を仮押さえ</button>
+  </div>
  </div>
 </div>
 <div id="seatReservationModal" class="modal hidden">
@@ -1674,7 +1694,7 @@ body.store-pos-only #login{display:none!important}
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v85-store-pos-seat-hold';
+const APP_VERSION='v86-store-pos-seat-hold-phone';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2508,6 +2528,51 @@ window.seatReservationArrive=async sid=>{
 };
 
 $('seatReservePickClose').onclick=()=>$('seatReservePickModal').classList.add('hidden');
+$('seatPhoneReserveOpen').onclick=()=>{
+ const seat=db.seats.find(s=>s.id===seatReservationSeatId);
+ if(!seat)return;
+ $('seatPhoneReserveTitle').textContent=`${seat.name}へ電話予約を仮押さえ`;
+ $('seatPhoneReserveType').value='予約';
+ $('seatPhoneReserveTime').value='';
+ $('seatPhoneReserveCustomer').value='';
+ $('seatPhoneReservePeople').value='1';
+ $('seatPhoneReserveMemo').value='';
+ const casts=db.staff.filter(s=>s.role==='cast');
+ $('seatPhoneReserveCast').innerHTML='<option value="">担当未定</option>'+casts.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+ $('seatReservePickModal').classList.add('hidden');
+ $('seatPhoneReserveModal').classList.remove('hidden');
+};
+$('seatPhoneReserveCancel').onclick=()=>{
+ $('seatPhoneReserveModal').classList.add('hidden');
+ if(seatReservationSeatId)$('seatReservePickModal').classList.remove('hidden');
+};
+$('seatPhoneReserveSave').onclick=()=>{
+ const seat=db.seats.find(s=>s.id===seatReservationSeatId);
+ if(!seat||seat.customerName||seat.reservation)return toast('この席には登録できません');
+ const customerName=$('seatPhoneReserveCustomer').value.trim();
+ if(!customerName)return toast('お客様名を入力してください');
+ const castId=$('seatPhoneReserveCast').value||'';
+ const customer=db.customers.find(c=>normalizeCustomerNameForMatch(c.name)===normalizeCustomerNameForMatch(customerName));
+ const visit={
+  id:id(),
+  date:today(),
+  type:$('seatPhoneReserveType').value||'予約',
+  time:$('seatPhoneReserveTime').value||'',
+  customerId:customer?.id||'',
+  customer:customer?.name||customerName,
+  castId,
+  people:Math.max(1,Number($('seatPhoneReservePeople').value||1)),
+  memo:$('seatPhoneReserveMemo').value.trim(),
+  source:'phone',
+  createdAt:nowISO()
+ };
+ db.visits.push(visit);
+ persist();
+ window.chooseSeatReservation(seat.id,visit.id);
+ saveSharedSchedulesFromPos();
+ $('seatPhoneReserveModal').classList.add('hidden');
+ toast('電話予約を登録して席を仮押さえしました');
+};
 $('seatReservationClose').onclick=()=>$('seatReservationModal').classList.add('hidden');
 $('seatReservationRelease').onclick=()=>releaseSeatReservation(seatReservationDetailId);
 $('seatReservationArrive').onclick=()=>seatReservationArrive(seatReservationDetailId);
