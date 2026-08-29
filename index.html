@@ -142,6 +142,11 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .seat-inuse .seat-status{background:#2f9c4b;color:#fff}
 .seat-customer{font-size:25px;font-weight:1000;margin-top:14px;line-height:1.15;color:#201821}
 .seat-casts{font-size:20px;font-weight:900;margin-top:10px;color:#5b3f63}
+.seat-cast-chip{display:inline-flex;align-items:center;margin:3px 5px 3px 0;padding:8px 12px;border:2px solid #aa86b4;border-radius:999px;background:#fff;color:#5b3f63;font:inherit;font-size:17px;font-weight:1000;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.seat-cast-chip:active{cursor:grabbing}.seat-cast-chip.dragging{opacity:.28}
+.seat.cast-drop-ready{outline:5px solid #1fa64a;outline-offset:2px;background:#e3f8e9!important;transform:scale(1.015)}
+.seat-cast-drag-ghost{position:fixed;z-index:10000;pointer-events:none;padding:11px 16px;border-radius:999px;background:#6d3f75;color:#fff;font-size:18px;font-weight:1000;box-shadow:0 8px 24px #0006;transform:translate(-50%,-50%)}
+.seat-move-help{margin:0 0 12px;padding:10px 13px;border-radius:12px;background:#f4edf6;color:#5b3f63;font-size:15px;font-weight:900}
 .seat-total{font-size:26px;font-weight:1000;margin-top:12px;color:#7b4f0e}
 .seat-order-count{font-size:16px;font-weight:800;margin-top:4px;color:#6f6670}
 .seat-empty-text{font-size:24px;font-weight:900;margin-top:34px;color:#82798a}
@@ -1124,7 +1129,7 @@ body.manager-mode .payroll-staff-settings{
  </div>
 </section>
 
-<section id="seats" class="screen"><h2>席管理</h2><div id="seatGrid" class="seat-grid"></div></section>
+<section id="seats" class="screen"><h2>席管理</h2><div class="seat-move-help">女の子の名前を長押ししたまま、別の使用中の席へ動かすと配置を変更できます</div><div id="seatGrid" class="seat-grid"></div></section>
 
 <section id="orders" class="screen">
 <div class="card">
@@ -2433,7 +2438,7 @@ function renderSeats(){
   const statusClass=s.customerName?'seat-inuse':reserved?'seat-reserved':'seat-empty';
   const clickAction=s.customerName?`openSeatOrder('${s.id}')`:reserved?`openSeatReservation('${s.id}')`:`openSeat('${s.id}')`;
 
-  return `<div class="seat ${typeClass} ${statusClass}" onclick="${clickAction}">
+  return `<div class="seat ${typeClass} ${statusClass}" data-seat-id="${esc(s.id)}" onclick="${clickAction}">
    <div class="seat-topline">
     <div class="seat-number">${esc(s.name)}</div>
     <div class="seat-status">${s.customerName?'使用中':reserved?'仮押さえ':'空席'}</div>
@@ -2442,7 +2447,7 @@ function renderSeats(){
    <div class="seat-customer">${esc(s.customerName||(reserved?s.reservation.customerName:''))}</div>
 
    ${s.customerName?`
-    <div class="seat-casts">${castNames.length?castNames.map(esc).join('・'):'担当なし'}</div>
+    <div class="seat-casts">${castNames.length?s.casts.map(castId=>{const c=staffById(castId);return c?`<button type="button" class="seat-cast-chip" data-cast-move="${esc(castId)}" data-from-seat="${esc(s.id)}" onclick="event.stopPropagation()">${esc(c.name)}</button>`:''}).join(''):'担当なし'}</div>
     <div class="seat-total">${yen(seatTotal(s))}</div>
     <div class="seat-order-count">注文 ${s.orders.length}件</div>
     <div class="item-actions seat-actions">
@@ -2468,6 +2473,78 @@ function renderSeats(){
    `}
   </div>`;
  }).join('');
+ bindSeatCastLongPress();
+}
+
+let seatCastDrag=null;
+function clearSeatCastDrag(){
+ if(!seatCastDrag)return;
+ clearTimeout(seatCastDrag.timer);
+ seatCastDrag.chip?.classList.remove('dragging');
+ document.querySelectorAll('.seat.cast-drop-ready').forEach(x=>x.classList.remove('cast-drop-ready'));
+ seatCastDrag.ghost?.remove();
+ seatCastDrag=null;
+}
+function seatAtPoint(x,y){
+ const el=document.elementFromPoint(x,y)?.closest?.('.seat');
+ if(!el)return null;
+ const sid=el.dataset.seatId;
+ const seat=db.seats.find(s=>s.id===sid);
+ return seat?.customerName?seat:null;
+}
+function beginSeatCastDrag(state,e){
+ if(seatCastDrag!==state)return;
+ state.active=true;
+ state.chip.classList.add('dragging');
+ const ghost=document.createElement('div');
+ ghost.className='seat-cast-drag-ghost';
+ ghost.textContent=staffById(state.castId)?.name||'女の子';
+ document.body.appendChild(ghost);state.ghost=ghost;
+ moveSeatCastGhost(state,e.clientX,e.clientY);
+ if(navigator.vibrate)navigator.vibrate(40);
+}
+function moveSeatCastGhost(state,x,y){
+ if(state.ghost){state.ghost.style.left=x+'px';state.ghost.style.top=y+'px'}
+ document.querySelectorAll('.seat.cast-drop-ready').forEach(el=>el.classList.remove('cast-drop-ready'));
+ const target=seatAtPoint(x,y);
+ if(target&&target.id!==state.fromSeatId){
+  document.querySelector(`.seat[data-seat-id="${CSS.escape(target.id)}"]`)?.classList.add('cast-drop-ready');
+ }
+}
+function finishSeatCastDrag(state,e){
+ if(seatCastDrag!==state)return;
+ clearTimeout(state.timer);
+ if(state.active){
+  e.preventDefault();e.stopPropagation();
+  const target=seatAtPoint(e.clientX,e.clientY);
+  if(target&&target.id!==state.fromSeatId){
+   db.seats.forEach(s=>{if(Array.isArray(s.casts))s.casts=s.casts.filter(idn=>idn!==state.castId)});
+   target.casts=Array.isArray(target.casts)?target.casts:[];
+   if(!target.casts.includes(state.castId))target.casts.push(state.castId);
+   const castName=staffById(state.castId)?.name||'女の子';
+   persist();clearSeatCastDrag();renderSeats();
+   toast(`${castName}を${target.name}へ移動しました`);return;
+  }
+ }
+ clearSeatCastDrag();
+}
+function bindSeatCastLongPress(){
+ document.querySelectorAll('[data-cast-move]').forEach(chip=>{
+  chip.onpointerdown=e=>{
+   e.stopPropagation();
+   const state={chip,castId:chip.dataset.castMove,fromSeatId:chip.dataset.fromSeat,active:false,ghost:null,timer:null,startX:e.clientX,startY:e.clientY};
+   seatCastDrag=state;chip.setPointerCapture?.(e.pointerId);
+   state.timer=setTimeout(()=>beginSeatCastDrag(state,e),450);
+  };
+  chip.onpointermove=e=>{
+   const state=seatCastDrag;if(!state||state.chip!==chip)return;
+   if(!state.active&&Math.hypot(e.clientX-state.startX,e.clientY-state.startY)>12){clearSeatCastDrag();return}
+   if(state.active){e.preventDefault();e.stopPropagation();moveSeatCastGhost(state,e.clientX,e.clientY)}
+  };
+  chip.onpointerup=e=>finishSeatCastDrag(seatCastDrag,e);
+  chip.onpointercancel=()=>clearSeatCastDrag();
+  chip.oncontextmenu=e=>e.preventDefault();
+ });
 }
 
 let seatReservationSeatId='',seatReservationDetailId='';
