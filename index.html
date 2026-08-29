@@ -146,6 +146,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .seat-cast-chip:active{cursor:grabbing}.seat-cast-chip.dragging{opacity:.28}
 .seat.cast-drop-ready{outline:5px solid #1fa64a;outline-offset:2px;background:#e3f8e9!important;transform:scale(1.015)}
 .seat-cast-drag-ghost{position:fixed;z-index:10000;pointer-events:none;padding:11px 16px;border-radius:999px;background:#6d3f75;color:#fff;font-size:18px;font-weight:1000;box-shadow:0 8px 24px #0006;transform:translate(-50%,-50%)}
+.seat-cast-board{margin:10px 0 14px;padding:13px;border:2px solid #dfd2e6;border-radius:16px;background:#fbf8fd}.seat-cast-board h3{margin:0 0 10px;font-size:17px}.seat-cast-groups{display:grid;grid-template-columns:1fr 1fr;gap:10px}.seat-cast-group{border:1px solid #e5dce9;border-radius:13px;background:#fff;padding:10px;min-height:76px}.seat-cast-group-title{font-size:13px;font-weight:1000;color:#6f6274;margin-bottom:7px}.waiting-cast-chip,.working-cast-chip{display:inline-flex;align-items:center;margin:3px 5px 3px 0;padding:8px 12px;border:2px solid #aa86b4;border-radius:999px;background:#fff;color:#5b3f63;font-size:16px;font-weight:1000;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}.working-cast-chip{border-color:#c8a34f;background:#fff9e9;color:#775714}.cast-seat-label{font-size:11px;margin-left:6px;opacity:.8}.cast-wait-drop-ready{outline:5px solid #1fa64a;outline-offset:2px;background:#e3f8e9!important}@media(max-width:560px){.seat-cast-groups{grid-template-columns:1fr}}
 .seat-move-help{margin:0 0 12px;padding:10px 13px;border-radius:12px;background:#f4edf6;color:#5b3f63;font-size:15px;font-weight:900}
 .seat-total{font-size:26px;font-weight:1000;margin-top:12px;color:#7b4f0e}
 .seat-order-count{font-size:16px;font-weight:800;margin-top:4px;color:#6f6670}
@@ -1129,7 +1130,7 @@ body.manager-mode .payroll-staff-settings{
  </div>
 </section>
 
-<section id="seats" class="screen"><h2>席管理</h2><div class="seat-move-help">女の子の名前を長押ししたまま、別の使用中の席へ動かすと配置を変更できます</div><div id="seatGrid" class="seat-grid"></div></section>
+<section id="seats" class="screen"><h2>席管理</h2><div class="seat-move-help">女の子の名前を長押しして席へ移動できます。席から「待機中」へ戻すこともできます。</div><div id="seatCastBoard" class="seat-cast-board"><h3>👠 出勤キャスト</h3><div class="seat-cast-groups"><div id="waitingCastZone" class="seat-cast-group"><div class="seat-cast-group-title">待機中</div><div id="waitingCastList"></div></div><div class="seat-cast-group"><div class="seat-cast-group-title">接客中</div><div id="workingCastList"></div></div></div></div><div id="seatGrid" class="seat-grid"></div></section>
 
 <section id="orders" class="screen">
 <div class="card">
@@ -2088,6 +2089,7 @@ $('attendanceConfirmYes').onclick=async()=>{
   $('attendancePickCard').classList.add('hidden');
   renderAttendance();
   renderPayroll();
+  renderSeats();
   await syncAttendanceCloud();
   toast(`${staff.name}を出勤登録しました`);
   return;
@@ -2170,6 +2172,7 @@ $('attendanceModalSave').onclick=async()=>{
  renderMyAttendance();
  renderAdminAttendance();
  renderPayroll();
+ renderSeats();
  await syncAttendanceCloud();
  toast(`${staff.name}を退勤登録しました`);
 };
@@ -2429,7 +2432,24 @@ function seatCastNames(s){
   :[];
 }
 
+function activeCastIds(){
+ return new Set((db.attendance||[]).filter(r=>r.in&&!r.out).map(r=>r.staffId));
+}
+function castSeat(castId){
+ return db.seats.find(s=>Array.isArray(s.casts)&&s.casts.includes(castId))||null;
+}
+function renderSeatCastBoard(){
+ const active=activeCastIds();
+ const casts=db.staff.filter(s=>s.role==='cast'&&active.has(s.id));
+ const waiting=casts.filter(c=>!castSeat(c.id));
+ const working=casts.filter(c=>castSeat(c.id));
+ const wl=$('waitingCastList'),wk=$('workingCastList');
+ if(wl)wl.innerHTML=waiting.length?waiting.map(c=>`<button type="button" class="waiting-cast-chip" data-cast-move="${esc(c.id)}" data-from-seat="" onclick="event.stopPropagation()">${esc(c.name)}</button>`).join(''):'<div class="meta">待機中のキャストはいません</div>';
+ if(wk)wk.innerHTML=working.length?working.map(c=>{const seat=castSeat(c.id);return `<button type="button" class="working-cast-chip" data-cast-move="${esc(c.id)}" data-from-seat="${esc(seat?.id||'')}" onclick="event.stopPropagation()">${esc(c.name)}<span class="cast-seat-label">${esc(seat?.name||'')}</span></button>`}).join(''):'<div class="meta">接客中のキャストはいません</div>';
+}
+
 function renderSeats(){
+ renderSeatCastBoard();
  $('seatGrid').innerHTML=db.seats.map(s=>{
   const castNames=seatCastNames(s);
   const isBox=String(s.id||'').startsWith('B') || String(s.name||'').toUpperCase().includes('BOX');
@@ -2444,7 +2464,7 @@ function renderSeats(){
     <div class="seat-status">${s.customerName?'使用中':reserved?'仮押さえ':'空席'}</div>
    </div>
 
-   <div class="seat-customer">${esc(s.customerName||(reserved?s.reservation.customerName:''))}</div>
+   <div class="seat-customer">${esc(s.customerName||(reserved?s.reservation.customerName:''))}${(s.customerName||(reserved?s.reservation.customerName:''))?' 様':''}</div>
 
    ${s.customerName?`
     <div class="seat-casts">${castNames.length?s.casts.map(castId=>{const c=staffById(castId);return c?`<button type="button" class="seat-cast-chip" data-cast-move="${esc(castId)}" data-from-seat="${esc(s.id)}" onclick="event.stopPropagation()">${esc(c.name)}</button>`:''}).join(''):'担当なし'}</div>
@@ -2482,6 +2502,7 @@ function clearSeatCastDrag(){
  clearTimeout(seatCastDrag.timer);
  seatCastDrag.chip?.classList.remove('dragging');
  document.querySelectorAll('.seat.cast-drop-ready').forEach(x=>x.classList.remove('cast-drop-ready'));
+ $('waitingCastZone')?.classList.remove('cast-wait-drop-ready');
  seatCastDrag.ghost?.remove();
  seatCastDrag=null;
 }
@@ -2491,6 +2512,9 @@ function seatAtPoint(x,y){
  const sid=el.dataset.seatId;
  const seat=db.seats.find(s=>s.id===sid);
  return seat?.customerName?seat:null;
+}
+function waitingZoneAtPoint(x,y){
+ return document.elementFromPoint(x,y)?.closest?.('#waitingCastZone')||null;
 }
 function beginSeatCastDrag(state,e){
  if(seatCastDrag!==state)return;
@@ -2506,9 +2530,12 @@ function beginSeatCastDrag(state,e){
 function moveSeatCastGhost(state,x,y){
  if(state.ghost){state.ghost.style.left=x+'px';state.ghost.style.top=y+'px'}
  document.querySelectorAll('.seat.cast-drop-ready').forEach(el=>el.classList.remove('cast-drop-ready'));
+ $('waitingCastZone')?.classList.remove('cast-wait-drop-ready');
  const target=seatAtPoint(x,y);
  if(target&&target.id!==state.fromSeatId){
   document.querySelector(`.seat[data-seat-id="${CSS.escape(target.id)}"]`)?.classList.add('cast-drop-ready');
+ }else if(state.fromSeatId&&waitingZoneAtPoint(x,y)){
+  $('waitingCastZone')?.classList.add('cast-wait-drop-ready');
  }
 }
 function finishSeatCastDrag(state,e){
@@ -2517,6 +2544,12 @@ function finishSeatCastDrag(state,e){
  if(state.active){
   e.preventDefault();e.stopPropagation();
   const target=seatAtPoint(e.clientX,e.clientY);
+  if(state.fromSeatId&&waitingZoneAtPoint(e.clientX,e.clientY)){
+   db.seats.forEach(s=>{if(Array.isArray(s.casts))s.casts=s.casts.filter(idn=>idn!==state.castId)});
+   const castName=staffById(state.castId)?.name||'女の子';
+   persist();clearSeatCastDrag();renderSeats();
+   toast(`${castName}を待機中へ戻しました`);return;
+  }
   if(target&&target.id!==state.fromSeatId){
    db.seats.forEach(s=>{if(Array.isArray(s.casts))s.casts=s.casts.filter(idn=>idn!==state.castId)});
    target.casts=Array.isArray(target.casts)?target.casts:[];
