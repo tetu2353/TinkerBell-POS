@@ -1906,6 +1906,8 @@ window.tinkerbellApplyCloudStaff=staff=>{
   persist();
   refreshSelects();
   renderStaff();
+  // 出勤キャスト一覧・接客中表示は従業員データにも依存するため即時更新
+  renderSeats();
 };
 window.tinkerbellGetLocalStaff=()=>Array.isArray(db.staff)?db.staff:[];
 window.tinkerbellApplyCloudMenu=menu=>{
@@ -1946,7 +1948,13 @@ window.tinkerbellApplyCloudAttendance=rows=>{
  const map=new Map((db.attendance||[]).map(r=>[r.id,r]));
  rows.forEach(r=>map.set(r.id,{...(map.get(r.id)||{}),...r}));
  db.attendance=[...map.values()].sort((a,b)=>String(a.in||'').localeCompare(String(b.in||'')));
- persist();renderAttendance();renderMyAttendance();renderAdminAttendance();renderPayroll();
+ persist();
+ renderAttendance();
+ renderMyAttendance();
+ renderAdminAttendance();
+ renderPayroll();
+ // LINE/Firebase側で出退勤が変わった瞬間に席管理も更新する
+ renderSeats();
 };
 window.tinkerbellGetLocalAttendance=()=>Array.isArray(db.attendance)?db.attendance:[];
 
@@ -2471,15 +2479,18 @@ function seatCastNames(s){
 }
 
 function activeCastIds(){
- // 夜営業では0時をまたぐため、日付ではなく「出勤済み・未退勤」を現在出勤中として扱う
- return new Set((db.attendance||[]).filter(r=>r.in&&!r.out).map(r=>r.staffId));
+ // 夜営業では0時をまたぐため、日付ではなく「出勤済み・未退勤」を現在出勤中として扱う。
+ // Firebase由来のIDが数値/文字列で揺れても一致するよう文字列へ正規化する。
+ return new Set((db.attendance||[])
+  .filter(r=>r&&r.in&&!r.out&&r.staffId!==undefined&&r.staffId!==null&&String(r.staffId)!=='')
+  .map(r=>String(r.staffId)));
 }
 function castSeat(castId){
  return db.seats.find(s=>Array.isArray(s.casts)&&s.casts.includes(castId))||null;
 }
 function renderSeatCastBoard(){
  const active=activeCastIds();
- const casts=db.staff.filter(s=>s.role==='cast'&&active.has(s.id));
+ const casts=db.staff.filter(s=>s.role==='cast'&&active.has(String(s.id)));
  const waiting=casts.filter(c=>!castSeat(c.id));
  const working=casts.filter(c=>castSeat(c.id));
  const wl=$('waitingCastList'),wk=$('workingCastList');
