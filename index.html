@@ -136,6 +136,8 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .seat-section{margin-bottom:14px}.seat-section-title{display:flex;align-items:center;justify-content:space-between;margin:0 0 7px;padding:0 3px}.seat-section-title b{font-size:18px}.seat-section-title small{font-weight:900;color:#756978}
 .seat-row-grid{display:grid;gap:8px}.counter-seat-grid,.box-seat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 .seat-tap-hint{margin-top:7px;font-size:12px;font-weight:900;color:#786d7d}.seat-mini-move{width:100%;min-height:32px;margin-top:7px;border:0;border-radius:9px;background:#2b252d;color:#fff;font-size:12px;font-weight:900;padding:5px}
+.seat-current-total{margin-top:7px;font-size:20px;font-weight:1000;color:#81530d}.seat-open-time{margin-top:3px;font-size:11px;font-weight:900;color:#736978}
+.seat-detail-actions{display:grid!important;grid-template-columns:1fr 1fr;gap:9px}.seat-detail-actions button{min-height:52px;font-size:16px}
 .seat{min-height:210px;border-width:3px!important;border-style:solid!important;border-radius:20px!important;padding:16px!important;box-shadow:0 8px 18px #00000012;transition:.12s}
 .seat:active{transform:scale(.985)}
 .seat-counter.seat-empty{background:#eef6ff!important;border-color:#5b9bd5!important}
@@ -187,6 +189,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
  .seat-status{font-size:11px;padding:4px 6px}
  .seat-customer{font-size:17px;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .seat-casts{font-size:14px;margin-top:6px;max-height:42px;overflow:auto}
+ .seat-current-total{font-size:17px;margin-top:5px}.seat-open-time{font-size:10px}
  .seat-cast-chip{font-size:12px;padding:5px 7px;margin:2px 2px 2px 0;border-width:1px}
  .seat-empty-text{font-size:18px;margin-top:18px}
  .seat-reservation-type{font-size:11px;margin-top:6px;padding:4px 6px}
@@ -1595,10 +1598,12 @@ body.manager-mode .payroll-staff-settings{
   <div class="modal-card">
     <h2 id="seatDetailTitle">席詳細</h2>
     <div id="seatDetailBody"></div>
-    <div class="row" style="margin-top:14px">
-      <button id="seatDetailClose" class="secondary">閉じる</button>
-      <button id="seatDetailEdit" class="secondary">席を変更</button>
-      <button id="seatDetailOrder" class="primary">注文・会計へ</button>
+    <div class="seat-detail-actions" style="margin-top:14px">
+      <button id="seatDetailOrder" class="primary">注文を追加</button>
+      <button id="seatDetailCheckout" class="primary">会計へ進む</button>
+      <button id="seatDetailEdit" class="secondary">女の子・人数を変更</button>
+      <button id="seatDetailMove" class="secondary">席を移動</button>
+      <button id="seatDetailClose" class="secondary" style="grid-column:1/-1">閉じる</button>
     </div>
   </div>
 </div>
@@ -1814,7 +1819,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v101-ipad-seat-layout';
+const APP_VERSION='v102-seat-detail-order-checkout';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2531,6 +2536,10 @@ function customerDisplayName(name,fallback=''){
  const value=String(name||fallback||'').trim();
  return value&& !value.endsWith('様')?`${value} 様`:value;
 }
+function seatOpenedTime(value){
+ if(!value)return '時刻未登録';
+ const d=new Date(value);return Number.isNaN(d.getTime())?'時刻未登録':d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+}
 let seatEditId='',seatCastSelected=[],seatSelectedCustomerId='',seatKanaFilter='あ';
 let seatUndoSnapshot=null,seatAction=null;
 function seatSnapshot(){return JSON.stringify(db.seats)}
@@ -2563,7 +2572,7 @@ window.handleSeatCardTap=seatId=>{
   const sourceKeep={id:source.id,name:source.name};Object.keys(source).forEach(k=>delete source[k]);Object.assign(source,{...sourceKeep,customerId:'',customerName:'',casts:[],openedAt:'',orders:[]});
   seatAction=null;persist();renderSeats();toast(`${sourceName}のお客様を${target.name}へ移動しました`);return;
  }
- if(target.customerName)return openSeatModal(target.id);
+ if(target.customerName)return openSeatDetail(target.id);
  if(target.reservation)return openSeatReservation(target.id);
  return openSeat(target.id);
 };
@@ -2600,7 +2609,8 @@ function renderSeats(){
    <div class="seat-customer">${esc(customerDisplayName(s.customerName||(reserved?s.reservation.customerName:'')))}</div>
    ${s.customerName?`
     <div class="seat-casts">${castNames.length?s.casts.map(castId=>{const c=staffById(castId);return c?`<button type="button" class="seat-cast-chip" data-cast-move="${esc(castId)}" data-from-seat="${esc(s.id)}" onclick="event.stopPropagation()">${esc(c.name)}</button>`:''}).join(''):'担当なし'}</div>
-    <button class="seat-mini-move" onclick="event.stopPropagation();startWholeSeatMove('${s.id}')">席を移動</button>
+    <div class="seat-current-total">${yen(seatBilling(s).total)}</div>
+    <div class="seat-open-time">入店 ${esc(seatOpenedTime(s.openedAt))}</div>
    `:reserved?`
     <div class="seat-reservation-type">${s.reservation.type==='companion'||s.reservation.type==='同伴'?'同伴':'予約・来店予定'}</div>
     <div class="seat-reservation-time">${esc(s.reservation.time||'時間未定')}</div>
@@ -2861,6 +2871,8 @@ window.openSeatDetail=sid=>{
   <div class="card">
    <div class="meta">お客様</div>
    <h2 style="margin:4px 0 14px">${esc(customerDisplayName(s.customerName,'未登録'))}</h2>
+   <div class="meta">人数・入店時間</div>
+   <div style="font-size:18px;font-weight:900;margin-top:5px">${Math.max(1,Number(s.people||1))}名　／　${esc(seatOpenedTime(s.openedAt))}</div>
    <div class="meta">ついている女の子</div>
    <div style="font-size:20px;font-weight:900;margin-top:6px">
     ${castNames.length?castNames.map(esc).join('・'):'なし'}
@@ -2877,8 +2889,8 @@ window.openSeatDetail=sid=>{
   </div>
 
   <div class="card">
-   <div class="meta">注文 ${s.orders.length}件</div>
-   <h2 style="margin:4px 0 0">${yen(seatTotal(s))}</h2>
+   <div class="meta">現在金額（注文 ${s.orders.length}件）</div>
+   <h2 style="margin:4px 0 0">${yen(seatBilling(s).total)}</h2>
   </div>`;
  $('seatDetailModal').classList.remove('hidden');
 };
@@ -2892,6 +2904,16 @@ $('seatDetailOrder').onclick=()=>{
  const sid=seatDetailId;
  $('seatDetailModal').classList.add('hidden');
  openSeatOrder(sid);
+};
+$('seatDetailCheckout').onclick=()=>{
+ const sid=seatDetailId;
+ $('seatDetailModal').classList.add('hidden');
+ checkoutSeat(sid);
+};
+$('seatDetailMove').onclick=()=>{
+ const sid=seatDetailId;
+ $('seatDetailModal').classList.add('hidden');
+ startWholeSeatMove(sid);
 };
 
 function findOtherSeatForCast(castId){
