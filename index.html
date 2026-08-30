@@ -2498,6 +2498,10 @@ $('printShift').onclick=()=>window.print();
 $('exportShiftCsv').onclick=()=>{const key=shiftMonthKey(),days=new Date(shiftViewMonth.getFullYear(),shiftViewMonth.getMonth()+1,0).getDate();let rows=[['名前',...Array.from({length:days},(_,i)=>`${i+1}日`)]];db.staff.forEach(st=>rows.push([st.name,...Array.from({length:days},(_,i)=>shiftRecord(st.id,`${key}-${String(i+1).padStart(2,'0')}`)?.status||'')]));const csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tinkerbell_shift_${key}.csv`;a.click();URL.revokeObjectURL(a.href)};
 
 function seatTotal(s){return s.orders.reduce((a,o)=>a+o.price*o.qty,0)}
+function customerDisplayName(name,fallback=''){
+ const value=String(name||fallback||'').trim();
+ return value&& !value.endsWith('様')?`${value} 様`:value;
+}
 let seatEditId='',seatCastSelected=[],seatSelectedCustomerId='',seatKanaFilter='あ';
 let seatUndoSnapshot=null,seatAction=null;
 function seatSnapshot(){return JSON.stringify(db.seats)}
@@ -2569,7 +2573,7 @@ function renderSeats(){
     <div class="seat-status">${s.customerName?'使用中':reserved?'仮押さえ':'空席'}</div>
    </div>
 
-   <div class="seat-customer">${esc(s.customerName||(reserved?s.reservation.customerName:''))}</div>
+   <div class="seat-customer">${esc(customerDisplayName(s.customerName||(reserved?s.reservation.customerName:'')))}</div>
 
    ${s.customerName?`
     <div class="seat-casts">${castNames.length?s.casts.map(castId=>{const c=staffById(castId);return c?`<button type="button" class="seat-cast-chip" data-cast-move="${esc(castId)}" data-from-seat="${esc(s.id)}" onclick="event.stopPropagation()">${esc(c.name)}</button>`:''}).join(''):'担当なし'}</div>
@@ -2722,7 +2726,7 @@ window.openSeatReservation=sid=>{
  $('seatReservationTitle').textContent=`${seat.name}の仮押さえ`;
  $('seatReservationBody').innerHTML=`<div class="card">
   <div class="meta">${r.type==='同伴'||r.type==='companion'?'同伴':'予約・来店予定'}</div>
-  <h2 style="margin:5px 0 10px">${esc(r.customerName||'お客様名未登録')}</h2>
+  <h2 style="margin:5px 0 10px">${esc(customerDisplayName(r.customerName,'お客様名未登録'))}</h2>
   <div class="meta">予定時間：${esc(r.time||'時間未定')}</div>
   <div class="meta">人数：${esc(r.people||1)}名</div>
   <div class="meta">担当：${esc(r.castName||'未定')}</div>
@@ -2838,7 +2842,7 @@ window.openSeatDetail=sid=>{
  $('seatDetailBody').innerHTML=`
   <div class="card">
    <div class="meta">お客様</div>
-   <h2 style="margin:4px 0 14px">${esc(s.customerName||'未登録')}</h2>
+   <h2 style="margin:4px 0 14px">${esc(customerDisplayName(s.customerName,'未登録'))}</h2>
    <div class="meta">ついている女の子</div>
    <div style="font-size:20px;font-weight:900;margin-top:6px">
     ${castNames.length?castNames.map(esc).join('・'):'なし'}
@@ -2893,7 +2897,7 @@ function renderSeatCastChoices(){
       <input type="checkbox" value="${c.id}" ${seatCastSelected.includes(c.id)?'checked':''}>
       <span>
        ${esc(c.name)}
-       ${otherSeat?`<small class="seat-cast-current">現在：${esc(otherSeat.name)} ${esc(otherSeat.customerName)}</small>`:''}
+       ${otherSeat?`<small class="seat-cast-current">現在：${esc(otherSeat.name)} ${esc(customerDisplayName(otherSeat.customerName))}</small>`:''}
       </span>
      </label>`;
    }).join('')
@@ -3324,7 +3328,7 @@ window.checkoutSeat=sid=>{
  $('seatCheckoutBody').innerHTML=`
   <div class="card">
    <div class="meta">${esc(s.name)}</div>
-   <h2 style="margin:4px 0 8px">${esc(s.customerName||'')}</h2>
+   <h2 style="margin:4px 0 8px">${esc(customerDisplayName(s.customerName))}</h2>
    ${(s.orders||[]).map(o=>`
     <div class="checkout-detail-line">
      <span>${esc(o.name)} × ${Number(o.qty||1)}${orderCastName(o)?` <small class="order-cast-label">担当：${esc(orderCastName(o))}</small>`:''}</span>
@@ -3572,7 +3576,7 @@ function renderOrderSeatPicker(){
  $('orderSeatPicker').innerHTML=seats.length?seats.map(s=>`
   <button type="button" class="order-seat-choice ${selectedOrderSeat===s.id?'active':''}" onclick="selectOrderSeat('${s.id}')">
    <b>${esc(s.name)}</b>
-   <span>${esc(s.customerName)}</span>
+   <span>${esc(customerDisplayName(s.customerName))}</span>
    <small>注文 ${s.orders.length}件　${yen(seatTotal(s))}</small>
   </button>`).join(''):'<div class="empty">現在、使用中の席はありません</div>';
 }
@@ -3629,7 +3633,7 @@ function renderTapOrders(){
  }
 
  const castNames=seatCastNames(s);
- $('selectedOrderSeatName').textContent=`${s.name}　${s.customerName}`;
+ $('selectedOrderSeatName').textContent=`${s.name}　${customerDisplayName(s.customerName)}`;
  $('selectedOrderSeatInfo').textContent=`ついている女の子：${castNames.length?castNames.join('・'):'なし'}　／　合計 ${yen(seatTotal(s))}`;
 
  const visibleMenu=db.menu
