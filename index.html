@@ -164,6 +164,12 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 }
 
 .seat-cast-current{display:block;margin-top:4px;color:#b14d36;font-size:12px;font-weight:900}
+.active-cast-card{margin-bottom:12px;border:2px solid #c79b43;background:#fffaf0}
+.active-cast-title{font-size:15px;font-weight:1000;color:#725017;margin-bottom:8px}
+.active-cast-list{display:flex;flex-wrap:wrap;gap:8px}
+.active-cast-name{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:#fff;border:1px solid #c79b43;font-size:16px;font-weight:1000}
+.active-cast-name::before{content:"●";color:#29a24a;font-size:11px}
+.active-cast-empty{color:#8a7460;font-weight:800}
 
 .inventory-item{border:2px solid #d9d2c5}
 .inventory-low{border-color:#e58b62!important;background:#fff3ed!important}
@@ -1179,7 +1185,7 @@ body.manager-mode .payroll-staff-settings{
  </div>
 </section>
 
-<section id="seats" class="screen"><h2>席管理</h2><div class="seat-move-help">女の子の名前を長押ししたまま、別の使用中の席へ動かすと配置を変更できます</div><div id="seatGrid" class="seat-grid"></div></section>
+<section id="seats" class="screen"><h2>席管理</h2><div class="card active-cast-card"><div class="active-cast-title">本日出勤中の女の子</div><div id="activeCastList" class="active-cast-list"></div></div><div class="seat-move-help">女の子の名前を長押ししたまま、別の使用中の席へ動かすと配置を変更できます</div><div id="seatGrid" class="seat-grid"></div></section>
 
 <section id="orders" class="screen">
 <div class="card">
@@ -1741,7 +1747,7 @@ body.manager-mode .payroll-staff-settings{
       <button id="printReceiptAgainBtn" class="secondary">再発行</button>
     </div>
     <div class="row" style="margin-top:10px">
-      <button id="printInvoiceBtn" class="primary">領収書を印刷</button>
+      <button id="printInvoiceBtn" class="primary" type="button" onclick="openInvoicePreview()">領収書を印刷</button>
       <button id="cancelCheckoutBtn" class="danger">会計取消</button>
     </div>
   </div>
@@ -1773,7 +1779,7 @@ body.manager-mode .payroll-staff-settings{
     <div class="invoice-print-note">※ 150mm × 80mmの横長領収書です。印刷画面では倍率100％・余白なしを選択してください。</div>
 
     <div id="invoicePrintError" class="invoice-print-error hidden"></div>
-    <button id="invoicePreviewPrint" class="primary invoice-print-large">この領収書を印刷</button>
+    <button id="invoicePreviewPrint" class="primary invoice-print-large" type="button" onclick="printCurrentInvoice()">この領収書を印刷</button>
   </div>
 </div>
 <div id="toast" class="toast hidden"></div>
@@ -1781,7 +1787,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v92-manager-daily-close-cast-move-receipt-records';
+const APP_VERSION='v93-attendance-cast-receipt-button-fix';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2483,7 +2489,26 @@ function seatCastNames(s){
   :[];
 }
 
+function activeCastStaff(){
+ const activeIds=new Set(
+  (db.attendance||[])
+   .filter(r=>r.in&&!r.out&&new Date(r.in).toLocaleDateString('sv-SE')===today())
+   .map(r=>r.staffId)
+ );
+ return (db.staff||[]).filter(s=>s.role==='cast'&&activeIds.has(s.id));
+}
+
+function renderActiveCastList(){
+ const box=$('activeCastList');
+ if(!box)return;
+ const casts=activeCastStaff();
+ box.innerHTML=casts.length
+  ?casts.map(c=>`<span class="active-cast-name">${esc(c.name)}</span>`).join('')
+  :'<span class="active-cast-empty">現在、出勤登録されている女の子はいません</span>';
+}
+
 function renderSeats(){
+ renderActiveCastList();
  $('seatGrid').innerHTML=db.seats.map(s=>{
   const castNames=seatCastNames(s);
   const isBox=String(s.id||'').startsWith('B') || String(s.name||'').toUpperCase().includes('BOX');
@@ -2816,7 +2841,7 @@ function findOtherSeatForCast(castId){
 }
 
 function renderSeatCastChoices(){
- const casts=db.staff.filter(x=>x.role==='cast');
+ const casts=activeCastStaff();
 
  $('seatCastChoices').innerHTML=casts.length
   ?casts.map(c=>{
@@ -2830,7 +2855,7 @@ function renderSeatCastChoices(){
       </span>
      </label>`;
    }).join('')
-  :'<div class="empty">キャストが登録されていません</div>';
+  :'<div class="empty">現在、出勤登録されている女の子はいません。先に「出勤・退勤」で出勤登録してください。</div>';
 
  $('seatCastChoices').querySelectorAll('input[type="checkbox"]').forEach(input=>{
   input.onchange=()=>{
@@ -5753,7 +5778,7 @@ function buildInvoicePreview(){
     <div class="tb-receipt-stamp">収入印紙<br>貼付欄</div>
   </div>`;
 }
-$('printInvoiceBtn').onclick=()=>{
+window.openInvoicePreview=()=>{
  const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
  if(!x)return;
 
@@ -5780,7 +5805,7 @@ $('invoicePreviewDate').onchange=buildInvoicePreview;
 $('invoicePreviewAmount').oninput=buildInvoicePreview;
 $('invoicePreviewClose').onclick=()=>$('invoicePreviewModal').classList.add('hidden');
 
-$('invoicePreviewPrint').onclick=()=>{
+window.printCurrentInvoice=()=>{
  const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
  if(!x)return;
 
