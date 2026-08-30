@@ -1793,7 +1793,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v98-receipt-seats-orders';
+const APP_VERSION='v100-add-counter7-box6';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1832,11 +1832,19 @@ const seed=()=>({
   {id:'mn13',name:'単品ウイスキー',price:0,type:'単品酒',back:0,tax:10},
   {id:'mn14',name:'チェーサー',price:0,type:'備品・割物',back:0,tax:10}
  ],
- seats:[...Array.from({length:6},(_,i)=>({id:'C'+(i+1),name:'カウンター'+(i+1),customerId:'',customerName:'',casts:[],openedAt:'',orders:[]})),
- ...Array.from({length:5},(_,i)=>({id:'B'+(i+1),name:'BOX '+(i+1),customerId:'',customerName:'',casts:[],openedAt:'',orders:[]}))],
+ seats:[...Array.from({length:7},(_,i)=>({id:'C'+(i+1),name:'カウンター'+(i+1),customerId:'',customerName:'',casts:[],openedAt:'',orders:[]})),
+ ...Array.from({length:6},(_,i)=>({id:'B'+(i+1),name:'BOX '+(i+1),customerId:'',customerName:'',casts:[],openedAt:'',orders:[]}))],
  customers:[], bottles:[], attendance:[], shifts:[], shiftMeta:{submitted:{},published:{}}, visits:[], notices:[], checkouts:[], checkoutEvents:[], payrollAdjustments:[]
 });
 let db=JSON.parse(localStorage.getItem(KEY)||'null')||seed(), current=null;
+db.seats=Array.isArray(db.seats)?db.seats:[];
+const newEmptySeat=(idn,name)=>({id:idn,name,customerId:'',customerName:'',casts:[],openedAt:'',orders:[]});
+if(!db.seats.some(s=>s.id==='C7')){
+ const firstBoxIndex=db.seats.findIndex(s=>String(s.id||'').startsWith('B'));
+ const seat=newEmptySeat('C7','カウンター7');
+ if(firstBoxIndex>=0)db.seats.splice(firstBoxIndex,0,seat);else db.seats.push(seat);
+}
+if(!db.seats.some(s=>s.id==='B6'))db.seats.push(newEmptySeat('B6','BOX 6'));
 const REQUIRED_MENU_ITEMS=[
   {id:'mn5',name:'アイス大',price:0,type:'備品・割物',back:0,tax:10},
   {id:'mn6',name:'アイス小',price:0,type:'備品・割物',back:0,tax:10},
