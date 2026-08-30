@@ -176,6 +176,13 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 }
 
 .seat-cast-current{display:block;margin-top:4px;color:#b14d36;font-size:12px;font-weight:900}
+.order-seat-picker-card{border:3px solid #caa45a;background:#fffaf0}
+.order-seat-picker-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.order-seat-picker-title h3{margin:0;font-size:22px}.order-seat-picker-title small{font-weight:900;color:#725d36}
+.order-seat-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.order-seat-choice{min-height:82px;text-align:left;padding:11px 12px;border:2px solid #d8c9aa;border-radius:14px;background:#fff;color:#2a2228}
+.order-seat-choice b{display:block;font-size:19px}.order-seat-choice span{display:block;margin-top:5px;font-size:15px;font-weight:900;color:#655967;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.order-seat-choice small{display:block;margin-top:5px;font-weight:900;color:#7b5a20}.order-seat-choice.active{background:#6d3f75;color:#fff;border-color:#6d3f75;box-shadow:0 0 0 4px #dbc9e0}.order-seat-choice.active span,.order-seat-choice.active small{color:#fff}
+@media(max-width:700px){.order-seat-picker{grid-template-columns:1fr 1fr}.order-seat-choice{min-height:76px}}
 
 .inventory-item{border:2px solid #d9d2c5}
 .inventory-low{border-color:#e58b62!important;background:#fff3ed!important}
@@ -1156,6 +1163,10 @@ body.manager-mode .payroll-staff-settings{
 </section>
 
 <section id="orders" class="screen">
+<div class="card order-seat-picker-card">
+  <div class="order-seat-picker-title"><h3>① 注文する席を選ぶ</h3><small>使用中の席だけ表示</small></div>
+  <div id="orderSeatPicker" class="order-seat-picker"></div>
+</div>
 <div class="card">
   <h3 style="margin-top:0">今日の売上</h3>
   <div id="todaySalesSummary"></div>
@@ -1174,7 +1185,7 @@ body.manager-mode .payroll-staff-settings{
     <div id="selectedOrderSeatInfo" class="meta"></div>
   </div>
 </div>
-<div id="noOrderSeat" class="card hidden">席管理から注文する席をタップしてください。</div>
+<div id="noOrderSeat" class="card hidden">上から注文する席を選んでください。</div>
 <div id="orderWorkspace">
   <div class="card order-step-card">
     <b class="order-step-title">注文</b>
@@ -3513,6 +3524,17 @@ window.selectOrderSeat=sid=>{
  renderOrders();
 };
 
+function renderOrderSeatPicker(){
+ const seats=db.seats.filter(s=>s.customerName);
+ if(selectedOrderSeat&&!seats.some(s=>s.id===selectedOrderSeat))selectedOrderSeat='';
+ $('orderSeatPicker').innerHTML=seats.length?seats.map(s=>`
+  <button type="button" class="order-seat-choice ${selectedOrderSeat===s.id?'active':''}" onclick="selectOrderSeat('${s.id}')">
+   <b>${esc(s.name)}</b>
+   <span>${esc(s.customerName)}</span>
+   <small>注文 ${s.orders.length}件　${yen(seatTotal(s))}</small>
+  </button>`).join(''):'<div class="empty">現在、使用中の席はありません</div>';
+}
+
 window.setCategory=c=>{
  selectedCategory=c;
  renderTapOrders();
@@ -3709,6 +3731,7 @@ $('undoBtn').onclick=()=>{
 };
 
 function renderOrders(){
+ renderOrderSeatPicker();
  renderTapOrders();
 
  const s=selectedSeat();
