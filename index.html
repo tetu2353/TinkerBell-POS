@@ -1800,7 +1800,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v95-ipad-receipt-print-isolation';
+const APP_VERSION='v96-ipad-separate-receipt-print-window';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -5680,6 +5680,23 @@ function printWindowHtml(title,body){
  w.document.close();
 }
 
+function openInvoicePrintWindow(){
+ const w=window.open('','_blank','width=900,height=600');
+ if(!w)return null;
+ const styles=[...document.querySelectorAll('style')].map(el=>el.textContent||'').join('\n');
+ const receipt=$('invoicePreviewPaper').innerHTML;
+ w.document.write(`<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>領収書</title>
+ <style>${styles}
+ html,body{margin:0!important;padding:0!important;background:#fff!important;width:150mm!important;height:80mm!important;overflow:hidden!important}
+ #invoicePrintRoot{display:block!important;width:150mm!important;height:80mm!important;margin:0!important;padding:0!important}
+ #invoicePrintRoot .tb-receipt-paper{width:150mm!important;height:80mm!important;max-width:none!important;zoom:1!important;transform:none!important}
+ @media print{@page{size:150mm 80mm;margin:0}html,body,#invoicePrintRoot{width:150mm!important;height:80mm!important;margin:0!important;padding:0!important;overflow:hidden!important}}
+ </style></head><body><div id="invoicePrintRoot">${receipt}</div>
+ <script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script></body></html>`);
+ w.document.close();
+ return w;
+}
+
 async function recordPrint(type,details={}){
  const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
  if(!x)return;
@@ -5859,35 +5876,15 @@ window.printCurrentInvoice=()=>{
  saveInvoiceRegistrationNumber(reg);
  localStorage.setItem(INVOICE_ISSUER_KEY,$('invoiceIssuerName').value.trim()||'ティンカーベル');
  buildInvoicePreview();
-
- document.body.classList.add('invoice-print-mode');
- // Safariが印刷レイアウトへ切り替える前にスタイルを確定させる。
- void document.body.offsetHeight;
-
- let cleaned=false;
- const cleanupPrintMode=()=>{
-  if(cleaned)return;
-  cleaned=true;
-  document.body.classList.remove('invoice-print-mode');
-  window.removeEventListener('afterprint',cleanupPrintMode);
-  window.removeEventListener('focus',focusAfterPrint);
- };
- const focusAfterPrint=()=>setTimeout(cleanupPrintMode,300);
- window.addEventListener('afterprint',cleanupPrintMode,{once:true});
- window.addEventListener('focus',focusAfterPrint,{once:true});
-
- // 印刷内容は操作時点で保存する。iPadではwindow.print()がすぐ戻るため後回しにしない。
- recordPrint('invoice',issueData).catch(error=>console.error('Print record save failed:',error));
-
- // ユーザーのタップイベント内で即時に印刷を呼び出す。
- try{
-  window.print();
- }catch(error){
-  cleanupPrintMode();
-  console.error('Print failed:',error);
-  errorBox.textContent='印刷機能を開けませんでした。SafariでこのPOSを開いてから印刷してください。';
+ const printWindow=openInvoicePrintWindow();
+ if(!printWindow){
+  errorBox.textContent='印刷画面を開けませんでした。Safariのポップアップブロックを解除してください。';
   errorBox.classList.remove('hidden');
+  return;
  }
+
+ // 明細印刷と同じく、領収書だけの別画面を開いて印刷する。
+ recordPrint('invoice',issueData).catch(error=>console.error('Print record save failed:',error));
 };
 
 $('cancelCheckoutBtn').onclick=async()=>{
