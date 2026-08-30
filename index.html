@@ -176,13 +176,6 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 }
 
 .seat-cast-current{display:block;margin-top:4px;color:#b14d36;font-size:12px;font-weight:900}
-.order-seat-picker-card{border:3px solid #caa45a;background:#fffaf0}
-.order-seat-picker-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.order-seat-picker-title h3{margin:0;font-size:22px}.order-seat-picker-title small{font-weight:900;color:#725d36}
-.order-seat-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-.order-seat-choice{min-height:82px;text-align:left;padding:11px 12px;border:2px solid #d8c9aa;border-radius:14px;background:#fff;color:#2a2228}
-.order-seat-choice b{display:block;font-size:19px}.order-seat-choice span{display:block;margin-top:5px;font-size:15px;font-weight:900;color:#655967;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.order-seat-choice small{display:block;margin-top:5px;font-weight:900;color:#7b5a20}.order-seat-choice.active{background:#6d3f75;color:#fff;border-color:#6d3f75;box-shadow:0 0 0 4px #dbc9e0}.order-seat-choice.active span,.order-seat-choice.active small{color:#fff}
-@media(max-width:700px){.order-seat-picker{grid-template-columns:1fr 1fr}.order-seat-choice{min-height:76px}}
 
 .inventory-item{border:2px solid #d9d2c5}
 .inventory-low{border-color:#e58b62!important;background:#fff3ed!important}
@@ -937,6 +930,14 @@ body.manager-mode .payroll-staff-settings{
 .customer-bottle-row:first-of-type{border-top:0}
 
 
+
+.customer-receipt-box{margin-top:16px;padding:14px;border:1px solid #d8d1c7;border-radius:14px;background:#fffdf9}
+.customer-receipt-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.customer-receipt-edit-row{padding:12px;border:1px solid #e4ded5;border-radius:12px;background:#fff;margin-top:8px}
+.customer-receipt-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.customer-receipt-tag{display:inline-flex;align-items:center;gap:4px;padding:7px 10px;border-radius:999px;background:#f4efe8;border:1px solid #ded4c7;font-weight:800}
+.invoice-profile-row{margin:10px 0;padding:10px;border-radius:12px;background:#f7f3ed;border:1px solid #e4dbcf}
+.invoice-history-box{margin-top:10px;padding:10px;border-radius:10px;background:#f5f5f5}
 .customer-inline-bottle-box{
  margin:14px 0;
  padding:14px;
@@ -1160,23 +1161,23 @@ body.manager-mode .payroll-staff-settings{
  <div id="seatMoveBanner" class="seat-move-banner"><span id="seatMoveBannerText"></span><button type="button" onclick="cancelSeatAction()">取消</button></div>
  <div class="seat-move-help">女の子は長押しして席へ移動できます。待機へ戻すときは上の「待機中」へ動かしてください。</div>
  <div id="seatGrid" class="seat-grid"></div>
+ <div class="card" style="margin-top:18px">
+  <h3 style="margin-top:0">今日の売上</h3>
+  <div id="todaySalesSummary"></div>
+  <div id="todaySalesDetail" style="margin-top:12px"></div>
+ </div>
+ <div class="card daily-close-card">
+  <h3 style="margin:0">🌙 営業終了の日計</h3>
+  <div class="meta">本日の日計を登録済みの管理者LINEへ送ります。</div>
+  <button id="sendDailyCloseToLine" class="primary daily-close-button">本日の日計を管理者LINEへ送る</button>
+  <div id="dailyCloseLineStatus" class="daily-close-status">まだ送信していません</div>
+ </div>
 </section>
 
 <section id="orders" class="screen">
 <div class="card order-seat-picker-card">
   <div class="order-seat-picker-title"><h3>① 注文する席を選ぶ</h3><small>使用中の席だけ表示</small></div>
   <div id="orderSeatPicker" class="order-seat-picker"></div>
-</div>
-<div class="card">
-  <h3 style="margin-top:0">今日の売上</h3>
-  <div id="todaySalesSummary"></div>
-  <div id="todaySalesDetail" style="margin-top:12px"></div>
-</div>
-<div class="card daily-close-card">
-  <h3 style="margin:0">🌙 営業終了の日計</h3>
-  <div class="meta">閉店時に黒服さんが押すと、本日の日計を登録済みの管理者LINEへ送ります。</div>
-  <button id="sendDailyCloseToLine" class="primary daily-close-button">本日の日計を管理者LINEへ送る</button>
-  <div id="dailyCloseLineStatus" class="daily-close-status">まだ送信していません</div>
 </div>
 <div class="order-seat-header">
   <button class="secondary" onclick="show('seats')">← 席一覧</button>
@@ -1188,7 +1189,7 @@ body.manager-mode .payroll-staff-settings{
 <div id="noOrderSeat" class="card hidden">上から注文する席を選んでください。</div>
 <div id="orderWorkspace">
   <div class="card order-step-card">
-    <b class="order-step-title">注文</b>
+    <b class="order-step-title">② 商品を選ぶ</b>
     <div id="tapMenuGrid" class="order-menu-grid" style="margin-top:10px"></div>
     <div class="meta" style="margin-top:14px;font-weight:900">その他の項目</div>
     <div id="orderCategories" class="category-row" style="margin-top:8px"></div>
@@ -1230,6 +1231,15 @@ body.manager-mode .payroll-staff-settings{
   </div>
   <div class="meta">お客様登録と同時にボトルも登録できます。</div>
   <div id="customerBottleRows" class="customer-bottle-edit-rows"></div>
+ </div>
+
+ <div class="customer-receipt-box">
+  <div class="customer-receipt-head">
+   <b>🧾 領収書の宛名</b>
+   <button type="button" id="addCustomerReceiptRow" class="secondary">＋ 宛名追加</button>
+  </div>
+  <div class="meta">会社名・個人名など、1人のお客様に複数の宛名を登録できます。会計後の領収書発行時に選択できます。</div>
+  <div id="customerReceiptRows"></div>
  </div>
 
  <div class="row">
@@ -1571,6 +1581,17 @@ body.manager-mode .payroll-staff-settings{
     </div>
   </div>
 </div>
+<div id="seatMoveModal" class="modal hidden">
+ <div class="modal-card">
+  <h2 id="seatMoveTitle">お客様の席移動</h2>
+  <div id="seatMoveCurrent" class="card"></div>
+  <p><b>移動先の空席を選んでください</b></p>
+  <div id="seatMoveChoices" class="seat-reservation-list"></div>
+  <div class="row" style="margin-top:14px">
+   <button id="seatMoveClose" class="secondary">キャンセル</button>
+  </div>
+ </div>
+</div>
 <div id="seatModal" class="modal hidden">
  <div class="modal-card">
   <h2 id="seatModalTitle">入店登録</h2>
@@ -1736,13 +1757,23 @@ body.manager-mode .payroll-staff-settings{
   <div class="modal-card invoice-preview-card">
     <div class="sectionHead">
       <h2>領収書プレビュー</h2>
-      <button id="invoicePreviewClose" class="secondary">閉じる</button>
+      <button id="invoicePreviewClose" class="secondary">POSに戻る</button>
     </div>
 
+    <div class="invoice-profile-row">
+      <label>登録済みの宛名
+       <select id="invoiceSavedRecipient"><option value="">お客様名を使用</option></select>
+      </label>
+      <div class="meta">お客様管理に複数登録した宛名から選べます。下の欄は今回だけ自由に変更できます。</div>
+    </div>
     <div class="row3">
       <label>宛名<input id="invoicePreviewName" placeholder="例：株式会社〇〇"></label>
       <label>敬称<select id="invoicePreviewSuffix"><option value="御中">御中</option><option value="様">様</option></select></label>
       <label>但し書き<input id="invoicePreviewProviso" value="飲食代として"></label>
+    </div>
+    <div class="row">
+      <label>領収日<input id="invoiceIssueDate" type="date"></label>
+      <label>領収金額<input id="invoiceAmount" type="number" min="0" step="1" inputmode="numeric"></label>
     </div>
     <div class="row3">
       <label>支払方法<select id="invoicePaymentMethod"><option>現金</option><option>クレジットカード</option><option>その他</option></select></label>
@@ -1762,7 +1793,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v89-manager-daily-close-line';
+const APP_VERSION='v98-receipt-seats-orders';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -1902,6 +1933,8 @@ window.tinkerbellApplyCloudStaff=staff=>{
   persist();
   refreshSelects();
   renderStaff();
+  // 出勤キャスト一覧・接客中表示は従業員データにも依存するため即時更新
+  renderSeats();
 };
 window.tinkerbellGetLocalStaff=()=>Array.isArray(db.staff)?db.staff:[];
 window.tinkerbellApplyCloudMenu=menu=>{
@@ -1942,7 +1975,13 @@ window.tinkerbellApplyCloudAttendance=rows=>{
  const map=new Map((db.attendance||[]).map(r=>[r.id,r]));
  rows.forEach(r=>map.set(r.id,{...(map.get(r.id)||{}),...r}));
  db.attendance=[...map.values()].sort((a,b)=>String(a.in||'').localeCompare(String(b.in||'')));
- persist();renderAttendance();renderMyAttendance();renderAdminAttendance();renderPayroll();
+ persist();
+ renderAttendance();
+ renderMyAttendance();
+ renderAdminAttendance();
+ renderPayroll();
+ // LINE/Firebase側で出退勤が変わった瞬間に席管理も更新する
+ renderSeats();
 };
 window.tinkerbellGetLocalAttendance=()=>Array.isArray(db.attendance)?db.attendance:[];
 
@@ -2123,6 +2162,7 @@ $('attendanceConfirmYes').onclick=async()=>{
   $('attendancePickCard').classList.add('hidden');
   renderAttendance();
   renderPayroll();
+  renderSeats();
   await syncAttendanceCloud();
   toast(`${staff.name}を出勤登録しました`);
   return;
@@ -2205,6 +2245,7 @@ $('attendanceModalSave').onclick=async()=>{
  renderMyAttendance();
  renderAdminAttendance();
  renderPayroll();
+ renderSeats();
  await syncAttendanceCloud();
  toast(`${staff.name}を退勤登録しました`);
 };
@@ -2841,7 +2882,8 @@ function findOtherSeatForCast(castId){
 }
 
 function renderSeatCastChoices(){
- const casts=db.staff.filter(x=>x.role==='cast');
+ const active=activeCastIds();
+ const casts=db.staff.filter(x=>x.role==='cast'&&active.has(x.id));
 
  $('seatCastChoices').innerHTML=casts.length
   ?casts.map(c=>{
@@ -2855,7 +2897,7 @@ function renderSeatCastChoices(){
       </span>
      </label>`;
    }).join('')
-  :'<div class="empty">キャストが登録されていません</div>';
+  :'<div class="empty">現在出勤中のキャストはいません</div>';
 
  $('seatCastChoices').querySelectorAll('input[type="checkbox"]').forEach(input=>{
   input.onchange=()=>{
@@ -3743,7 +3785,7 @@ function renderOrders(){
  $('orderSummary').innerHTML=`
   <div class="card selected-order-summary">
    <div class="sectionHead">
-    <h2>この席の注文</h2>
+    <h2>③ 注文内容・会計</h2>
     <b class="order-total">${yen(seatTotal(s))}</b>
    </div>
    ${s.orders.length?s.orders.map(o=>`
@@ -3805,6 +3847,41 @@ function customerBirthdayText(c){
 }
 
 let customerBottleDraft=[];
+let customerReceiptDraft=[];
+
+function emptyCustomerReceiptDraft(){
+ return {id:id(),name:'',suffix:'御中',proviso:'飲食代として'};
+}
+function normalizeReceiptProfiles(c){
+ return Array.isArray(c?.receiptProfiles)?c.receiptProfiles.filter(r=>r&&String(r.name||'').trim()).map(r=>({
+  id:r.id||id(), name:String(r.name||'').trim(), suffix:r.suffix==='様'?'様':'御中', proviso:String(r.proviso||'飲食代として').trim()||'飲食代として'
+ })):[];
+}
+function collectCustomerReceiptDraft(){
+ return [...document.querySelectorAll('[data-cr-row]')].map(row=>({
+  id:row.dataset.crId||id(),
+  name:row.querySelector('[data-cr-name]')?.value.trim()||'',
+  suffix:row.querySelector('[data-cr-suffix]')?.value||'御中',
+  proviso:row.querySelector('[data-cr-proviso]')?.value.trim()||'飲食代として'
+ }));
+}
+function renderCustomerReceiptRows(){
+ const box=$('customerReceiptRows'); if(!box)return;
+ box.innerHTML=customerReceiptDraft.length?customerReceiptDraft.map((r,i)=>`
+  <div class="customer-receipt-edit-row" data-cr-row data-cr-id="${esc(r.id||'')}">
+   <div class="row3">
+    <label>宛名<input data-cr-name value="${esc(r.name||'')}" placeholder="例：株式会社〇〇"></label>
+    <label>敬称<select data-cr-suffix><option value="御中" ${r.suffix!=='様'?'selected':''}>御中</option><option value="様" ${r.suffix==='様'?'selected':''}>様</option></select></label>
+    <label>但し書き<input data-cr-proviso value="${esc(r.proviso||'飲食代として')}"></label>
+   </div>
+   <button type="button" class="danger" onclick="removeCustomerReceiptRow(${i})">この宛名を削除</button>
+  </div>`).join(''):'<div class="empty">登録済みの領収書宛名はありません</div>';
+}
+window.removeCustomerReceiptRow=i=>{
+ customerReceiptDraft=collectCustomerReceiptDraft();
+ customerReceiptDraft.splice(i,1);
+ renderCustomerReceiptRows();
+};
 
 function emptyCustomerBottleDraft(){
  return {id:'',number:'',type:'焼酎',name:'',level:'満タン',place:''};
@@ -3857,6 +3934,12 @@ $('addCustomerBottleRow').onclick=()=>{
  renderCustomerBottleRows();
 };
 
+$('addCustomerReceiptRow').onclick=()=>{
+ customerReceiptDraft=collectCustomerReceiptDraft();
+ customerReceiptDraft.push(emptyCustomerReceiptDraft());
+ renderCustomerReceiptRows();
+};
+
 function clearCustomerEdit(){
  $('customerEditId').value='';
  $('customerName').value='';
@@ -3866,6 +3949,8 @@ function clearCustomerEdit(){
  $('customerMemo').value='';
  customerBottleDraft=[];
  renderCustomerBottleRows();
+ customerReceiptDraft=[];
+ renderCustomerReceiptRows();
  $('saveCustomer').textContent='お客様登録';
  $('cancelCustomerEdit').classList.add('hidden');
 }
@@ -3888,6 +3973,8 @@ window.editCustomer=idn=>{
   place:b.place||''
  }));
  renderCustomerBottleRows();
+ customerReceiptDraft=normalizeReceiptProfiles(c);
+ renderCustomerReceiptRows();
  $('saveCustomer').textContent='変更を保存';
  $('cancelCustomerEdit').classList.remove('hidden');
  show('customers');
@@ -3953,6 +4040,7 @@ $('saveCustomer').onclick=async()=>{
   birthMonth:birthMonth?Number(birthMonth):'',
   birthDay:birthDay?Number(birthDay):'',
   memo:$('customerMemo').value.trim(),
+  receiptProfiles:collectCustomerReceiptDraft().filter(r=>r.name),
   cloudPending:true,
   updatedAt:nowISO()
  });
@@ -4166,6 +4254,11 @@ function renderCustomers(){
        <div><small>平均利用額</small><b>${yen(average)}</b></div>
        ${managerUnlocked?`<div class="customer-total-spend manager-spend"><small>累計利用額</small><b>${yen(total)}</b></div>`:''}
       </div>
+
+      ${normalizeReceiptProfiles(c).length?`<div class="customer-receipt-box">
+       <b>🧾 領収書宛名 ${normalizeReceiptProfiles(c).length}件</b>
+       <div class="customer-receipt-list">${normalizeReceiptProfiles(c).map(r=>`<span class="customer-receipt-tag">${esc(r.name)} ${esc(r.suffix)}</span>`).join('')}</div>
+      </div>`:''}
 
       <div class="customer-bottle-box">
        <div class="customer-bottle-head">
@@ -5640,7 +5733,8 @@ window.openCheckoutDetail=idn=>{
   </div>
   ${orderSection}
   ${x.status==='cancelled'?`<div class="card checkout-cancelled-box"><b>取消済み</b><div class="meta">${esc(x.cancelReason||'理由なし')} / ${x.cancelledAt?new Date(x.cancelledAt).toLocaleString('ja-JP'):''}</div></div>`:''}
-  <div class="meta">レシート発行 ${Number(x.receiptPrintCount||0)}回 / 領収書発行 ${Number(x.invoicePrintCount||0)}回</div>`;
+  <div class="meta">レシート発行 ${Number(x.receiptPrintCount||0)}回 / 領収書発行 ${Number(x.invoicePrintCount||0)}回</div>
+  ${Array.isArray(x.invoiceHistory)&&x.invoiceHistory.length?`<div class="invoice-history-box"><b>領収書発行履歴</b>${x.invoiceHistory.map(h=>`<div class="meta">${esc(h.issueDate||'')}　${esc(h.recipient||'')} ${esc(h.suffix||'')}　${yen(h.amount||0)}</div>`).join('')}</div>`:''}`;
  renderSplitCheckoutActions(x);
  $('cancelCheckoutBtn').classList.toggle('hidden',x.status==='cancelled');
  $('checkoutDetailModal').classList.remove('hidden');
@@ -5709,6 +5803,27 @@ $('printReceiptBtn').onclick=async()=>{
 };
 $('printReceiptAgainBtn').onclick=$('printReceiptBtn').onclick;
 
+function invoiceCustomerForCheckout(x){
+ if(!x)return null;
+ if(x.customerId){const c=customerById(x.customerId);if(c)return c}
+ const n=normalizeCustomerNameForMatch(x.groupCustomerName||x.customerName);
+ return (db.customers||[]).find(c=>normalizeCustomerNameForMatch(c.name)===n)||null;
+}
+function populateInvoiceRecipientOptions(x){
+ const sel=$('invoiceSavedRecipient'); if(!sel)return;
+ const c=invoiceCustomerForCheckout(x);
+ const profiles=normalizeReceiptProfiles(c);
+ sel.innerHTML=`<option value="">お客様名を使用</option>`+profiles.map((r,i)=>`<option value="${i}">${esc(r.name)} ${esc(r.suffix)}</option>`).join('');
+ sel.value='';
+}
+function invoiceEnteredAmount(x){
+ const v=Number($('invoiceAmount')?.value);
+ return Number.isFinite(v)&&v>=0?v:Number(x?.total||0);
+}
+function invoiceEnteredDate(x){
+ return $('invoiceIssueDate')?.value||localDateKey(x?.closedAt)||today();
+}
+
 function buildInvoicePreview(){
  const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
  if(!x)return;
@@ -5719,9 +5834,11 @@ function buildInvoicePreview(){
  const payment=$('invoicePaymentMethod').value||x.paymentMethod||'未登録';
  const registration=$('invoicePreviewRegistration').value.trim();
  const issuer=$('invoiceIssuerName').value.trim()||'ティンカーベル';
- const summary=checkoutTaxSummary(x);
- const obj=summary[10] || {gross:Number(x.total||0), net:0, tax:0};
- const no=`${new Date(x.closedAt).toLocaleDateString('sv-SE').replaceAll('-','')}-${String(x.id).slice(-6).toUpperCase()}`;
+ const amount=invoiceEnteredAmount(x);
+ const issueDate=invoiceEnteredDate(x);
+ const net=Math.round(amount/1.1);
+ const obj={gross:amount,net,tax:amount-net};
+ const no=`${String(issueDate).replaceAll('-','')}-${String(x.id).slice(-6).toUpperCase()}`;
 
  $('invoicePreviewPaper').innerHTML=`
   <div class="invoice-landscape">
@@ -5731,7 +5848,7 @@ function buildInvoicePreview(){
         <div class="invoice-number">No. ${esc(no)}</div>
       </div>
       <div class="invoice-head-right">
-        <div>発行日<br>${new Date(x.closedAt).toLocaleDateString('ja-JP')}</div>
+        <div>発行日<br>${new Date(issueDate+'T00:00:00').toLocaleDateString('ja-JP')}</div>
       </div>
     </div>
 
@@ -5742,7 +5859,7 @@ function buildInvoicePreview(){
     <div class="invoice-main-row">
       <div class="invoice-main-left">
         <div class="invoice-amount-label">金額</div>
-        <div class="invoice-amount">${yen(x.total)}</div>
+        <div class="invoice-amount">${yen(amount)}</div>
 
         <div class="invoice-proviso">但し　${esc(proviso)}</div>
         <div class="invoice-payment">支払方法　${esc(payment)}</div>
@@ -5752,7 +5869,7 @@ function buildInvoicePreview(){
         <div class="invoice-tax-heading">内訳</div>
         <div class="invoice-tax-row"><span>税抜金額</span><span>${yen(obj.net)}</span></div>
         <div class="invoice-tax-row"><span>消費税額（10％）</span><span>${yen(obj.tax)}</span></div>
-        <div class="invoice-tax-row"><span>税込合計</span><span>${yen(x.total)}</span></div>
+        <div class="invoice-tax-row"><span>税込合計</span><span>${yen(amount)}</span></div>
       </div>
     </div>
 
@@ -5774,9 +5891,12 @@ $('printInvoiceBtn').onclick=()=>{
  const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
  if(!x)return;
 
+ populateInvoiceRecipientOptions(x);
  $('invoicePreviewName').value=x.customerName||'';
  $('invoicePreviewProviso').value='飲食代として';
  $('invoicePreviewSuffix').value='御中';
+ $('invoiceIssueDate').value=localDateKey(x.closedAt)||today();
+ $('invoiceAmount').value=Number(x.total||0);
  $('invoicePaymentMethod').value=x.paymentMethod||'現金';
  $('invoicePreviewRegistration').value=getInvoiceRegistrationNumber();
  $('invoiceIssuerName').value=localStorage.getItem(INVOICE_ISSUER_KEY)||'ティンカーベル';
@@ -5785,13 +5905,41 @@ $('printInvoiceBtn').onclick=()=>{
  $('invoicePreviewModal').classList.remove('hidden');
 };
 
+$('invoiceSavedRecipient').onchange=()=>{
+ const x=db.checkouts.find(c=>c.id===selectedCheckoutId); if(!x)return;
+ const c=invoiceCustomerForCheckout(x);
+ const profiles=normalizeReceiptProfiles(c);
+ const idx=$('invoiceSavedRecipient').value;
+ if(idx===''){
+  $('invoicePreviewName').value=x.customerName||'';
+  $('invoicePreviewSuffix').value='御中';
+  $('invoicePreviewProviso').value='飲食代として';
+ }else{
+  const r=profiles[Number(idx)];
+  if(r){$('invoicePreviewName').value=r.name;$('invoicePreviewSuffix').value=r.suffix;$('invoicePreviewProviso').value=r.proviso||'飲食代として'}
+ }
+ buildInvoicePreview();
+};
+$('invoiceIssueDate').onchange=buildInvoicePreview;
+$('invoiceAmount').oninput=buildInvoicePreview;
 $('invoicePreviewName').oninput=buildInvoicePreview;
 $('invoicePreviewProviso').oninput=buildInvoicePreview;
 $('invoicePreviewSuffix').onchange=buildInvoicePreview;
 $('invoicePaymentMethod').onchange=buildInvoicePreview;
 $('invoicePreviewRegistration').oninput=buildInvoicePreview;
 $('invoiceIssuerName').oninput=buildInvoicePreview;
-$('invoicePreviewClose').onclick=()=>$('invoicePreviewModal').classList.add('hidden');
+function closeInvoicePreview(){
+ document.body.classList.remove('invoice-print-mode');
+ $('invoicePreviewModal').classList.add('hidden');
+}
+$('invoicePreviewClose').onclick=closeInvoicePreview;
+
+let invoicePrintCleanupTimer=null;
+function finishInvoicePrintMode(){
+ document.body.classList.remove('invoice-print-mode');
+ if(invoicePrintCleanupTimer){clearTimeout(invoicePrintCleanupTimer);invoicePrintCleanupTimer=null;}
+}
+window.addEventListener('afterprint',finishInvoicePrintMode);
 
 $('invoicePreviewPrint').onclick=()=>{
  const x=db.checkouts.find(c=>c.id===selectedCheckoutId);
@@ -5802,6 +5950,18 @@ $('invoicePreviewPrint').onclick=()=>{
  errorBox.textContent='';
 
  const reg=$('invoicePreviewRegistration').value.trim();
+ const amount=invoiceEnteredAmount(x);
+ const issueDate=invoiceEnteredDate(x);
+ if(!issueDate){
+  errorBox.textContent='領収日を入力してください。';
+  errorBox.classList.remove('hidden');
+  return;
+ }
+ if(!Number.isFinite(amount)||amount<=0){
+  errorBox.textContent='領収金額は1円以上で入力してください。';
+  errorBox.classList.remove('hidden');
+  return;
+ }
 
  if(!reg){
   errorBox.textContent='インボイス登録番号を入力してください（T＋13桁）';
@@ -5821,21 +5981,35 @@ $('invoicePreviewPrint').onclick=()=>{
  localStorage.setItem(INVOICE_ISSUER_KEY,$('invoiceIssuerName').value.trim()||'ティンカーベル');
  buildInvoicePreview();
 
+ x.invoiceHistory=Array.isArray(x.invoiceHistory)?x.invoiceHistory:[];
+ x.invoiceHistory.unshift({
+  id:id(),
+  printedAt:nowISO(),
+  issueDate,
+  amount,
+  recipient:$('invoicePreviewName').value.trim(),
+  suffix:$('invoicePreviewSuffix').value||'御中',
+  proviso:$('invoicePreviewProviso').value.trim()||'飲食代として',
+  paymentMethod:$('invoicePaymentMethod').value||x.paymentMethod||'',
+  registration:reg
+ });
+ persist();
+
  document.body.classList.add('invoice-print-mode');
 
- // ユーザーのタップイベント内で即時に印刷を呼び出す。
+ // iPhone/Safariではwindow.print()が非同期で開くことがあるため、
+ // 固定時間で印刷モードを解除せず afterprint で元のPOS画面へ復帰させる。
  try{
   window.print();
+  recordPrint('invoice').catch(error=>console.error('Print record save failed:',error));
+  // afterprint が発火しないブラウザ向けの安全弁。印刷画面を開く時間を十分確保する。
+  invoicePrintCleanupTimer=setTimeout(finishInvoicePrintMode,30000);
  }catch(error){
   console.error('Print failed:',error);
+  finishInvoicePrintMode();
   errorBox.textContent='印刷機能を開けませんでした。SafariでこのPOSを開いてから印刷してください。';
   errorBox.classList.remove('hidden');
  }
-
- setTimeout(()=>{
-  document.body.classList.remove('invoice-print-mode');
-  recordPrint('invoice').catch(error=>console.error('Print record save failed:',error));
- },800);
 };
 
 $('cancelCheckoutBtn').onclick=async()=>{
