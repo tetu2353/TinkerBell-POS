@@ -132,7 +132,10 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .seat-cast-board .seat-cast-chip.selected{background:#6d3f75;color:#fff;border-color:#6d3f75;box-shadow:0 0 0 4px #d9c5df}
 .seat-cast-empty{font-size:14px;font-weight:800;color:#8a7e8e;padding:6px}
 .seat-move-banner{display:none;margin:0 0 12px;padding:12px 14px;border-radius:13px;background:#6d3f75;color:#fff;font-weight:1000}.seat-move-banner.active{display:flex;align-items:center;justify-content:space-between;gap:10px}.seat-move-banner button{background:#fff;color:#5d3465;min-height:38px}
-.seat-grid{gap:14px}
+.seat-grid{display:block!important}
+.seat-section{margin-bottom:14px}.seat-section-title{display:flex;align-items:center;justify-content:space-between;margin:0 0 7px;padding:0 3px}.seat-section-title b{font-size:18px}.seat-section-title small{font-weight:900;color:#756978}
+.seat-row-grid{display:grid;gap:8px}.counter-seat-grid,.box-seat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.seat-tap-hint{margin-top:7px;font-size:12px;font-weight:900;color:#786d7d}.seat-mini-move{width:100%;min-height:32px;margin-top:7px;border:0;border-radius:9px;background:#2b252d;color:#fff;font-size:12px;font-weight:900;padding:5px}
 .seat{min-height:210px;border-width:3px!important;border-style:solid!important;border-radius:20px!important;padding:16px!important;box-shadow:0 8px 18px #00000012;transition:.12s}
 .seat:active{transform:scale(.985)}
 .seat-counter.seat-empty{background:#eef6ff!important;border-color:#5b9bd5!important}
@@ -173,6 +176,24 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
  .seat-total{font-size:22px}
  .seat-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
  .seat-actions .danger{grid-column:1/-1}
+}
+@media(min-width:900px){
+ #seats{max-width:none}
+ .counter-seat-grid{grid-template-columns:repeat(7,minmax(0,1fr))}
+ .box-seat-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+ .seat-row-grid{gap:7px}
+ .seat{min-height:128px;padding:9px!important;border-radius:14px!important;box-shadow:0 3px 8px #00000010}
+ .seat-number{font-size:18px;white-space:nowrap}
+ .seat-status{font-size:11px;padding:4px 6px}
+ .seat-customer{font-size:17px;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .seat-casts{font-size:14px;margin-top:6px;max-height:42px;overflow:auto}
+ .seat-cast-chip{font-size:12px;padding:5px 7px;margin:2px 2px 2px 0;border-width:1px}
+ .seat-empty-text{font-size:18px;margin-top:18px}
+ .seat-reservation-type{font-size:11px;margin-top:6px;padding:4px 6px}
+ .seat-reservation-time{font-size:15px;margin-top:5px}
+ .seat-actions{margin-top:6px}.seat-actions button{min-height:32px;font-size:11px;padding:5px}
+ .seat-cast-board{padding:9px;margin-bottom:8px}.seat-cast-lane{min-height:58px;padding:7px}
+ .seat-control-bar{padding:8px 10px;margin-bottom:8px}.seat-move-help{padding:7px 10px;margin-bottom:8px;font-size:12px}
 }
 
 .seat-cast-current{display:block;margin-top:4px;color:#b14d36;font-size:12px;font-weight:900}
@@ -1793,7 +1814,7 @@ body.manager-mode .payroll-staff-settings{
 <script>
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)];
 const KEY='tb_integrated_v1';
-const APP_VERSION='v100-add-counter7-box6';
+const APP_VERSION='v101-ipad-seat-layout';
 const nowISO=()=>new Date().toISOString();
 const today=()=>new Date().toLocaleDateString('sv-SE');
 const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
@@ -2561,52 +2582,41 @@ function seatCastNames(s){
 }
 
 function renderSeats(){
- const inuse=db.seats.filter(s=>s.customerName).length,reserved=db.seats.filter(s=>!s.customerName&&s.reservation?.customerName).length;
- $('seatSummary').innerHTML=`<span>空席 ${db.seats.length-inuse-reserved}</span><span>使用中 ${inuse}</span><span>仮押さえ ${reserved}</span>`;
+ const inuse=db.seats.filter(s=>s.customerName).length,reservedCount=db.seats.filter(s=>!s.customerName&&s.reservation?.customerName).length;
+ $('seatSummary').innerHTML=`<span>空席 ${db.seats.length-inuse-reservedCount}</span><span>使用中 ${inuse}</span><span>仮押さえ ${reservedCount}</span>`;
  $('seatUndo').disabled=!seatUndoSnapshot;
  $('seatMoveBanner').classList.toggle('active',Boolean(seatAction));
  $('seatMoveBannerText').textContent=seatAction?.type==='cast'?`${staffById(seatAction.castId)?.name||'女の子'}：配置する席を押してください`:seatAction?.type==='seat'?`${db.seats.find(s=>s.id===seatAction.seatId)?.name||'席'}：移動先の空席を押してください`:'';
  renderSeatCastBoard();
- $('seatGrid').innerHTML=db.seats.map(s=>{
+
+ const seatCard=s=>{
   const castNames=seatCastNames(s);
-  const isBox=String(s.id||'').startsWith('B') || String(s.name||'').toUpperCase().includes('BOX');
+  const isBox=String(s.id||'').startsWith('B')||String(s.name||'').toUpperCase().includes('BOX');
   const typeClass=isBox?'seat-box':'seat-counter';
   const reserved=!s.customerName&&s.reservation&&s.reservation.customerName;
   const statusClass=s.customerName?'seat-inuse':reserved?'seat-reserved':'seat-empty';
-  const clickAction=`handleSeatCardTap('${s.id}')`;
-
-  return `<div class="seat ${typeClass} ${statusClass} ${seatAction?.type==='cast'&&s.customerName?'seat-select-ready':''} ${seatAction?.type==='seat'&&seatAction.seatId===s.id?'seat-move-source':''}" data-seat-id="${esc(s.id)}" onclick="${clickAction}">
-   <div class="seat-topline">
-    <div class="seat-number">${esc(s.name)}</div>
-    <div class="seat-status">${s.customerName?'使用中':reserved?'仮押さえ':'空席'}</div>
-   </div>
-
+  return `<div class="seat ${typeClass} ${statusClass} ${seatAction?.type==='cast'&&s.customerName?'seat-select-ready':''} ${seatAction?.type==='seat'&&seatAction.seatId===s.id?'seat-move-source':''}" data-seat-id="${esc(s.id)}" onclick="handleSeatCardTap('${s.id}')">
+   <div class="seat-topline"><div class="seat-number">${esc(s.name)}</div><div class="seat-status">${s.customerName?'使用中':reserved?'仮押さえ':'空席'}</div></div>
    <div class="seat-customer">${esc(customerDisplayName(s.customerName||(reserved?s.reservation.customerName:'')))}</div>
-
    ${s.customerName?`
     <div class="seat-casts">${castNames.length?s.casts.map(castId=>{const c=staffById(castId);return c?`<button type="button" class="seat-cast-chip" data-cast-move="${esc(castId)}" data-from-seat="${esc(s.id)}" onclick="event.stopPropagation()">${esc(c.name)}</button>`:''}).join(''):'担当なし'}</div>
-    <div class="item-actions seat-actions">
-      <button class="secondary" onclick="event.stopPropagation();openSeatModal('${s.id}')">配置を編集</button>
-      <button class="primary" onclick="event.stopPropagation();startWholeSeatMove('${s.id}')">席を移動</button>
-    </div>
+    <button class="seat-mini-move" onclick="event.stopPropagation();startWholeSeatMove('${s.id}')">席を移動</button>
    `:reserved?`
     <div class="seat-reservation-type">${s.reservation.type==='companion'||s.reservation.type==='同伴'?'同伴':'予約・来店予定'}</div>
     <div class="seat-reservation-time">${esc(s.reservation.time||'時間未定')}</div>
     <div class="seat-casts">${esc(s.reservation.castName||'担当未定')}</div>
-    <div class="item-actions seat-actions">
-      <button class="secondary" onclick="event.stopPropagation();openSeatReservation('${s.id}')">確認</button>
-      <button class="primary" onclick="event.stopPropagation();seatReservationArrive('${s.id}')">来店・注文開始</button>
-      <button class="danger" onclick="event.stopPropagation();releaseSeatReservation('${s.id}')">解除</button>
-    </div>
+    <div class="seat-tap-hint">タップして確認</div>
    `:`
     <div class="seat-empty-text">空席</div>
-    <div class="item-actions seat-actions">
-      <button class="primary" onclick="event.stopPropagation();openSeat('${s.id}')">入店登録</button>
-      <button class="secondary" onclick="event.stopPropagation();openSeatReservePick('${s.id}')">予定を仮押さえ</button>
-    </div>
+    <div class="seat-tap-hint">タップして登録</div>
    `}
   </div>`;
- }).join('');
+ };
+ const counters=db.seats.filter(s=>!String(s.id||'').startsWith('B')&&!String(s.name||'').toUpperCase().includes('BOX'));
+ const boxes=db.seats.filter(s=>String(s.id||'').startsWith('B')||String(s.name||'').toUpperCase().includes('BOX'));
+ $('seatGrid').innerHTML=`
+  <div class="seat-section"><div class="seat-section-title"><b>カウンター</b><small>${counters.length}席</small></div><div class="seat-row-grid counter-seat-grid">${counters.map(seatCard).join('')}</div></div>
+  <div class="seat-section"><div class="seat-section-title"><b>BOX</b><small>${boxes.length}席</small></div><div class="seat-row-grid box-seat-grid">${boxes.map(seatCard).join('')}</div></div>`;
  bindSeatCastLongPress();
 }
 $('seatUndo').onclick=restoreSeatChange;
