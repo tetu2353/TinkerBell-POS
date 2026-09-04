@@ -68,6 +68,11 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .order-menu-button b{display:block;font-size:19px;line-height:1.3}
 .order-menu-button small{display:block;font-size:17px;font-weight:900;color:#9b6920;margin-top:7px}
 .order-menu-button:active{transform:scale(.97);background:#ffe8a9}
+.order-menu-button{position:relative;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.order-menu-button.added{background:#dff5e6;border-color:#2f9655;box-shadow:0 0 0 3px #bfe8cc inset}
+.order-menu-qty{position:absolute;right:8px;top:8px;min-width:29px;height:29px;padding:0 7px;border-radius:999px;background:#7a1730;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:1000}
+.order-search{margin:10px 0 4px}.order-search input{min-height:50px;border:2px solid #c79b43;background:#fff}
+.order-live-status{min-height:28px;margin:8px 0 0;padding:5px 9px;border-radius:9px;background:#edf7ef;color:#24713b;font-weight:900}
 .selected-order-summary{border:3px solid #7f5a1c}
 .order-total{font-size:26px;color:#8d5d13}
 .order-line{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
@@ -81,6 +86,15 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
 .qty-button{width:38px;height:38px;padding:0;border-radius:10px;font-size:22px;font-weight:900}
 .qty-number{min-width:24px;text-align:center;font-size:18px}
 @media(max-width:560px){.order-line-right{flex-wrap:wrap;justify-content:flex-end}.qty-controls{width:100%;justify-content:flex-end}}
+@media(min-width:900px) and (orientation:landscape){
+ #orderWorkspace{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(360px,.75fr);gap:12px;align-items:start}
+ #orderWorkspace>.order-step-card{grid-column:1;grid-row:1/3;margin:0}
+ #orderWorkspace>#castPicker{grid-column:1;grid-row:2;margin:0;z-index:3}
+ #orderWorkspace>#orderSummary{grid-column:2;grid-row:1/3;position:sticky;top:92px;max-height:calc(100vh - 170px);overflow:auto}
+ .selected-order-summary{margin:0}
+ .order-menu-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .order-menu-button{min-height:82px}
+}
 .attendance-person-card{border:1px solid var(--line);border-radius:14px;background:#fff;margin-bottom:10px;overflow:hidden}
 .attendance-person-card summary{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px;cursor:pointer;font-size:17px;font-weight:900}
 .attendance-person-total{color:#8d5d13;white-space:nowrap}
@@ -540,17 +554,45 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;background:#f
   border-bottom:0;
 }
 .receipt-right-block{
-  text-align:right;
+  display:flex;
+  justify-content:flex-end;
+  align-items:flex-end;
+  gap:10px;
+  text-align:left;
   line-height:1.7;
   font-size:13px;
 }
+.receipt-fairy{
+  width:54px;
+  min-width:54px;
+  color:#418b8e;
+  opacity:.9;
+}
+.receipt-fairy svg{display:block;width:100%;height:auto}
+.receipt-shop-info{max-width:270px}
 .receipt-shop-name{
-  font-size:19px;
-  font-weight:1000;
-  margin-bottom:4px;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:21px;
+  font-weight:700;
+  font-style:italic;
+  letter-spacing:.08em;
+  margin-bottom:2px;
 }
 .receipt-shop-line{
   word-break:break-word;
+}
+.receipt-stamp-space{
+  width:82px;
+  height:52px;
+  border:1px dashed #777;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size:10px;
+  line-height:1.35;
+  color:#555;
+  margin-left:auto;
 }
 @media(max-width:640px){
   .receipt-bottom-grid{grid-template-columns:1fr}
@@ -1214,9 +1256,11 @@ body.manager-mode .payroll-staff-settings{
 <div id="orderWorkspace">
   <div class="card order-step-card">
     <b class="order-step-title">② 商品を選ぶ</b>
+    <label class="order-search">商品検索<input id="orderMenuSearch" type="search" placeholder="商品名を入力"></label>
     <div id="tapMenuGrid" class="order-menu-grid" style="margin-top:10px"></div>
     <div class="meta" style="margin-top:14px;font-weight:900">その他の項目</div>
     <div id="orderCategories" class="category-row" style="margin-top:8px"></div>
+    <div id="orderLiveStatus" class="order-live-status" aria-live="polite">商品をタップすると、この席へ追加されます</div>
   </div>
   <div id="castPicker" class="card hidden">
     <b class="order-step-title">女の子をタップ</b>
@@ -3601,7 +3645,7 @@ $('seatCheckoutConfirm').onclick=async()=>{
  toast(mode==='split'?`分割会計を${createdCheckouts.length}件保存しました`:'会計を確定しました');
 };
 
-let selectedOrderSeat='',selectedCategory='よく使う',pendingMenu='',lastOrder=null,undoTimer=null;
+let selectedOrderSeat='',selectedCategory='よく使う',pendingMenu='',lastOrder=null,undoTimer=null,orderMenuSearch='',lastMenuTapAt=0,lastMenuTapId='';
 
 window.selectOrderSeat=sid=>{
  selectedOrderSeat=sid;
@@ -3623,6 +3667,11 @@ function renderOrderSeatPicker(){
 
 window.setCategory=c=>{
  selectedCategory=c;
+ renderTapOrders();
+};
+
+$('orderMenuSearch').oninput=e=>{
+ orderMenuSearch=String(e.target.value||'').trim().toLowerCase();
  renderTapOrders();
 };
 
@@ -3706,14 +3755,17 @@ function renderTapOrders(){
    ${esc(c)}
   </button>`).join('');
 
- const items=selectedCategory==='よく使う'
+ let items=selectedCategory==='よく使う'
   ?quickItems
   :visibleMenu.filter(m=>m.type===selectedCategory);
 
+ if(orderMenuSearch)items=visibleMenu.filter(m=>String(m.name||'').toLowerCase().includes(orderMenuSearch));
+
  $('tapMenuGrid').innerHTML=items.length?items.map(m=>`
-  <button class="order-menu-button" onclick="tapMenu('${m.id}')">
+  <button type="button" class="order-menu-button" data-menu-id="${esc(m.id)}" onclick="tapMenu('${m.id}')">
    <b>${esc(m.name)}</b>
    <small>${yen(m.price)}</small>
+   ${(()=>{const qty=(s.orders||[]).filter(o=>o.menuId===m.id).reduce((n,o)=>n+Number(o.qty||1),0);return qty?`<span class="order-menu-qty">${qty}</span>`:''})()}
   </button>`).join(''):'<div class="empty">この項目の商品はありません</div>';
 
  $('castPicker').classList.add('hidden');
@@ -3722,6 +3774,11 @@ function renderTapOrders(){
 window.tapMenu=mid=>{
  const s=selectedSeat();
  if(!s)return toast('席管理から席を選んでください');
+
+ const now=Date.now();
+ if(lastMenuTapId===mid&&now-lastMenuTapAt<350)return;
+ lastMenuTapId=mid;
+ lastMenuTapAt=now;
 
  const m=db.menu.find(x=>x.id===mid);
  if(!m||m.visible===false)return;
@@ -3782,6 +3839,9 @@ window.commitTapOrder=(mid,castId)=>{
  renderOrders();
  renderInventory();
  syncInventoryCloud();
+ const addedButton=[...document.querySelectorAll('.order-menu-button')].find(button=>button.dataset.menuId===String(mid));
+ if(addedButton){addedButton.classList.add('added');setTimeout(()=>addedButton.classList.remove('added'),650)}
+ $('orderLiveStatus').textContent=`✓ ${m.name}を追加しました`;
  showUndo(`${m.name}を追加`);
  toast(`${m.name}を追加`);
 };
@@ -3829,8 +3889,8 @@ function renderOrders(){
  $('orderSummary').innerHTML=`
   <div class="card selected-order-summary">
    <div class="sectionHead">
-    <h2>③ 注文内容・会計</h2>
-    <b class="order-total">${yen(seatTotal(s))}</b>
+    <h2>③ 現在の注文 <small>(${s.orders.reduce((n,o)=>n+Number(o.qty||1),0)}点)</small></h2>
+    <b class="order-total">合計 ${yen(seatTotal(s))}</b>
    </div>
    ${s.orders.length?s.orders.map(o=>`
     <div class="order-line">
@@ -3858,6 +3918,7 @@ window.changeOrderQty=(sid,oid,delta)=>{
  if(!s||!o)return;
 
  const change=Number(delta||0);
+ if(change<0&&Number(o.qty||1)<=1&&!confirm(`${o.name}を注文から削除しますか？`))return;
  if(change>0&&!adjustInventory(o.menuId,-change,`${s.name} 数量追加`))return;
  if(change<0)adjustInventory(o.menuId,-change,`${s.name} 数量減`);
  o.qty=Number(o.qty||1)+change;
@@ -3876,6 +3937,7 @@ window.delOrder=(sid,oid)=>{
  const s=db.seats.find(x=>x.id===sid);
  if(!s)return;
  const o=s.orders.find(x=>x.id===oid);
+ if(!o||!confirm(`${o.name} × ${Number(o.qty||1)}を削除しますか？`))return;
  if(o)adjustInventory(o.menuId,Number(o.qty||1),`${s.name} 注文削除`);
  s.orders=s.orders.filter(x=>x.id!==oid);
  persist();
@@ -5885,48 +5947,36 @@ function buildInvoicePreview(){
  const no=`${String(issueDate).replaceAll('-','')}-${String(x.id).slice(-6).toUpperCase()}`;
 
  $('invoicePreviewPaper').innerHTML=`
-  <div class="invoice-landscape">
-    <div class="invoice-head-row">
-      <div>
-        <div class="invoice-doc-title">領 収 証</div>
-        <div class="invoice-number">No. ${esc(no)}</div>
-      </div>
-      <div class="invoice-head-right">
-        <div>発行日<br>${new Date(issueDate+'T00:00:00').toLocaleDateString('ja-JP')}</div>
-      </div>
+  <div class="receipt-photo-layout">
+    <div class="receipt-head">
+      <div class="receipt-spacer"></div>
+      <div class="receipt-title">領 収 証</div>
+      <div class="receipt-no">No. ${esc(no)}</div>
     </div>
-
-    <div class="invoice-customer-row">
-      <div class="invoice-customer-name">${esc(name||'　　　　　　　　　　　')} ${esc(suffix)}</div>
-    </div>
-
-    <div class="invoice-main-row">
-      <div class="invoice-main-left">
-        <div class="invoice-amount-label">金額</div>
-        <div class="invoice-amount">${yen(amount)}</div>
-
-        <div class="invoice-proviso">但し　${esc(proviso)}</div>
-        <div class="invoice-payment">支払方法　${esc(payment)}</div>
+    <div class="receipt-date-row"><div class="receipt-date-line">発行日　${new Date(issueDate+'T00:00:00').toLocaleDateString('ja-JP')}</div></div>
+    <div class="receipt-name-row"><div class="receipt-name-line">${esc(name||'　　　　　　　　　　　')} ${esc(suffix)}</div></div>
+    <div class="receipt-amount-label">金　額</div>
+    <div class="receipt-amount-box">${yen(amount)}－</div>
+    <div class="receipt-proviso-row"><div class="receipt-proviso-label">但し</div><div class="receipt-proviso-line">${esc(proviso)}</div></div>
+    <div class="receipt-payment-row">支払方法　${esc(payment)}　　上記正に領収いたしました。</div>
+    <div class="receipt-bottom-grid">
+      <div class="receipt-left-block">
+        <div class="receipt-block-title">内　訳</div>
+        <div class="receipt-breakdown-row"><span>税抜価格</span><span>${yen(obj.net)}</span></div>
+        <div class="receipt-breakdown-row"><span>消費税額（10％）</span><span>${yen(obj.tax)}</span></div>
+        <div class="receipt-stamp-space">収入印紙<br>貼付欄<br>5万円以上</div>
       </div>
-
-      <div class="invoice-tax-box">
-        <div class="invoice-tax-heading">内訳</div>
-        <div class="invoice-tax-row"><span>税抜金額</span><span>${yen(obj.net)}</span></div>
-        <div class="invoice-tax-row"><span>消費税額（10％）</span><span>${yen(obj.tax)}</span></div>
-        <div class="invoice-tax-row"><span>税込合計</span><span>${yen(amount)}</span></div>
-      </div>
-    </div>
-
-    <div class="invoice-footer-row">
-      <div class="invoice-note">
-        上記正に領収いたしました。
-      </div>
-
-      <div class="invoice-shop">
-        <div><b>${esc(issuer)}</b></div>
-        <div>${esc(INVOICE_ADDRESS)}</div>
-        <div>TEL ${INVOICE_PHONE}</div>
-        <div>登録番号 ${esc(registration||DEFAULT_INVOICE_REG)}</div>
+      <div class="receipt-right-block">
+        <div class="receipt-fairy" aria-hidden="true">
+          <svg viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg"><g fill="currentColor"><ellipse cx="24" cy="40" rx="20" ry="30" opacity=".22" transform="rotate(-28 24 40)"/><ellipse cx="57" cy="42" rx="18" ry="28" opacity=".22" transform="rotate(28 57 42)"/><circle cx="41" cy="35" r="8"/><path d="M37 43c-6 14-4 27 3 38l-15 24 7 3 12-20 11 20 7-4-15-25c7-12 8-24 0-36z"/><path d="M36 49 17 67l4 5 18-13M47 49l18 18-4 5-17-13"/></g><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M35 27c4-12 15-13 19-8-8 0-12 4-13 10"/><path d="M11 22l2 5m-5-2 5-2M67 17l2 6m-5-2 6-2M13 89l2 5m-5-2 5-2"/></g></svg>
+        </div>
+        <div class="receipt-shop-info">
+          <div class="receipt-shop-name">Tinker Bell</div>
+          <div class="receipt-shop-line">${esc(issuer)}</div>
+          <div class="receipt-shop-line">${esc(INVOICE_ADDRESS)}</div>
+          <div class="receipt-shop-line">TEL ${INVOICE_PHONE}</div>
+          <div class="receipt-shop-line">登録番号 ${esc(registration||DEFAULT_INVOICE_REG)}</div>
+        </div>
       </div>
     </div>
   </div>`;
